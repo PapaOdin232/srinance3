@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "module": "esnext",
+    "types": ["jest", "@testing-library/jest-dom", "node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

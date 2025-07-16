@@ -1,0 +1,18 @@
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[flake8]
+max-line-length = 88
+exclude = .git,__pycache__,venv
+
+
+[coverage.run]
+branch = true
+source = ["backend"]
+
+[coverage.report]
+omit = ["*/tests/*", "*/__init__.py"]
+show_missing = true

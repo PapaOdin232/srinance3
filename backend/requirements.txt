@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-dotenv
+httpx
+pydantic
+black
+flake8
+isort
+pre-commit
+
+requests
+sqlalchemy
+websocket-client
