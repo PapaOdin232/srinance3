@@ -10,7 +10,7 @@ import type { WSMessage } from '../services/wsClient';
 Chart.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
 const SYMBOL = 'BTCUSDT';
-const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws');
+const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/market');
 
 export const MarketPanel: React.FC = () => {
   const [ticker, setTicker] = useState<TickerResponse | null>(null);
@@ -20,24 +20,48 @@ export const MarketPanel: React.FC = () => {
   const wsRef = useRef<WSClient | null>(null);
 
   useEffect(() => {
+    console.log('[MarketPanel] useEffect mount');
     // Pobierz dane początkowe
     getTicker(SYMBOL).then(setTicker).catch((e) => setError((e as Error).message));
     getOrderbook(SYMBOL).then(setOrderbook).catch((e) => setError((e as Error).message));
     // WebSocket na żywo
-    wsRef.current = new WSClient(WS_URL);
-    wsRef.current.addListener((msg: WSMessage) => {
-      if (msg.type === 'ticker' && msg.symbol === SYMBOL) {
-        setTicker({ symbol: msg.symbol, price: msg.price });
+    wsRef.current = new WSClient(WS_URL, (err) => {
+      console.log('[MarketPanel] WSClient onErrorCallback', err);
+      if (!err) setError(null);
+      else setError(err);
+    });
+    wsRef.current.addListener((msg: any) => {
+      console.log('[MarketPanel] WSClient listener', msg);
+      setError(null);
+      // Obsługa wiadomości typu kline
+      if (msg.e === 'kline' && msg.s === SYMBOL && msg.k) {
+        const closePrice = parseFloat(msg.k.c);
+        setTicker({ symbol: msg.s, price: msg.k.c });
         setChartData((prev) => ({
-          labels: [...prev.labels, new Date().toLocaleTimeString()].slice(-20),
-          data: [...prev.data, parseFloat(msg.price)].slice(-20),
+          labels: [...prev.labels, new Date(msg.k.T).toLocaleTimeString()].slice(-20),
+          data: [...prev.data, closePrice].slice(-20),
         }));
+        console.log('[MarketPanel] zaktualizowano ticker i chartData z kline', closePrice);
       }
-      if (msg.type === 'orderbook' && msg.symbol === SYMBOL) {
-        setOrderbook({ bids: msg.bids, asks: msg.asks });
+      // Obsługa wiadomości typu depthUpdate
+      else if (msg.e === 'depthUpdate' && msg.s === SYMBOL) {
+        setOrderbook({ bids: msg.b, asks: msg.a });
+        console.log('[MarketPanel] zaktualizowano orderbook z depthUpdate', msg.b, msg.a);
+      }
+      // Obsługa wiadomości typu 24hrTicker
+      else if (msg.e === '24hrTicker' && msg.s === SYMBOL) {
+        setTicker({ symbol: msg.s, price: msg.c });
+        console.log('[MarketPanel] zaktualizowano ticker z 24hrTicker', msg.c);
+      }
+      else {
+        // fallback na nieznane typy
+        console.log('[MarketPanel] nieobsługiwany typ wiadomości', msg);
       }
     });
-    return () => wsRef.current?.close();
+    return () => {
+      console.log('[MarketPanel] useEffect cleanup (unmount/refresh)');
+      wsRef.current?.close();
+    };
   }, []);
 
   return (

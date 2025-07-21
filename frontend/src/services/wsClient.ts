@@ -14,29 +14,37 @@ export class WSClient {
   private listeners: WSListener[] = [];
   private reconnectTimeout = 2000;
   private shouldReconnect = true;
+  private onErrorCallback?: (err: string) => void;
 
-  constructor(url: string) {
+  constructor(url: string, onErrorCallback?: (err: string) => void) {
     this.url = url;
+    this.onErrorCallback = onErrorCallback;
+    console.log(`[WSClient] Konstruktor: tworzę instancję dla url=${url}`);
     this.connect();
   }
 
   private connect() {
     this.ws = new WebSocket(this.url);
     this.ws.onopen = () => {
-      // Połączono
+      console.log(`[WSClient] onopen: Połączono z WebSocket (${this.url})`);
+      if (this.onErrorCallback) this.onErrorCallback("");
     };
     this.ws.onmessage = (event) => {
+      console.log(`[WSClient] onmessage: Otrzymano wiadomość (${this.url})`, event.data);
       try {
         const data = JSON.parse(event.data);
         this.listeners.forEach((cb) => cb(data));
       } catch (e) {
-        // Błąd parsowania
+        console.warn('[WSClient] Błąd parsowania wiadomości', e);
       }
     };
-    this.ws.onerror = () => {
-      // Obsługa błędów
+    this.ws.onerror = (event) => {
+      console.error(`[WSClient] onerror: Błąd połączenia z WebSocketem (${this.url})`, event);
+      if (this.onErrorCallback) this.onErrorCallback("Błąd połączenia z WebSocketem");
     };
     this.ws.onclose = () => {
+      console.log(`[WSClient] onclose: Połączenie z WebSocketem zostało zamknięte (${this.url})`);
+      if (this.onErrorCallback) this.onErrorCallback("Połączenie z WebSocketem zostało zamknięte");
       if (this.shouldReconnect) {
         setTimeout(() => this.connect(), this.reconnectTimeout);
       }
@@ -64,5 +72,5 @@ export class WSClient {
 }
 
 // Przykład użycia:
-// const ws = new WSClient('ws://localhost:8000/ws');
+// const ws = new WSClient('ws://localhost:8000/ws/market');
 // ws.addListener((msg) => { ... });

@@ -68,16 +68,34 @@ npx prettier --write .
 ```
 
 ## Uruchomienie środowiska
-- Backend:
+
+## Uruchomienie środowiska
+Backend:
   ```bash
   cd backend
   source venv/bin/activate
   uvicorn main:app --reload
   ```
-- Frontend:
+Frontend:
   ```bash
   cd frontend
   npm run dev
+  ```
+
+## Obsługa błędów i fallbacki
+
+- Komponenty frontendowe (MarketPanel, BotPanel, AccountPanel) wyświetlają czytelne komunikaty w przypadku braku połączenia z backendem (np. rozłączenie WebSocket, błąd API).
+- W przypadku rozłączenia WebSocket użytkownik zobaczy komunikat o braku połączenia i aplikacja nie zawiesi się.
+- Wszelkie błędy są logowane w konsoli oraz prezentowane w UI w przyjaznej formie.
+
+## Testy jednostkowe
+
+- Testy jednostkowe dla kluczowych komponentów frontendowych znajdują się w plikach `*.test.tsx` w katalogu `frontend/src/components/`.
+- Testy sprawdzają poprawność renderowania danych, obsługę błędów oraz komunikatów fallbackowych.
+- Aby uruchomić testy frontendowe:
+  ```bash
+  cd frontend
+  npm test
   ```
 
 ## Przykładowe pliki konfiguracyjne

@@ -7,4 +7,4 @@ BINANCE_ENV = os.getenv("BINANCE_ENV", "testnet")
 
 # Testnet endpointy Binance
 BINANCE_API_URL = "https://testnet.binance.vision/api"
-BINANCE_WS_URL = "wss://testnet.binance.vision/ws"
+BINANCE_WS_URL = "wss://stream.testnet.binance.vision"

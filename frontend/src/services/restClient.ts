@@ -3,21 +3,52 @@ import axios from 'axios';
 
 import { getEnvVar } from './testConnection';
 
+
 const API_BASE_URL = getEnvVar('VITE_API_URL', 'http://localhost:8000');
+const AUTH_TOKEN = getEnvVar('VITE_AUTH_TOKEN', 'example_admin_token');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${AUTH_TOKEN}`,
   },
 });
 
 // Typy odpowiedzi zgodne z backendem
+export interface CommissionRates {
+  maker: string;
+  taker: string;
+  buyer: string;
+  seller: string;
+}
+
+export interface Balance {
+  asset: string;
+  free: string;
+  locked: string;
+}
+
 export interface AccountResponse {
-  balances: Record<string, string>;
+  makerCommission: number;
+  takerCommission: number;
+  buyerCommission: number;
+  sellerCommission: number;
+  commissionRates: CommissionRates;
+  canTrade: boolean;
+  canWithdraw: boolean;
+  canDeposit: boolean;
+  brokered: boolean;
+  requireSelfTradePrevention: boolean;
+  preventSor: boolean;
+  updateTime: number;
+  accountType: string;
+  balances: Balance[];
   permissions: string[];
-  limits: Record<string, number>;
+  uid: number;
+  /** Niestandardowe pole backendu, nie występuje w oficjalnym API Binance */
+  limits?: Record<string, number>;
 }
 
 export interface TickerResponse {
@@ -53,18 +84,29 @@ export async function getAccount() {
   }
 }
 
+
 export async function getTicker(symbol: string) {
   try {
-    const res = await api.post<TickerResponse>('/ticker', { symbol });
+    const res = await api.get<TickerResponse>(`/ticker?symbol=${encodeURIComponent(symbol)}`);
     return res.data;
   } catch (err) {
     handleError(err);
   }
 }
 
-export async function getHistory() {
+
+export async function getAccountHistory(symbol: string) {
   try {
-    const res = await api.get<HistoryResponse>('/history');
+    const res = await api.get<HistoryResponse>(`/account/history?symbol=${encodeURIComponent(symbol)}`);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function getAccountBalance(asset: string) {
+  try {
+    const res = await api.get<{ balance: string }>(`/account/balance?asset=${encodeURIComponent(asset)}`);
     return res.data;
   } catch (err) {
     handleError(err);
@@ -101,7 +143,11 @@ export async function getBotLogs() {
 function handleError(error: unknown): never {
   if (typeof error === 'object' && error !== null && 'isAxiosError' in error && (error as any).isAxiosError) {
     const err = error as any;
-    throw new Error(err.response?.data?.detail || err.message);
+    // Loguj szczegóły do konsoli
+    console.error('API error:', err);
+    // Wyświetl szczegóły użytkownikowi
+    throw new Error(err.response?.data?.detail || err.message || 'Błąd API');
   }
+  console.error('Unknown error:', error);
   throw new Error('Unknown error');
 }

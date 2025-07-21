@@ -4,7 +4,7 @@ import { WSClient } from '../services/wsClient';
 import type { WSMessage } from '../services/wsClient';
 import { getEnvVar } from '../services/testConnection';
 
-const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws');
+const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/market');
 
 export const BotPanel: React.FC = () => {
   const [settings, setSettings] = useState({ symbol: 'BTCUSDT', amount: 0.001 });
@@ -16,22 +16,34 @@ export const BotPanel: React.FC = () => {
   const wsRef = useRef<WSClient | null>(null);
 
   useEffect(() => {
+    console.log('[BotPanel] useEffect mount');
     getBotStatus().then((res) => {
       setStatus(res?.status || 'unknown');
       setRunning(res?.running || false);
     });
     getBotLogs().then((res) => setLogs(res?.logs || []));
-    wsRef.current = new WSClient(WS_URL);
+    wsRef.current = new WSClient(WS_URL, (err) => {
+      console.log('[BotPanel] WSClient onErrorCallback', err);
+      if (err) setError(err);
+    });
     wsRef.current.addListener((msg: WSMessage) => {
+      console.log('[BotPanel] WSClient listener', msg);
       if (msg.type === 'log') {
         setLogs((prev) => [...prev.slice(-99), msg.message]);
       }
       if (msg.type === 'bot_status') {
-        setStatus(msg.status);
+        if (typeof msg.status === 'object' && msg.status !== null) {
+          setStatus(msg.status.status || JSON.stringify(msg.status));
+        } else {
+          setStatus(msg.status);
+        }
         setRunning(msg.running);
       }
     });
-    return () => wsRef.current?.close();
+    return () => {
+      console.log('[BotPanel] useEffect cleanup (unmount/refresh)');
+      wsRef.current?.close();
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +94,7 @@ export const BotPanel: React.FC = () => {
           Stop
         </button>
       </form>
-      <div>Status: <b>{status}</b> {running ? '🟢' : '🔴'}</div>
+      <div>Status: <b>{typeof status === 'object' ? JSON.stringify(status) : String(status)}</b> {running ? '🟢' : '🔴'}</div>
       {error && <div style={{ color: 'red' }}>Błąd: {error}</div>}
       <h3>Logi bota (na żywo)</h3>
       <div style={{ background: '#222', color: '#0f0', fontFamily: 'monospace', padding: 12, height: 200, overflowY: 'auto', borderRadius: 4 }}>

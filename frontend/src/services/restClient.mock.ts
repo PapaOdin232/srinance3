@@ -1,8 +1,30 @@
 import type { AccountResponse, TickerResponse, HistoryResponse, OrderbookResponse, BotStatusResponse, BotLogsResponse } from './restClient';
 
 export const mockAccount: AccountResponse = {
-  balances: { BTC: '0.5', USDT: '1000' },
+  makerCommission: 10,
+  takerCommission: 10,
+  buyerCommission: 0,
+  sellerCommission: 0,
+  commissionRates: {
+    maker: '0.00100000',
+    taker: '0.00100000',
+    buyer: '0.00000000',
+    seller: '0.00000000',
+  },
+  canTrade: true,
+  canWithdraw: true,
+  canDeposit: true,
+  brokered: false,
+  requireSelfTradePrevention: false,
+  preventSor: false,
+  updateTime: 1751456749287,
+  accountType: 'SPOT',
+  balances: [
+    { asset: 'BTC', free: '0.5', locked: '0.0' },
+    { asset: 'USDT', free: '1000', locked: '0.0' },
+  ],
   permissions: ['SPOT'],
+  uid: 123456789,
   limits: { limit1: 100 },
 };
 
