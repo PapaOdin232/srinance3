@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 
-import { getEnvVar } from './testConnection';
+import { getEnvVar } from './getEnvVar';
 
 
 const API_BASE_URL = getEnvVar('VITE_API_URL', 'http://localhost:8000');

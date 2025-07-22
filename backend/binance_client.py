@@ -72,7 +72,7 @@ class BinanceRESTClient:
 
 
 class BinanceWebSocketClient:
-    def __init__(self, streams, queue=None, main_loop=None):
+    def __init__(self, streams, queues=None, main_loop=None):
         from backend.config import BINANCE_WS_URL, BINANCE_ENV
         self.ws_url = BINANCE_WS_URL.rstrip('/')
         self.env = BINANCE_ENV
@@ -80,13 +80,15 @@ class BinanceWebSocketClient:
         self.should_reconnect = True
         self.threads = []
         self.ws_apps = []
-        self.queue = queue  # asyncio.Queue do forwardowania wiadomości
+        self.queues = queues if queues is not None else []  # Lista kolejek do forwardowania wiadomości
         self.main_loop = main_loop
 
     def on_message(self, ws, message):
-        # Forward do asyncio.Queue jeśli podana, inaczej tylko print
-        if self.queue and self.main_loop:
-            self.main_loop.call_soon_threadsafe(self.queue.put_nowait, message)
+        # Forward do wszystkich kolejek jeśli dostępne
+        if self.queues and self.main_loop:
+            for queue in self.queues:
+                if queue:
+                    self.main_loop.call_soon_threadsafe(queue.put_nowait, message)
         else:
             data = json.loads(message)
             print("WS MESSAGE:", data)

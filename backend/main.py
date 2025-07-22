@@ -24,13 +24,51 @@ binance_streams = [
     "btcusdt@depth",
     "btcusdt@kline_1m"
 ]
-binance_queue = asyncio.Queue()
+binance_queue = asyncio.Queue()  # Dla /ws/market endpoint
+bot_queue = asyncio.Queue()      # Dla TradingBot live data
 
 
 # Przekaż referencję do głównej event loop do klienta WS
 main_loop = asyncio.get_event_loop()
-binance_ws_client = BinanceWebSocketClient(binance_streams, queue=binance_queue, main_loop=main_loop)
+binance_ws_client = BinanceWebSocketClient(binance_streams, queues=[binance_queue, bot_queue], main_loop=main_loop)
 binance_ws_client.connect()
+
+# --- WebSocket dla logów bota ---
+bot_log_connections = set()
+
+@app.websocket("/ws/bot")
+async def websocket_bot(websocket: WebSocket):
+    await websocket.accept()
+    bot_log_connections.add(websocket)
+    print("[WebSocket] Nowe połączenie /ws/bot")
+    try:
+        while True:
+            # Czekaj na wiadomości (utrzymuj połączenie)
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        print("[WebSocket] Klient rozłączył się /ws/bot")
+        bot_log_connections.discard(websocket)
+
+async def broadcast_bot_message(message):
+    """Wyślij wiadomość do wszystkich połączonych klientów WebSocket bota"""
+    print(f"[DEBUG] broadcast_bot_message called with {len(bot_log_connections)} connections")
+    print(f"[DEBUG] message: {message}")
+    if bot_log_connections:
+        disconnected = set()
+        sent_count = 0
+        for websocket in bot_log_connections:
+            try:
+                await websocket.send_json(message)
+                sent_count += 1
+                print(f"[DEBUG] Message sent to WebSocket client #{sent_count}")
+            except (WebSocketDisconnect, ConnectionResetError, Exception) as e:
+                print(f"[DEBUG] Failed to send to WebSocket: {e}")
+                disconnected.add(websocket)
+        # Usuń rozłączone połączenia
+        bot_log_connections.difference_update(disconnected)
+        print(f"[DEBUG] Message broadcast completed. Sent to {sent_count} clients, {len(disconnected)} disconnected")
+    else:
+        print(f"[DEBUG] No WebSocket connections available for broadcast")
 
 @app.websocket("/ws/market")
 async def websocket_market(websocket: WebSocket):
@@ -87,7 +125,7 @@ def admin_auth(request: Request):
         raise HTTPException(status_code=401, detail="Unauthorized: invalid or missing token")
 
 client = BinanceRESTClient()
-bot = TradingBot()
+bot = TradingBot(market_data_queue=bot_queue, broadcast_callback=broadcast_bot_message, main_loop=main_loop)
 
 
 class SymbolRequest(BaseModel):

@@ -1,13 +1,32 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js';
+import { 
+  Chart, 
+  LineController,
+  LineElement, 
+  PointElement, 
+  LinearScale, 
+  CategoryScale, 
+  Title,
+  Tooltip, 
+  Legend 
+} from 'chart.js';
 import { getTicker, getOrderbook } from '../services/restClient';
-import { getEnvVar } from '../services/testConnection';
+import { getEnvVar } from '../services/getEnvVar';
 import type { TickerResponse, OrderbookResponse } from '../services/restClient';
 import { WSClient } from '../services/wsClient';
 import type { WSMessage } from '../services/wsClient';
 
-Chart.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
+Chart.register(
+  LineController,
+  LineElement, 
+  PointElement, 
+  LinearScale, 
+  CategoryScale, 
+  Title,
+  Tooltip, 
+  Legend
+);
 
 const SYMBOL = 'BTCUSDT';
 const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/market');

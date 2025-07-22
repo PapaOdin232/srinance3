@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getBotStatus, getBotLogs, api } from '../services/restClient';
 import { WSClient } from '../services/wsClient';
-import type { WSMessage } from '../services/wsClient';
-import { getEnvVar } from '../services/testConnection';
+import { getEnvVar } from '../services/getEnvVar';
+import type { WSMessage, WSLogMessage, WSBotStatusMessage } from '../types/websocket';
 
-const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/market');
+// WebSocket URL dla logów bota - różne od /ws/market (dane rynkowe)
+const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/bot');
 
 export const BotPanel: React.FC = () => {
   const [settings, setSettings] = useState({ symbol: 'BTCUSDT', amount: 0.001 });
@@ -28,18 +29,23 @@ export const BotPanel: React.FC = () => {
     });
     wsRef.current.addListener((msg: WSMessage) => {
       console.log('[BotPanel] WSClient listener', msg);
+      // Temporary debug: show alert to test WebSocket message reception
       if (msg.type === 'log') {
-        // msg.message może być unknown, rzutuj na string
-        setLogs((prev) => [...prev.slice(-99), String((msg as { message?: unknown }).message ?? '')]);
+        alert(`Bot Log: ${(msg as WSLogMessage).message}`);
+      }
+      if (msg.type === 'log') {
+        const logMessage = msg as WSLogMessage;
+        setLogs((prev) => [...prev.slice(-99), logMessage.message]);
       }
       if (msg.type === 'bot_status') {
-        // msg.status może być unknown lub object
-        if (typeof (msg as any).status === 'object' && (msg as any).status !== null && 'status' in (msg as any).status) {
-          setStatus(String((msg as any).status.status || JSON.stringify((msg as any).status)));
+        const statusMessage = msg as WSBotStatusMessage;
+        // Sprawdź czy status jest object z właściwością 'status'
+        if (typeof statusMessage.status === 'object' && statusMessage.status !== null && 'status' in statusMessage.status) {
+          setStatus(String(statusMessage.status.status || JSON.stringify(statusMessage.status)));
         } else {
-          setStatus(String((msg as any).status));
+          setStatus(String(statusMessage.status));
         }
-        setRunning(Boolean((msg as any).running));
+        setRunning(Boolean(statusMessage.running));
       }
     });
     return () => {

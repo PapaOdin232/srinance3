@@ -1,7 +1,21 @@
-// Mock dla react-chartjs-2, aby uniknąć problemów z canvas w jsdom
+// Mock dla react-chartjs-2 i chart.js, aby uniknąć problemów z canvas w jsdom
 jest.mock('react-chartjs-2', () => ({
   Line: () => <div data-testid="mock-line-chart" />,
   Bar: () => <div data-testid="mock-bar-chart" />,
+}));
+
+jest.mock('chart.js', () => ({
+  Chart: {
+    register: jest.fn(),
+  },
+  LineController: {},
+  LineElement: {},
+  PointElement: {},
+  LinearScale: {},
+  CategoryScale: {},
+  Title: {},
+  Tooltip: {},
+  Legend: {},
 }));
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';

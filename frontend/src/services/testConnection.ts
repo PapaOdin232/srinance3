@@ -1,14 +1,4 @@
-// Umożliwia pobieranie zmiennych środowiskowych zarówno w Vite (import.meta.env), jak i w testach (process.env)
-export function getEnvVar(key: string, fallback?: string): string {
-  if (typeof process !== 'undefined' && typeof process.env !== 'undefined' && key in process.env) {
-    return process.env[key] ?? fallback ?? '';
-  }
-  // Vite: import.meta.env
-  if (typeof import.meta !== 'undefined' && typeof import.meta.env !== 'undefined' && key in import.meta.env) {
-    return import.meta.env[key] ?? fallback ?? '';
-  }
-  return fallback ?? '';
-}
+// Importuj tylko wersję process.env
 import { getAccount, getTicker } from './restClient';
 import { WSClient } from './wsClient';
 
