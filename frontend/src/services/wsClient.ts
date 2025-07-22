@@ -1,10 +1,10 @@
 // Prosty klient WebSocket z reconnect i obsługą błędów
 
 export type WSMessage =
-  | { type: 'ticker'; symbol: string; price: string }
-  | { type: 'orderbook'; symbol: string; bids: [string, string][]; asks: [string, string][] }
-  | { type: 'log'; message: string }
-  | { type: string; [key: string]: any };
+  | { type: 'ticker', symbol: string, price: string }
+  | { type: 'orderbook', symbol: string, bids: [string, string][], asks: [string, string][] }
+  | { type: 'log', message: string }
+  | { type: string, [key: string]: unknown };
 
 export type WSListener = (msg: WSMessage) => void;
 
@@ -33,7 +33,7 @@ export class WSClient {
       console.log(`[WSClient] onmessage: Otrzymano wiadomość (${this.url})`, event.data);
       try {
         const data = JSON.parse(event.data);
-        this.listeners.forEach((cb) => cb(data));
+        this.listeners.forEach((cb) => { cb(data); });
       } catch (e) {
         console.warn('[WSClient] Błąd parsowania wiadomości', e);
       }

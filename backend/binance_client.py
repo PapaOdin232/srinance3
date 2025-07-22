@@ -1,4 +1,3 @@
-import os
 import time
 import hmac
 import hashlib
@@ -7,14 +6,14 @@ import threading
 import websocket
 import json
 from urllib.parse import urlencode
-from backend.config import BINANCE_API_KEY, BINANCE_API_SECRET, BINANCE_API_URL, BINANCE_WS_URL
+from backend.config import BINANCE_API_URL, BINANCE_WS_URL
 
 class BinanceRESTClient:
     def get_orderbook(self, symbol, limit=10):
         endpoint = "/v3/depth"
         params = {"symbol": symbol.upper(), "limit": limit}
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
     def __init__(self):
@@ -41,7 +40,7 @@ class BinanceRESTClient:
         params = {"timestamp": int(time.time() * 1000)}
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        resp = requests.get(url, headers=self._headers())
+        resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
 
@@ -49,7 +48,7 @@ class BinanceRESTClient:
         endpoint = "/v3/ticker/price"
         params = {"symbol": symbol.upper()}
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
 
@@ -60,7 +59,7 @@ class BinanceRESTClient:
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
         print(f"[DEBUG] url: {url}")
         print(f"[DEBUG] headers: {self._headers()}")
-        resp = requests.get(url, headers=self._headers())
+        resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
 

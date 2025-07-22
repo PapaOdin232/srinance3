@@ -1,0 +1,31 @@
+# Konfiguracja Codacy do wykluczania katalogów środowiskowych i node_modules
+# oraz ignorowania błędów w zależnościach
+
+engines:
+  eslint:
+    enabled: true
+    exclude:
+      - "**/node_modules/**"
+      - "**/.venv/**"
+      - "**/venv/**"
+      - "**/dist/**"
+      - "**/build/**"
+      - "**/.cache/**"
+  pylint:
+    enabled: true
+    exclude:
+      - "**/node_modules/**"
+      - "**/.venv/**"
+      - "**/venv/**"
+      - "**/dist/**"
+      - "**/build/**"
+      - "**/.cache/**"
+  pmd:
+    enabled: true
+    exclude:
+      - "**/node_modules/**"
+      - "**/.venv/**"
+      - "**/venv/**"
+      - "**/dist/**"
+      - "**/build/**"
+      - "**/.cache/**"

@@ -56,8 +56,10 @@ export interface TickerResponse {
   price: string;
 }
 
+
+// Typ odpowiedzi dla historii konta
 export interface HistoryResponse {
-  history: Array<any>; // doprecyzuj typ po stronie backendu
+  history: Array<unknown>; // Doprecyzuj typ po stronie backendu
 }
 
 export interface OrderbookResponse {
@@ -141,12 +143,17 @@ export async function getBotLogs() {
 }
 
 function handleError(error: unknown): never {
-  if (typeof error === 'object' && error !== null && 'isAxiosError' in error && (error as any).isAxiosError) {
+  // Obsługa błędów Axios
+  if (typeof error === 'object' && error !== null && 'isAxiosError' in error && (error as { isAxiosError?: boolean }).isAxiosError) {
     const err = error as any;
     // Loguj szczegóły do konsoli
     console.error('API error:', err);
     // Wyświetl szczegóły użytkownikowi
     throw new Error(err.response?.data?.detail || err.message || 'Błąd API');
+  }
+  // Obsługa zwykłych błędów JS
+  if (error instanceof Error) {
+    throw error;
   }
   console.error('Unknown error:', error);
   throw new Error('Unknown error');

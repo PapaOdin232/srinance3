@@ -14,8 +14,8 @@ export const AccountPanel: React.FC = () => {
     const symbol = 'BTCUSDT';
     Promise.all([getAccount(), getAccountHistory(symbol)])
       .then(([acc, hist]) => {
-        setAccount(acc ?? null);
-        setHistory(hist ?? null);
+        setAccount(acc);
+        setHistory(hist);
         setError(null);
       })
       .catch((e) => setError((e as Error).message))
@@ -123,15 +123,18 @@ export const AccountPanel: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {history.history.map((item: any, idx: number) => (
-              <tr key={idx}>
-                <td>{item.time || '-'}</td>
-                <td>{item.symbol || '-'}</td>
-                <td>{item.qty || '-'}</td>
-                <td>{item.price || '-'}</td>
-                <td>{item.side || '-'}</td>
-              </tr>
-            ))}
+            {history.history.map((item: unknown, idx: number) => {
+              const trade = item as { time?: string; symbol?: string; qty?: string; price?: string; side?: string };
+              return (
+                <tr key={idx}>
+                  <td>{trade.time || '-'}</td>
+                  <td>{trade.symbol || '-'}</td>
+                  <td>{trade.qty || '-'}</td>
+                  <td>{trade.price || '-'}</td>
+                  <td>{trade.side || '-'}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       ) : (

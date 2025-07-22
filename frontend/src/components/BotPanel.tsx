@@ -17,11 +17,11 @@ export const BotPanel: React.FC = () => {
 
   useEffect(() => {
     console.log('[BotPanel] useEffect mount');
-    getBotStatus().then((res) => {
-      setStatus(res?.status || 'unknown');
-      setRunning(res?.running || false);
+    void getBotStatus().then((res) => {
+      setStatus(res.status || 'unknown');
+      setRunning(res.running || false);
     });
-    getBotLogs().then((res) => setLogs(res?.logs || []));
+    void getBotLogs().then((res) => { setLogs(res.logs || []); });
     wsRef.current = new WSClient(WS_URL, (err) => {
       console.log('[BotPanel] WSClient onErrorCallback', err);
       if (err) setError(err);
@@ -29,15 +29,17 @@ export const BotPanel: React.FC = () => {
     wsRef.current.addListener((msg: WSMessage) => {
       console.log('[BotPanel] WSClient listener', msg);
       if (msg.type === 'log') {
-        setLogs((prev) => [...prev.slice(-99), msg.message]);
+        // msg.message może być unknown, rzutuj na string
+        setLogs((prev) => [...prev.slice(-99), String((msg as { message?: unknown }).message ?? '')]);
       }
       if (msg.type === 'bot_status') {
-        if (typeof msg.status === 'object' && msg.status !== null) {
-          setStatus(msg.status.status || JSON.stringify(msg.status));
+        // msg.status może być unknown lub object
+        if (typeof (msg as any).status === 'object' && (msg as any).status !== null && 'status' in (msg as any).status) {
+          setStatus(String((msg as any).status.status || JSON.stringify((msg as any).status)));
         } else {
-          setStatus(msg.status);
+          setStatus(String((msg as any).status));
         }
-        setRunning(msg.running);
+        setRunning(Boolean((msg as any).running));
       }
     });
     return () => {
@@ -78,7 +80,7 @@ export const BotPanel: React.FC = () => {
   return (
     <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 24, maxWidth: 600, margin: '24px auto', background: '#f9fafb' }}>
       <h2>Panel bota</h2>
-      <form style={{ marginBottom: 16 }} onSubmit={e => e.preventDefault()}>
+      <form style={{ marginBottom: 16 }} onSubmit={e => { e.preventDefault(); }}>
         <label>
           Symbol:
           <input name="symbol" value={settings.symbol} onChange={handleChange} required style={{ marginLeft: 8 }} />
