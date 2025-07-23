@@ -5,6 +5,7 @@ import requests
 import threading
 import websocket
 import json
+
 from urllib.parse import urlencode
 from backend.config import BINANCE_API_URL, BINANCE_WS_URL
 
@@ -72,6 +73,9 @@ class BinanceRESTClient:
 
 
 class BinanceWebSocketClient:
+class BinanceClient(BinanceRESTClient):
+    """Alias for compatibility with main.py imports."""
+    pass
     def __init__(self, streams, queues=None, main_loop=None):
         from backend.config import BINANCE_WS_URL, BINANCE_ENV
         self.ws_url = BINANCE_WS_URL.rstrip('/')

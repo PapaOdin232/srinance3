@@ -1,8 +1,8 @@
 import './App.css';
 
-import { AccountPanel } from './components/AccountPanel';
-import { MarketPanel } from './components/MarketPanel';
-import { BotPanel } from './components/BotPanel';
+import AccountPanel from './components/AccountPanel';
+import MarketPanel from './components/MarketPanel';
+import BotPanel from './components/BotPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
