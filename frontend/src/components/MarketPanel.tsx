@@ -121,11 +121,20 @@ const MarketPanel: React.FC = () => {
       ]);
       
       if (tickerData) {
-        setTicker(tickerData);
+        setTicker({
+          symbol: tickerData.symbol,
+          price: tickerData.price,
+          change: tickerData.change || '0',
+          changePercent: tickerData.changePercent || '0%'
+        });
       }
       
       if (orderBookData) {
-        setOrderBook(orderBookData);
+        setOrderBook({
+          symbol: symbol,
+          bids: orderBookData.bids,
+          asks: orderBookData.asks
+        });
       }
       
       await loadHistoricalData(symbol);
@@ -180,8 +189,8 @@ const MarketPanel: React.FC = () => {
           case 'ticker':
             if (msg.symbol === selectedSymbol) {
               setTicker(prevTicker => ({
-                symbol: msg.symbol,
-                price: msg.price,
+                symbol: msg.symbol as string,
+                price: msg.price as string,
                 change: prevTicker?.change || '0',
                 changePercent: prevTicker?.changePercent || '0%'
               }));
@@ -192,7 +201,7 @@ const MarketPanel: React.FC = () => {
                 const chart = chartInstanceRef.current;
                 
                 chart.data.labels?.push(now);
-                chart.data.datasets[0].data.push(parseFloat(msg.price));
+                chart.data.datasets[0].data.push(parseFloat(msg.price as string));
                 
                 // Keep only last 100 points
                 if (chart.data.labels && chart.data.labels.length > 100) {
@@ -208,9 +217,9 @@ const MarketPanel: React.FC = () => {
           case 'orderbook':
             if (msg.symbol === selectedSymbol) {
               setOrderBook({
-                symbol: msg.symbol,
-                bids: msg.bids,
-                asks: msg.asks
+                symbol: msg.symbol as string,
+                bids: msg.bids as [string, string][],
+                asks: msg.asks as [string, string][]
               });
             }
             break;

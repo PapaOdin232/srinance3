@@ -19,7 +19,7 @@ jest.mock('chart.js', () => ({
 }));
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { MarketPanel } from './MarketPanel';
+import MarketPanel from './MarketPanel';
 import * as restClient from '../services/restClient';
 
 jest.mock('../services/restClient');

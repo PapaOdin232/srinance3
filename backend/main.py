@@ -8,12 +8,18 @@ from typing import Dict, List
 import uvicorn
 
 from binance_client import BinanceClient
-from database.crud import init_database
-from database.log import setup_logging
+from database.init_db import init_db
 from bot.trading_bot import TradingBot
 
 # Setup logging
-setup_logging()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('database/app.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Global instances
@@ -141,7 +147,7 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize database
         logger.info("📊 Initializing database...")
-        init_database()
+        init_db()
         
         # Initialize Binance client
         logger.info("🔗 Initializing Binance client...")
@@ -492,6 +498,129 @@ async def health_check():
         "bot_available": trading_bot is not None,
         "bot_running": trading_bot.is_running if trading_bot else False
     }
+
+# REST API Endpoints
+@app.get("/account")
+async def get_account():
+    """Get account information"""
+    try:
+        if binance_client:
+            account_info = binance_client.get_account_info()
+            return account_info
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Account endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/ticker")
+async def get_ticker(symbol: str):
+    """Get ticker information for a symbol"""
+    try:
+        if binance_client:
+            ticker = binance_client.get_ticker(symbol)
+            return ticker
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Ticker endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/orderbook")
+async def get_orderbook(symbol: str, limit: int = 20):
+    """Get order book for a symbol"""
+    try:
+        if binance_client:
+            orderbook = binance_client.get_orderbook(symbol, limit)
+            return orderbook
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Order book endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/klines")
+async def get_klines(symbol: str, interval: str = "1m", limit: int = 100):
+    """Get klines/candlestick data for a symbol"""
+    try:
+        if binance_client:
+            # Note: This is a placeholder - you need to implement get_klines in binance_client
+            # For now, returning mock data
+            import time
+            current_time = int(time.time() * 1000)
+            mock_klines = []
+            for i in range(limit):
+                kline_time = current_time - (i * 60000)  # 1 minute intervals
+                mock_klines.append([
+                    kline_time,  # Open time
+                    "50000.00",  # Open price
+                    "50100.00",  # High price
+                    "49900.00",  # Low price
+                    "50050.00",  # Close price
+                    "1000.00",   # Volume
+                    kline_time + 59999,  # Close time
+                    "50000000.00",  # Quote asset volume
+                    1000,  # Number of trades
+                    "500.00",  # Taker buy base asset volume
+                    "25000000.00"  # Taker buy quote asset volume
+                ])
+            return list(reversed(mock_klines))  # Reverse to get chronological order
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Klines endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/account/history")
+async def get_account_history(symbol: str):
+    """Get account trade history for a symbol"""
+    try:
+        if binance_client:
+            history = binance_client.get_account_trades(symbol)
+            return {"history": history}
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Account history endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/account/balance")
+async def get_account_balance(asset: str):
+    """Get account balance for an asset"""
+    try:
+        if binance_client:
+            balance = binance_client.get_balance(asset)
+            return {"balance": balance.get("free", "0")}
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Account balance endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/bot/status")
+async def get_bot_status():
+    """Get bot status"""
+    try:
+        if trading_bot:
+            return {
+                "status": "running" if trading_bot.is_running else "stopped",
+                "running": trading_bot.is_running
+            }
+        else:
+            return {"error": "Trading bot not available"}
+    except Exception as e:
+        logger.error(f"Bot status endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/bot/logs")
+async def get_bot_logs():
+    """Get bot logs"""
+    try:
+        # For now, return placeholder logs
+        return {"logs": ["Bot initialized", "Ready for trading"]}
+    except Exception as e:
+        logger.error(f"Bot logs endpoint error: {e}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     logger.info("🚀 Starting SRInance3 server...")

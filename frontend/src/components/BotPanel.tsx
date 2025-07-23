@@ -80,20 +80,20 @@ const BotPanel: React.FC = () => {
         
         console.log('[BotPanel] Received message:', msg);
         
-        switch (msg.type) {
+        switch ((msg as any).type) {
           case 'bot_status':
             setBotStatus({
-              running: msg.running || false,
-              symbol: msg.status?.symbol,
-              strategy: msg.status?.strategy,
-              balance: msg.status?.balance,
-              position: msg.status?.position,
-              last_action: msg.status?.last_action,
-              timestamp: msg.status?.timestamp
+              running: (msg as any).running || false,
+              symbol: (msg as any).status?.symbol,
+              strategy: (msg as any).status?.strategy,
+              balance: (msg as any).status?.balance,
+              position: (msg as any).status?.position,
+              last_action: (msg as any).status?.last_action,
+              timestamp: (msg as any).status?.timestamp
             });
             
             // Reset loading states when status changes
-            if (msg.running !== undefined) {
+            if ((msg as any).running !== undefined) {
               setIsStarting(false);
               setIsStopping(false);
             }
@@ -102,9 +102,9 @@ const BotPanel: React.FC = () => {
           case 'log':
             const newLog: LogEntry = {
               id: logIdCounterRef.current++,
-              message: msg.message || 'Empty log message',
+              message: (msg as any).message || 'Empty log message',
               timestamp: new Date().toLocaleTimeString(),
-              level: extractLogLevel(msg.message || '')
+              level: extractLogLevel((msg as any).message || '')
             };
             
             setLogs(prevLogs => {
@@ -115,7 +115,7 @@ const BotPanel: React.FC = () => {
             break;
             
           case 'error':
-            setError(msg.message || 'Unknown error occurred');
+            setError((msg as any).message || 'Unknown error occurred');
             setIsStarting(false);
             setIsStopping(false);
             break;

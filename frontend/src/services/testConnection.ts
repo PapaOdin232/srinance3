@@ -1,6 +1,6 @@
 // Importuj tylko wersję process.env
 import { getAccount, getTicker } from './restClient';
-import { WSClient } from './wsClient';
+import EnhancedWSClient from './wsClient';
 
 export async function testRestConnection() {
   try {
@@ -13,9 +13,9 @@ export async function testRestConnection() {
 }
 
 export function testWsConnection(url: string, onMessage: (msg: unknown) => void) {
-  const ws = new WSClient(url);
+  const ws = new EnhancedWSClient(url);
   ws.addListener(onMessage);
   // Zamknij po 5s
-  setTimeout(() => { ws.close(); }, 5000);
+  setTimeout(() => { ws.destroy(); }, 5000);
   return ws;
 }

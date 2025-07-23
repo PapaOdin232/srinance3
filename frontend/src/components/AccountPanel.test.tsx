@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { AccountPanel } from './AccountPanel';
+import AccountPanel from './AccountPanel';
 import * as restClient from '../services/restClient';
 
 jest.mock('../services/restClient');

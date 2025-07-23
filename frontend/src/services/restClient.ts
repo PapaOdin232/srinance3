@@ -54,6 +54,8 @@ export interface AccountResponse {
 export interface TickerResponse {
   symbol: string;
   price: string;
+  change?: string;
+  changePercent?: string;
 }
 
 
@@ -63,6 +65,7 @@ export interface HistoryResponse {
 }
 
 export interface OrderbookResponse {
+  symbol?: string;
   bids: Array<[string, string]>;
   asks: Array<[string, string]>;
 }
@@ -118,6 +121,37 @@ export async function getAccountBalance(asset: string) {
 export async function getOrderbook(symbol: string) {
   try {
     const res = await api.get<OrderbookResponse>(`/orderbook?symbol=${symbol}`);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+// Alias for compatibility with MarketPanel.tsx
+export const getOrderBook = getOrderbook;
+
+// Alias for compatibility with MarketPanel.tsx
+export const getCurrentTicker = getTicker;
+
+// Klines response type (Binance returns arrays of values)
+export type KlineResponse = [
+  number,  // Open time
+  string,  // Open price
+  string,  // High price
+  string,  // Low price
+  string,  // Close price
+  string,  // Volume
+  number,  // Close time
+  string,  // Quote asset volume
+  number,  // Number of trades
+  string,  // Taker buy base asset volume
+  string   // Taker buy quote asset volume
+];
+
+// Get Klines (candlestick data)
+export async function getKlines(symbol: string, interval: string = '1m', limit: number = 100) {
+  try {
+    const res = await api.get<KlineResponse[]>(`/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${limit}`);
     return res.data;
   } catch (err) {
     handleError(err);

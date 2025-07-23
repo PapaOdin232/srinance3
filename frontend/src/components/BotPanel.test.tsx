@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BotPanel } from './BotPanel';
+import BotPanel from './BotPanel';
 import * as restClient from '../services/restClient';
 
 jest.mock('../services/restClient');

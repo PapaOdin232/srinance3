@@ -1,7 +1,7 @@
-from backend.database.init_db import SessionLocal
-from backend.models.order import Order
-from backend.models.log import Log
-from backend.models.history import History
+from database.init_db import SessionLocal
+from models.order import Order
+from models.log import Log
+from models.history import History
 
 def create_order(**kwargs):
     session = SessionLocal()

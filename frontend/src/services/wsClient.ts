@@ -1,13 +1,15 @@
 // Enhanced WebSocket Client z exponential backoff, connection states i heartbeat
 
-export enum ConnectionState {
-  DISCONNECTED = 'DISCONNECTED',
-  CONNECTING = 'CONNECTING', 
-  CONNECTED = 'CONNECTED',
-  RECONNECTING = 'RECONNECTING',
-  ERROR = 'ERROR',
-  CLOSING = 'CLOSING'
-}
+export const ConnectionState = {
+  DISCONNECTED: 'DISCONNECTED',
+  CONNECTING: 'CONNECTING', 
+  CONNECTED: 'CONNECTED',
+  RECONNECTING: 'RECONNECTING',
+  ERROR: 'ERROR',
+  CLOSING: 'CLOSING'
+} as const;
+
+export type ConnectionState = typeof ConnectionState[keyof typeof ConnectionState];
 
 export type WSMessage =
   | { type: 'ticker', symbol: string, price: string }

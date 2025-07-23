@@ -7,9 +7,17 @@ import websocket
 import json
 
 from urllib.parse import urlencode
-from backend.config import BINANCE_API_URL, BINANCE_WS_URL
+from config import BINANCE_API_URL, BINANCE_WS_URL
 
 class BinanceRESTClient:
+    def __init__(self):
+        from config import BINANCE_API_KEY, BINANCE_API_SECRET
+        self.api_key = BINANCE_API_KEY
+        self.api_secret = BINANCE_API_SECRET
+        self.base_url = BINANCE_API_URL
+        print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", self.api_key)
+        print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", self.api_secret)
+
     def get_orderbook(self, symbol, limit=10):
         endpoint = "/v3/depth"
         params = {"symbol": symbol.upper(), "limit": limit}
@@ -17,13 +25,6 @@ class BinanceRESTClient:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
-    def __init__(self):
-        from backend.config import BINANCE_API_KEY, BINANCE_API_SECRET
-        self.api_key = BINANCE_API_KEY
-        self.api_secret = BINANCE_API_SECRET
-        self.base_url = BINANCE_API_URL
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", self.api_key)
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", self.api_secret)
 
     def _sign(self, params):
         query_string = urlencode(params)
@@ -71,13 +72,9 @@ class BinanceRESTClient:
                 return bal
         return {"asset": asset.upper(), "free": "0", "locked": "0"}
 
-
 class BinanceWebSocketClient:
-class BinanceClient(BinanceRESTClient):
-    """Alias for compatibility with main.py imports."""
-    pass
     def __init__(self, streams, queues=None, main_loop=None):
-        from backend.config import BINANCE_WS_URL, BINANCE_ENV
+        from config import BINANCE_WS_URL, BINANCE_ENV
         self.ws_url = BINANCE_WS_URL.rstrip('/')
         self.env = BINANCE_ENV
         self.streams = streams
@@ -150,3 +147,28 @@ class BinanceClient(BinanceRESTClient):
         self.should_reconnect = False
         for ws in self.ws_apps:
             ws.close()
+
+
+class BinanceClient(BinanceRESTClient):
+    """Enhanced Binance client with both REST and WebSocket support."""
+    
+    def __init__(self):
+        super().__init__()
+        self.ws_client = None
+    
+    async def initialize(self):
+        """Initialize the client (placeholder for async initialization)"""
+        print("[DEBUG] BinanceClient initialized")
+    
+    async def close(self):
+        """Close the client and clean up resources"""
+        if self.ws_client:
+            self.ws_client.close()
+    
+    async def get_ticker(self, symbol):
+        """Async wrapper for get_ticker"""
+        return super().get_ticker(symbol)
+    
+    async def get_order_book(self, symbol, limit=20):
+        """Async wrapper for get_orderbook"""
+        return super().get_orderbook(symbol, limit)
