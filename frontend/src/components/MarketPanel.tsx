@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chart } from 'chart.js/auto';
 import type { ChartConfiguration } from 'chart.js';
-import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient.enhanced';
+import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 import { getCurrentTicker, getOrderBook, getKlines } from '../services/restClient';
 
 interface TickerData {

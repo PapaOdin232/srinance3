@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient.enhanced';
+import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 
 interface BotStatus {
   running: boolean;
