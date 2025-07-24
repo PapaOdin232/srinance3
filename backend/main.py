@@ -33,13 +33,15 @@ market_connections: List[WebSocket] = []
 bot_connections: List[WebSocket] = []
 
 class ConnectionManager:
-    """Enhanced connection manager with heartbeat support"""
+    """Enhanced connection manager with heartbeat support and per-client subscriptions"""
     
     def __init__(self, max_connections: int = 10):
         self.market_connections: List[WebSocket] = []
         self.bot_connections: List[WebSocket] = []
         self.heartbeat_tasks: Dict[WebSocket, asyncio.Task] = {}
         self.max_connections = max_connections
+        # Track client subscriptions: WebSocket -> Set of symbols
+        self.client_subscriptions: Dict[WebSocket, set[str]] = {}
     
     async def connect_market(self, websocket: WebSocket):
         # Sprawdź limit połączeń
@@ -74,6 +76,10 @@ class ConnectionManager:
             self.market_connections.remove(websocket)
             logger.info(f"Market WebSocket disconnected. Remaining connections: {len(self.market_connections)}")
         
+        # Clean up client subscriptions
+        if websocket in self.client_subscriptions:
+            del self.client_subscriptions[websocket]
+        
         self._cleanup_heartbeat(websocket)
     
     def disconnect_bot(self, websocket: WebSocket):
@@ -82,6 +88,24 @@ class ConnectionManager:
             logger.info(f"Bot WebSocket disconnected. Remaining connections: {len(self.bot_connections)}")
         
         self._cleanup_heartbeat(websocket)
+    
+    def subscribe_client(self, websocket: WebSocket, symbol: str):
+        """Subscribe client to a symbol"""
+        if websocket not in self.client_subscriptions:
+            self.client_subscriptions[websocket] = set()
+        
+        self.client_subscriptions[websocket].add(symbol)
+        logger.info(f"Client subscribed to {symbol}. Total subscriptions: {len(self.client_subscriptions[websocket])}")
+    
+    def unsubscribe_client(self, websocket: WebSocket, symbol: str):
+        """Unsubscribe client from a symbol"""
+        if websocket in self.client_subscriptions:
+            self.client_subscriptions[websocket].discard(symbol)
+            logger.info(f"Client unsubscribed from {symbol}. Remaining subscriptions: {len(self.client_subscriptions[websocket])}")
+    
+    def get_client_subscriptions(self, websocket: WebSocket) -> set[str]:
+        """Get all symbols that client is subscribed to"""
+        return self.client_subscriptions.get(websocket, set())
     
     def _cleanup_heartbeat(self, websocket: WebSocket):
         if websocket in self.heartbeat_tasks:
@@ -112,10 +136,39 @@ class ConnectionManager:
             logger.error(f"Heartbeat error: {e}")
     
     async def broadcast_to_market(self, data: dict):
-        """Broadcast data to all market connections with error handling"""
+        """Broadcast data to market connections based on their subscriptions"""
         if not self.market_connections:
             return
         
+        symbol = data.get('symbol')
+        if not symbol:
+            # If no symbol specified, broadcast to all connections
+            await self._broadcast_to_all_market(data)
+            return
+        
+        disconnected = []
+        sent_count = 0
+        
+        for connection in self.market_connections:
+            try:
+                # Check if client is subscribed to this symbol
+                if symbol in self.get_client_subscriptions(connection):
+                    await connection.send_json(data)
+                    sent_count += 1
+                else:
+                    logger.debug(f"Skipping {symbol} data for unsubscribed client")
+            except Exception as e:
+                logger.warning(f"Failed to send to market connection: {e}")
+                disconnected.append(connection)
+        
+        logger.debug(f"Broadcasted {symbol} data to {sent_count}/{len(self.market_connections)} clients")
+        
+        # Clean up disconnected connections
+        for conn in disconnected:
+            self.disconnect_market(conn)
+    
+    async def _broadcast_to_all_market(self, data: dict):
+        """Broadcast data to all market connections regardless of subscriptions"""
         disconnected = []
         for connection in self.market_connections:
             try:
@@ -331,7 +384,15 @@ async def websocket_market_endpoint(websocket: WebSocket):
                     
                 elif message_type == 'subscribe':
                     symbol = data.get('symbol', 'BTCUSDT')
-                    logger.info(f"Market client subscribed to {symbol}")
+                    
+                    # Unsubscribe from previous symbols (single subscription per client)
+                    current_subscriptions = manager.get_client_subscriptions(websocket)
+                    for old_symbol in current_subscriptions.copy():
+                        manager.unsubscribe_client(websocket, old_symbol)
+                    
+                    # Subscribe to new symbol
+                    manager.subscribe_client(websocket, symbol)
+                    logger.info(f"Market client {client_id} subscribed to {symbol}")
                     
                     # Send immediate data for subscribed symbol
                     if binance_client:
@@ -345,6 +406,12 @@ async def websocket_market_endpoint(websocket: WebSocket):
                                 })
                         except Exception as e:
                             logger.warning(f"Failed to get immediate ticker for {symbol}: {e}")
+                
+                elif message_type == 'unsubscribe':
+                    symbol = data.get('symbol')
+                    if symbol:
+                        manager.unsubscribe_client(websocket, symbol)
+                        logger.info(f"Market client {client_id} unsubscribed from {symbol}")
                 
                 elif message_type == 'ping':
                     await websocket.send_json({"type": "pong"})

@@ -31,6 +31,12 @@ const MarketPanel: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   
   const wsClientRef = useRef<EnhancedWSClient | null>(null);
+  const selectedSymbolRef = useRef<string>(selectedSymbol);
+
+  // Keep selectedSymbolRef in sync with selectedSymbol
+  useEffect(() => {
+    selectedSymbolRef.current = selectedSymbol;
+  }, [selectedSymbol]);
 
   // Debugowanie setup/cleanup WebSocket
   useEffect(() => {
@@ -181,20 +187,21 @@ const MarketPanel: React.FC = () => {
     }
   }, [chartInstance, selectedSymbol, historyLoaded, loadHistoricalData]);
 
-  // Setup WebSocket connection
+  // Setup WebSocket connection - PERSISTENT CONNECTION (no dependencies)
   useEffect(() => {
     let mounted = true;
     let wsClientLocal: EnhancedWSClient | null = null;
 
     const setupWebSocket = () => {
-      // Cleanup poprzedniego połączenia
+      // Don't create new connection if one already exists
       if (wsClientRef.current) {
-        wsClientRef.current.destroy();
-        wsClientRef.current = null;
+        console.log('[MarketPanel] WebSocket connection already exists, skipping setup');
+        return;
       }
 
       if (!mounted) return;
 
+      console.log('[MarketPanel] Setting up persistent WebSocket connection');
       const wsClient = new EnhancedWSClient('ws://localhost:8000/ws/market', {
         reconnectInterval: 2000,
         maxReconnectInterval: 30000,
@@ -208,18 +215,19 @@ const MarketPanel: React.FC = () => {
 
       wsClient.addStateListener((state, error) => {
         if (!mounted) return;
+        console.log(`[MarketPanel] WebSocket state changed: ${state}`);
         setConnectionState(state);
         setConnectionError(error || null);
-        if (state === ConnectionState.CONNECTED) {
-          wsClient.send({ type: 'subscribe', symbol: selectedSymbol });
-        }
+        // Note: Initial subscription will be handled by separate useEffect
       });
 
       wsClient.addListener((msg) => {
         if (!mounted) return;
+        const currentSelectedSymbol = selectedSymbolRef.current;
         switch (msg.type) {
           case 'ticker':
-            if (msg.symbol === selectedSymbol) {
+            // Filter: only process ticker for currently selected symbol
+            if (msg.symbol === currentSelectedSymbol) {
               console.log(`[MarketPanel] Received ticker for ${msg.symbol}: ${msg.price}`);
               setTicker(prevTicker => ({
                 symbol: msg.symbol as string,
@@ -235,31 +243,35 @@ const MarketPanel: React.FC = () => {
               } else {
                 console.warn(`[MarketPanel] Chart instance not available for adding data point`);
               }
+            } else {
+              console.log(`[MarketPanel] Filtered out ticker for ${msg.symbol} (selected: ${currentSelectedSymbol})`);
             }
             break;
           case 'orderbook':
-            if (msg.symbol === selectedSymbol) {
+            // Filter: only process orderbook for currently selected symbol
+            if (msg.symbol === currentSelectedSymbol) {
               setOrderBook({
                 symbol: msg.symbol as string,
                 bids: msg.bids as [string, string][],
                 asks: msg.asks as [string, string][]
               });
+            } else {
+              console.log(`[MarketPanel] Filtered out orderbook for ${msg.symbol} (selected: ${currentSelectedSymbol})`);
             }
             break;
         }
       });
     };
 
-    // Opóźnienie setupWebSocket, aby zapobiec podwójnym połączeniom w Strict Mode
-    const timeoutId = setTimeout(() => {
-      setupWebSocket();
-      loadInitialData(selectedSymbol);
-    }, 100);
+    // Delay to prevent double connections in Strict Mode
+    const timeoutId = setTimeout(setupWebSocket, 100);
 
     return () => {
       mounted = false;
       clearTimeout(timeoutId);
+      // Only destroy on component unmount, not on symbol change
       if (wsClientLocal) {
+        console.log('[MarketPanel] Destroying WebSocket connection on component unmount');
         wsClientLocal.destroy();
         wsClientLocal = null;
       }
@@ -268,8 +280,27 @@ const MarketPanel: React.FC = () => {
         wsClientRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSymbol]); // Usunięto chartInstance i addDataPoint - nie powinny triggerować WebSocket setup
+  }, []); // NO dependencies - persistent connection
+
+  // Handle symbol subscription changes - REUSE EXISTING CONNECTION
+  useEffect(() => {
+    if (!wsClientRef.current || connectionState !== ConnectionState.CONNECTED) {
+      console.log(`[MarketPanel] WebSocket not ready for subscription. State: ${connectionState}`);
+      return;
+    }
+
+    console.log(`[MarketPanel] Subscribing to ${selectedSymbol} via existing WebSocket connection`);
+    
+    // Send subscription message for new symbol
+    wsClientRef.current.send({ 
+      type: 'subscribe', 
+      symbol: selectedSymbol 
+    });
+
+    // Load initial data for new symbol
+    loadInitialData(selectedSymbol);
+
+  }, [selectedSymbol, connectionState]); // Only depend on symbol and connection state
 
   const handleSymbolChange = (newSymbol: string) => {
     setSelectedSymbol(newSymbol);
