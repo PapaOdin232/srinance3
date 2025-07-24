@@ -54,13 +54,13 @@ const MarketPanel: React.FC = () => {
     }
   }, [connectionState, connectionError]);
 
-  // Chart configuration - zmemoizowane aby zapobiec re-renderom
+  // Chart configuration - static configuration, data will be updated dynamically
   const chartConfig: ChartConfiguration = useMemo(() => ({
     type: 'line',
     data: {
       labels: [],
       datasets: [{
-        label: `${selectedSymbol} Price`,
+        label: 'Price', // Static label, will be updated when data loads
         data: [],
         borderColor: '#10B981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -92,12 +92,12 @@ const MarketPanel: React.FC = () => {
         }
       }
     }
-  }), [selectedSymbol]);
+  }), []); // No dependencies - static config
 
-  // Use custom chart hook
+  // Use custom chart hook - NO dependencies to prevent chart recreation
   const { chartRef, chartInstance, addDataPoint, updateChart } = useChart(
-    chartConfig, 
-    [selectedSymbol]
+    chartConfig 
+    // Removed [selectedSymbol] dependency - chart will update data instead of recreating
   );
 
   // Load historical data for chart - zmemoizowane aby uniknąć re-renderów
@@ -235,13 +235,18 @@ const MarketPanel: React.FC = () => {
                 change: prevTicker?.change || '0',
                 changePercent: prevTicker?.changePercent || '0%'
               }));
-              if (chartInstance) {
-                const now = new Date();
-                const priceValue = parseFloat(msg.price as string);
-                console.log(`[MarketPanel] Adding data point to chart: ${priceValue} at ${now.toISOString()}`);
+              
+              // Add real-time data point to chart
+              const now = new Date();
+              const priceValue = parseFloat(msg.price as string);
+              console.log(`[MarketPanel] Attempting to add data point to chart: ${priceValue} at ${now.toISOString()}`);
+              
+              // Use addDataPoint function which has internal chartInstance check
+              try {
                 addDataPoint(now, 0, priceValue, 100);
-              } else {
-                console.warn(`[MarketPanel] Chart instance not available for adding data point`);
+                console.log(`[MarketPanel] Successfully added data point to chart`);
+              } catch (error) {
+                console.warn(`[MarketPanel] Failed to add data point to chart:`, error);
               }
             } else {
               console.log(`[MarketPanel] Filtered out ticker for ${msg.symbol} (selected: ${currentSelectedSymbol})`);

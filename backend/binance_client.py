@@ -87,7 +87,7 @@ class BinanceRESTClient:
 
 class BinanceWebSocketClient:
     def __init__(self, streams, queues=None, main_loop=None):
-        from config import BINANCE_WS_URL, BINANCE_ENV
+        from .config import BINANCE_WS_URL, BINANCE_ENV
         self.ws_url = BINANCE_WS_URL.rstrip('/')
         self.env = BINANCE_ENV
         self.streams = streams

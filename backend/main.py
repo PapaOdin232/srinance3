@@ -7,8 +7,10 @@ from contextlib import asynccontextmanager
 from typing import Dict, List, Optional
 import uvicorn
 import os
+import threading
+import queue
 
-from backend.binance_client import BinanceClient
+from backend.binance_client import BinanceClient, BinanceWebSocketClient
 from backend.database.init_db import init_db
 from backend.bot.trading_bot import TradingBot
 
@@ -17,7 +19,7 @@ os.makedirs('database', exist_ok=True)
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('database/app.log'),
@@ -28,7 +30,9 @@ logger = logging.getLogger(__name__)
 
 # Global instances
 binance_client: Optional[BinanceClient] = None
+binance_ws_client: Optional[BinanceWebSocketClient] = None
 trading_bot: Optional[TradingBot] = None
+market_data_queue: queue.Queue = queue.Queue()
 market_connections: List[WebSocket] = []
 bot_connections: List[WebSocket] = []
 
@@ -215,9 +219,26 @@ async def lifespan(app: FastAPI):
         
         # Initialize Binance client
         logger.info("🔗 Initializing Binance client...")
-        global binance_client
+        global binance_client, binance_ws_client
         binance_client = BinanceClient()
         await binance_client.initialize()
+        
+        # Initialize Binance WebSocket client
+        logger.info("🌐 Initializing Binance WebSocket client...")
+        # Streams for ticker data of popular symbols
+        streams = [
+            'btcusdt@ticker',
+            'ethusdt@ticker', 
+            'adausdt@ticker',
+            'dotusdt@ticker',
+            'linkusdt@ticker'
+        ]
+        binance_ws_client = BinanceWebSocketClient(
+            streams=streams,
+            queues=[market_data_queue],
+            main_loop=asyncio.get_event_loop()
+        )
+        binance_ws_client.connect()
         
         # Initialize trading bot with broadcast_callback i event loop
         logger.info("🤖 Initializing trading bot...")
@@ -255,6 +276,10 @@ async def lifespan(app: FastAPI):
             logger.info("🔌 Closing Binance client...")
             await binance_client.close()
         
+        if binance_ws_client:
+            logger.info("🔌 Closing Binance WebSocket client...")
+            binance_ws_client.close()
+        
         # Cancel all heartbeat tasks
         for task in manager.heartbeat_tasks.values():
             if not task.done():
@@ -280,27 +305,65 @@ app.add_middleware(
 )
 
 async def market_data_broadcaster():
-    """Background task to broadcast market data"""
+    """Background task to broadcast market data from Binance WebSocket"""
     logger.info("📡 Starting market data broadcaster...")
     
     while True:
         try:
-            if binance_client and manager.market_connections:
-                # Get ticker data for popular symbols
-                symbols = ['BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'DOTUSDT', 'LINKUSDT']
+            # Check if we have connections to broadcast to
+            if not manager.market_connections:
+                await asyncio.sleep(1)
+                continue
                 
-                for symbol in symbols:
-                    try:
-                        ticker = await binance_client.get_ticker(symbol)
-                        if ticker:
-                            await manager.broadcast_to_market({
-                                "type": "ticker",
-                                "symbol": symbol,
-                                "price": ticker.get('price', '0'),
-                                "change": ticker.get('priceChange', '0'),
-                                "changePercent": ticker.get('priceChangePercent', '0%')
-                            })
+            # Process messages from WebSocket queue
+            try:
+                # Non-blocking get from queue
+                message = market_data_queue.get_nowait()
+                
+                # Parse the WebSocket message
+                data = json.loads(message)
+                logger.debug(f"Received WebSocket data: {data}")
+                
+                # Handle single stream (testnet) vs multi-stream (prod) format
+                if 'stream' in data:
+                    # Multi-stream format (production)
+                    stream_data = data['data']
+                    stream_name = data['stream']
+                else:
+                    # Single stream format (testnet)
+                    stream_data = data
+                    # Extract stream name from data context or default
+                    stream_name = f"{stream_data.get('s', '').lower()}@ticker"
+                
+                # Process ticker data
+                if '@ticker' in stream_name:
+                    symbol = stream_data.get('s')  # Symbol like 'BTCUSDT'
+                    if symbol:
+                        ticker_data = {
+                            "type": "ticker",
+                            "symbol": symbol,
+                            "price": stream_data.get('c', '0'),  # Current price
+                            "change": stream_data.get('P', '0'),  # Price change percent
+                            "changePercent": f"{stream_data.get('P', '0')}%"  # Add % sign
+                        }
                         
+                        logger.debug(f"Broadcasting ticker data for {symbol}: {ticker_data}")
+                        await manager.broadcast_to_market(ticker_data)
+                
+            except queue.Empty:
+                # No messages in queue, wait a bit
+                await asyncio.sleep(0.1)
+                continue
+            
+            # Also get orderbook data via REST API (less frequent updates are OK)
+            if binance_client and manager.market_connections:
+                # Get unique subscribed symbols
+                subscribed_symbols = set()
+                for client_subs in manager.client_subscriptions.values():
+                    subscribed_symbols.update(client_subs)
+                
+                for symbol in subscribed_symbols:
+                    try:
                         # Get order book data
                         orderbook = await binance_client.get_order_book(symbol, limit=20)
                         if orderbook:
@@ -310,14 +373,13 @@ async def market_data_broadcaster():
                                 "bids": orderbook.get('bids', [])[:10],
                                 "asks": orderbook.get('asks', [])[:10]
                             })
-                        
-                        await asyncio.sleep(2)  # Delay between symbols
-                        
+                            
                     except Exception as e:
-                        logger.warning(f"Failed to get market data for {symbol}: {e}")
+                        logger.warning(f"Failed to get orderbook for {symbol}: {e}")
                         continue
-            
-            await asyncio.sleep(5)  # Wait before next cycle
+                        
+                # Wait between orderbook updates
+                await asyncio.sleep(5)
             
         except Exception as e:
             logger.error(f"Market data broadcaster error: {e}")
