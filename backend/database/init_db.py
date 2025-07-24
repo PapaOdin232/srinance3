@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.order import Base as OrderBase
-from models.log import Base as LogBase
-from models.history import Base as HistoryBase
+from backend.models.order import Base as OrderBase
+from backend.models.log import Base as LogBase
+from backend.models.history import Base as HistoryBase
 
 DB_URL = "sqlite:///database/bot.db"
 engine = create_engine(DB_URL)

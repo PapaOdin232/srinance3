@@ -7,11 +7,11 @@ import websocket
 import json
 
 from urllib.parse import urlencode
-from config import BINANCE_API_URL, BINANCE_WS_URL
+from backend.config import BINANCE_API_URL, BINANCE_WS_URL
 
 class BinanceRESTClient:
     def __init__(self):
-        from config import BINANCE_API_KEY, BINANCE_API_SECRET
+        from backend.config import BINANCE_API_KEY, BINANCE_API_SECRET
         self.api_key = BINANCE_API_KEY
         self.api_secret = BINANCE_API_SECRET
         self.base_url = BINANCE_API_URL
@@ -166,9 +166,31 @@ class BinanceClient(BinanceRESTClient):
             self.ws_client.close()
     
     async def get_ticker(self, symbol):
-        """Async wrapper for get_ticker"""
-        return super().get_ticker(symbol)
-    
+        """Async wrapper for get_ticker using thread executor"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_ticker, symbol)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_ticker failed for {symbol}: {e}")
+            return None
+
     async def get_order_book(self, symbol, limit=20):
-        """Async wrapper for get_orderbook"""
-        return super().get_orderbook(symbol, limit)
+        """Async wrapper for get_orderbook using thread executor"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_orderbook, symbol, limit)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_order_book failed for {symbol}: {e}")
+            return None
+
+    async def get_account_info_async(self):
+        """Async wrapper for get_account_info"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_account_info)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_account_info failed: {e}")
+            return None

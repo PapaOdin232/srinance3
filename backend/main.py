@@ -4,12 +4,16 @@ import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from typing import Dict, List
+from typing import Dict, List, Optional
 import uvicorn
+import os
 
-from binance_client import BinanceClient
-from database.init_db import init_db
-from bot.trading_bot import TradingBot
+from backend.binance_client import BinanceClient
+from backend.database.init_db import init_db
+from backend.bot.trading_bot import TradingBot
+
+# Ensure database directory exists
+os.makedirs('database', exist_ok=True)
 
 # Setup logging
 logging.basicConfig(
@@ -23,28 +27,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global instances
-binance_client: BinanceClient = None
-trading_bot: TradingBot = None
+binance_client: Optional[BinanceClient] = None
+trading_bot: Optional[TradingBot] = None
 market_connections: List[WebSocket] = []
 bot_connections: List[WebSocket] = []
 
 class ConnectionManager:
     """Enhanced connection manager with heartbeat support"""
     
-    def __init__(self):
+    def __init__(self, max_connections: int = 10):
         self.market_connections: List[WebSocket] = []
         self.bot_connections: List[WebSocket] = []
         self.heartbeat_tasks: Dict[WebSocket, asyncio.Task] = {}
+        self.max_connections = max_connections
     
     async def connect_market(self, websocket: WebSocket):
+        # Sprawdź limit połączeń
+        if len(self.market_connections) >= self.max_connections:
+            await websocket.close(code=1008, reason="Connection limit exceeded")
+            logger.warning(f"Market connection limit exceeded. Current: {len(self.market_connections)}")
+            return 0
+
         await websocket.accept()
         self.market_connections.append(websocket)
         logger.info(f"Market WebSocket connected. Total connections: {len(self.market_connections)}")
-        
+
         # Start heartbeat for this connection
         task = asyncio.create_task(self._heartbeat_loop(websocket))
         self.heartbeat_tasks[websocket] = task
-        
+
         return len(self.market_connections)
     
     async def connect_bot(self, websocket: WebSocket):
@@ -151,12 +162,18 @@ async def lifespan(app: FastAPI):
         
         # Initialize Binance client
         logger.info("🔗 Initializing Binance client...")
+        global binance_client
         binance_client = BinanceClient()
         await binance_client.initialize()
         
-        # Initialize trading bot
+        # Initialize trading bot with broadcast_callback i event loop
         logger.info("🤖 Initializing trading bot...")
-        trading_bot = TradingBot(binance_client)
+        global trading_bot
+        trading_bot = TradingBot(
+            market_data_queue=None,
+            broadcast_callback=manager.broadcast_to_bot,
+            main_loop=asyncio.get_event_loop()
+        )
         
         # Start background tasks
         logger.info("⚡ Starting background tasks...")
@@ -173,9 +190,13 @@ async def lifespan(app: FastAPI):
         # Cleanup
         logger.info("🔄 Shutting down application...")
         
-        if trading_bot and trading_bot.is_running:
+        if trading_bot and trading_bot.running:
             logger.info("🛑 Stopping trading bot...")
-            await trading_bot.stop()
+            if hasattr(trading_bot.stop, '__call__'):
+                if asyncio.iscoroutinefunction(trading_bot.stop):
+                    await trading_bot.stop()
+                else:
+                    trading_bot.stop()
         
         if binance_client:
             logger.info("🔌 Closing Binance client...")
@@ -257,16 +278,17 @@ async def bot_log_broadcaster():
         try:
             if trading_bot and manager.bot_connections:
                 # Broadcast bot status
+                temp_update = getattr(trading_bot, 'last_update', None)
                 status_data = {
                     "type": "bot_status",
-                    "running": trading_bot.is_running,
+                    "running": trading_bot.running,
                     "status": {
                         "symbol": getattr(trading_bot, 'symbol', None),
                         "strategy": getattr(trading_bot, 'strategy', None),
                         "balance": getattr(trading_bot, 'balance', 0),
                         "position": getattr(trading_bot, 'position', None),
                         "last_action": getattr(trading_bot, 'last_action', None),
-                        "timestamp": trading_bot.last_update.isoformat() if hasattr(trading_bot, 'last_update') else None
+                        "timestamp": temp_update.isoformat() if temp_update is not None else None
                     }
                 }
                 
@@ -281,7 +303,7 @@ async def bot_log_broadcaster():
 @app.websocket("/ws/market")
 async def websocket_market_endpoint(websocket: WebSocket):
     """Enhanced market WebSocket endpoint with heartbeat support"""
-    client_id = f"{websocket.client.host}:{websocket.client.port}"
+    client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
     logger.info(f"Market WebSocket connection attempt from {client_id}")
     
     try:
@@ -345,7 +367,7 @@ async def websocket_market_endpoint(websocket: WebSocket):
 @app.websocket("/ws/bot")
 async def websocket_bot_endpoint(websocket: WebSocket):
     """Enhanced bot WebSocket endpoint with command handling"""
-    client_id = f"{websocket.client.host}:{websocket.client.port}"
+    client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
     logger.info(f"Bot WebSocket connection attempt from {client_id}")
     
     try:
@@ -362,7 +384,7 @@ async def websocket_bot_endpoint(websocket: WebSocket):
         if trading_bot:
             await websocket.send_json({
                 "type": "bot_status",
-                "running": trading_bot.is_running,
+                "running": trading_bot.running,
                 "status": {
                     "symbol": getattr(trading_bot, 'symbol', None),
                     "strategy": getattr(trading_bot, 'strategy', None),
@@ -391,12 +413,16 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                     if trading_bot:
                         await websocket.send_json({
                             "type": "bot_status",
-                            "running": trading_bot.is_running,
-                            "status": {
-                                "symbol": getattr(trading_bot, 'symbol', None),
-                                "strategy": getattr(trading_bot, 'strategy', None),
-                                "balance": getattr(trading_bot, 'balance', 0),
-                            }
+                            "running": trading_bot.running,
+                            "status": trading_bot.get_status()
+                        })
+
+                elif message_type == 'get_logs':
+                    # Send last logs
+                    if trading_bot:
+                        await websocket.send_json({
+                            "type": "bot_logs",
+                            "logs": trading_bot.get_logs()
                         })
                 
                 elif message_type == 'start_bot':
@@ -405,9 +431,16 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                     
                     logger.info(f"Starting bot with symbol={symbol}, strategy={strategy}")
                     
-                    if trading_bot and not trading_bot.is_running:
+                    if trading_bot and not trading_bot.running:
                         try:
-                            await trading_bot.start(symbol=symbol, strategy=strategy)
+                            # Używamy setattr aby bezpiecznie ustawić atrybuty
+                            setattr(trading_bot, 'symbol', symbol)
+                            setattr(trading_bot, 'strategy', strategy)
+                            
+                            if asyncio.iscoroutinefunction(trading_bot.start):
+                                await trading_bot.start()
+                            else:
+                                trading_bot.start()
                             
                             await websocket.send_json({
                                 "type": "log",
@@ -439,9 +472,13 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                 elif message_type == 'stop_bot':
                     logger.info("Stopping bot")
                     
-                    if trading_bot and trading_bot.is_running:
+                    if trading_bot and trading_bot.running:
                         try:
-                            await trading_bot.stop()
+                            if hasattr(trading_bot.stop, '__call__'):
+                                if asyncio.iscoroutinefunction(trading_bot.stop):
+                                    await trading_bot.stop()
+                                else:
+                                    trading_bot.stop()
                             
                             await websocket.send_json({
                                 "type": "log",
@@ -496,7 +533,7 @@ async def health_check():
         "bot_connections": len(manager.bot_connections),
         "binance_connected": binance_client is not None,
         "bot_available": trading_bot is not None,
-        "bot_running": trading_bot.is_running if trading_bot else False
+        "bot_running": trading_bot.running if trading_bot else False
     }
 
 # REST API Endpoints
@@ -516,15 +553,23 @@ async def get_account():
 @app.get("/ticker")
 async def get_ticker(symbol: str):
     """Get ticker information for a symbol"""
+    from fastapi import HTTPException
     try:
-        if binance_client:
-            ticker = binance_client.get_ticker(symbol)
-            return ticker
-        else:
-            return {"error": "Binance client not available"}
+        if not binance_client:
+            logger.error("Binance client not available")
+            raise HTTPException(status_code=503, detail="Binance client not available")
+
+        ticker = await binance_client.get_ticker(symbol)
+        if ticker is None:
+            logger.error(f"Failed to get ticker for {symbol}")
+            raise HTTPException(status_code=404, detail=f"Ticker not found for symbol {symbol}")
+
+        return ticker
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
-        logger.error(f"Ticker endpoint error: {e}")
-        return {"error": str(e)}
+        logger.error(f"Ticker endpoint error for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/orderbook")
 async def get_orderbook(symbol: str, limit: int = 20):
@@ -603,8 +648,8 @@ async def get_bot_status():
     try:
         if trading_bot:
             return {
-                "status": "running" if trading_bot.is_running else "stopped",
-                "running": trading_bot.is_running
+                "status": "running" if trading_bot.running else "stopped",
+                "running": trading_bot.running
             }
         else:
             return {"error": "Trading bot not available"}

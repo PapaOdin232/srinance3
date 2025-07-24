@@ -11,6 +11,6 @@ BINANCE_ENV = os.getenv("BINANCE_ENV", "testnet")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "example_admin_token")
 
 if BINANCE_ENV == "prod":
-    from config_prod import *
+    from backend.config_prod import *
 else:
-    from config_testnet import *
+    from backend.config_testnet import *

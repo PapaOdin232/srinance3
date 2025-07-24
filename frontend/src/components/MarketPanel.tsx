@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Chart } from 'chart.js/auto';
+import 'chartjs-adapter-date-fns';
 import type { ChartConfiguration } from 'chart.js';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 import { getCurrentTicker, getOrderBook, getKlines } from '../services/restClient';
+import useChart from '../hooks/useChart';
 
 interface TickerData {
   symbol: string;
@@ -29,62 +30,73 @@ const MarketPanel: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   
   const wsClientRef = useRef<EnhancedWSClient | null>(null);
-  const chartRef = useRef<HTMLCanvasElement>(null);
-  const chartInstanceRef = useRef<Chart | null>(null);
-  const retryTimeoutRef = useRef<number | null>(null);
 
-  // Initialize chart
+  // Debugowanie setup/cleanup WebSocket
   useEffect(() => {
-    if (chartRef.current && !chartInstanceRef.current) {
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
-        const config: ChartConfiguration = {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [{
-              label: `${selectedSymbol} Price`,
-              data: [],
-              borderColor: '#10B981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              tension: 0.1,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top'
-              }
-            },
-            scales: {
-              x: {
-                type: 'time',
-                time: {
-                  unit: 'minute'
-                }
-              },
-              y: {
-                beginAtZero: false
-              }
-            }
-          }
-        };
-        
-        chartInstanceRef.current = new Chart(ctx, config);
-      }
-    }
-    
+    console.log(`[MarketPanel] Setting up WebSocket for ${selectedSymbol}`);
     return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
-        chartInstanceRef.current = null;
-      }
+      console.log(`[MarketPanel] Cleaning up WebSocket for ${selectedSymbol}`);
     };
   }, [selectedSymbol]);
+
+  // Monitoring stanu połączenia
+  useEffect(() => {
+    console.log(`[MarketPanel] Connection state changed: ${connectionState}`);
+    if (connectionError) {
+      console.error(`[MarketPanel] Connection error: ${connectionError}`);
+    }
+  }, [connectionState, connectionError]);
+
+  // Chart configuration
+  const chartConfig: ChartConfiguration = {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: `${selectedSymbol} Price`,
+        data: [],
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        tension: 0.1,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'minute',
+            displayFormats: {
+              minute: 'HH:mm'
+            }
+          },
+          adapters: {
+            date: {
+              locale: 'pl'
+            }
+          }
+        },
+        y: {
+          beginAtZero: false
+        }
+      }
+    }
+  };
+
+  // Use custom chart hook
+  const { chartRef, chartInstance, addDataPoint, updateChart } = useChart(
+    chartConfig, 
+    [selectedSymbol]
+  );
 
   // Load historical data for chart
   const loadHistoricalData = async (symbol: string) => {
@@ -92,14 +104,22 @@ const MarketPanel: React.FC = () => {
       setIsLoading(true);
       const klines = await getKlines(symbol, '1m', 100);
       
-      if (chartInstanceRef.current && klines) {
+      if (chartInstance && klines) {
         const labels = klines.map(k => new Date(k[0]));
         const prices = klines.map(k => parseFloat(k[4])); // Close price
         
-        chartInstanceRef.current.data.labels = labels;
-        chartInstanceRef.current.data.datasets[0].data = prices;
-        chartInstanceRef.current.data.datasets[0].label = `${symbol} Price`;
-        chartInstanceRef.current.update();
+        // Update chart using the hook's method
+        updateChart({
+          labels,
+          datasets: [{
+            label: `${symbol} Price`,
+            data: prices,
+            borderColor: '#10B981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.1,
+            fill: true
+          }]
+        });
       }
     } catch (err) {
       console.error('Failed to load historical data:', err);
@@ -149,42 +169,39 @@ const MarketPanel: React.FC = () => {
   // Setup WebSocket connection
   useEffect(() => {
     let mounted = true;
-    
+    let wsClientLocal: EnhancedWSClient | null = null;
+
     const setupWebSocket = () => {
+      // Cleanup poprzedniego połączenia
       if (wsClientRef.current) {
         wsClientRef.current.destroy();
+        wsClientRef.current = null;
       }
-      
+
+      if (!mounted) return;
+
       const wsClient = new EnhancedWSClient('ws://localhost:8000/ws/market', {
         reconnectInterval: 2000,
         maxReconnectInterval: 30000,
-        maxReconnectAttempts: 10,
+        maxReconnectAttempts: 5,
         heartbeatInterval: 30000,
         debug: true
       });
-      
+
       wsClientRef.current = wsClient;
-      
-      // Connection state listener
+      wsClientLocal = wsClient;
+
       wsClient.addStateListener((state, error) => {
         if (!mounted) return;
-        
         setConnectionState(state);
         setConnectionError(error || null);
-        
         if (state === ConnectionState.CONNECTED) {
-          // Subscribe to symbol when connected
-          wsClient.send({ 
-            type: 'subscribe', 
-            symbol: selectedSymbol 
-          });
+          wsClient.send({ type: 'subscribe', symbol: selectedSymbol });
         }
       });
-      
-      // Message listener
+
       wsClient.addListener((msg) => {
         if (!mounted) return;
-        
         switch (msg.type) {
           case 'ticker':
             if (msg.symbol === selectedSymbol) {
@@ -194,26 +211,13 @@ const MarketPanel: React.FC = () => {
                 change: prevTicker?.change || '0',
                 changePercent: prevTicker?.changePercent || '0%'
               }));
-              
-              // Update chart with real-time price
-              if (chartInstanceRef.current) {
+              if (chartInstance) {
                 const now = new Date();
-                const chart = chartInstanceRef.current;
-                
-                chart.data.labels?.push(now);
-                chart.data.datasets[0].data.push(parseFloat(msg.price as string));
-                
-                // Keep only last 100 points
-                if (chart.data.labels && chart.data.labels.length > 100) {
-                  chart.data.labels.shift();
-                  chart.data.datasets[0].data.shift();
-                }
-                
-                chart.update('none');
+                const priceValue = parseFloat(msg.price as string);
+                addDataPoint(now, 0, priceValue, 100);
               }
             }
             break;
-            
           case 'orderbook':
             if (msg.symbol === selectedSymbol) {
               setOrderBook({
@@ -226,21 +230,27 @@ const MarketPanel: React.FC = () => {
         }
       });
     };
-    
-    setupWebSocket();
-    loadInitialData(selectedSymbol);
-    
+
+    // Opóźnienie setupWebSocket, aby zapobiec podwójnym połączeniom w Strict Mode
+    const timeoutId = setTimeout(() => {
+      setupWebSocket();
+      loadInitialData(selectedSymbol);
+    }, 100);
+
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
+      if (wsClientLocal) {
+        wsClientLocal.destroy();
+        wsClientLocal = null;
+      }
       if (wsClientRef.current) {
         wsClientRef.current.destroy();
         wsClientRef.current = null;
       }
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
     };
-  }, [selectedSymbol]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSymbol, chartInstance, addDataPoint]);
 
   const handleSymbolChange = (newSymbol: string) => {
     setSelectedSymbol(newSymbol);
