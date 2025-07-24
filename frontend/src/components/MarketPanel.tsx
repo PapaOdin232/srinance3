@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import 'chartjs-adapter-date-fns';
 import type { ChartConfiguration } from 'chart.js';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
@@ -47,8 +47,8 @@ const MarketPanel: React.FC = () => {
     }
   }, [connectionState, connectionError]);
 
-  // Chart configuration
-  const chartConfig: ChartConfiguration = {
+  // Chart configuration - zmemoizowane aby zapobiec re-renderom
+  const chartConfig: ChartConfiguration = useMemo(() => ({
     type: 'line',
     data: {
       labels: [],
@@ -78,11 +78,6 @@ const MarketPanel: React.FC = () => {
             displayFormats: {
               minute: 'HH:mm'
             }
-          },
-          adapters: {
-            date: {
-              locale: 'pl'
-            }
           }
         },
         y: {
@@ -90,7 +85,7 @@ const MarketPanel: React.FC = () => {
         }
       }
     }
-  };
+  }), [selectedSymbol]);
 
   // Use custom chart hook
   const { chartRef, chartInstance, addDataPoint, updateChart } = useChart(
@@ -102,24 +97,34 @@ const MarketPanel: React.FC = () => {
   const loadHistoricalData = async (symbol: string) => {
     try {
       setIsLoading(true);
+      console.log(`[MarketPanel] Loading historical data for ${symbol}`);
       const klines = await getKlines(symbol, '1m', 100);
       
-      if (chartInstance && klines) {
+      if (klines && klines.length > 0) {
+        console.log(`[MarketPanel] Got ${klines.length} historical data points`);
         const labels = klines.map(k => new Date(k[0]));
         const prices = klines.map(k => parseFloat(k[4])); // Close price
+        console.log(`[MarketPanel] Price range: ${Math.min(...prices)} - ${Math.max(...prices)}`);
         
-        // Update chart using the hook's method
-        updateChart({
-          labels,
-          datasets: [{
-            label: `${symbol} Price`,
-            data: prices,
-            borderColor: '#10B981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            tension: 0.1,
-            fill: true
-          }]
-        });
+        if (chartInstance) {
+          console.log(`[MarketPanel] Chart instance available, updating chart`);
+          // Update chart using the hook's method
+          updateChart({
+            labels,
+            datasets: [{
+              label: `${symbol} Price`,
+              data: prices,
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.1,
+              fill: true
+            }]
+          });
+        } else {
+          console.warn(`[MarketPanel] Chart instance not available yet, data will be loaded later`);
+        }
+      } else {
+        console.warn(`[MarketPanel] No historical data received`);
       }
     } catch (err) {
       console.error('Failed to load historical data:', err);
@@ -166,6 +171,14 @@ const MarketPanel: React.FC = () => {
     }
   };
 
+  // Załaduj dane historyczne gdy chart będzie gotowy
+  useEffect(() => {
+    if (chartInstance) {
+      console.log(`[MarketPanel] Chart instance ready, loading historical data for ${selectedSymbol}`);
+      loadHistoricalData(selectedSymbol);
+    }
+  }, [chartInstance, selectedSymbol]);
+
   // Setup WebSocket connection
   useEffect(() => {
     let mounted = true;
@@ -205,6 +218,7 @@ const MarketPanel: React.FC = () => {
         switch (msg.type) {
           case 'ticker':
             if (msg.symbol === selectedSymbol) {
+              console.log(`[MarketPanel] Received ticker for ${msg.symbol}: ${msg.price}`);
               setTicker(prevTicker => ({
                 symbol: msg.symbol as string,
                 price: msg.price as string,
@@ -214,7 +228,10 @@ const MarketPanel: React.FC = () => {
               if (chartInstance) {
                 const now = new Date();
                 const priceValue = parseFloat(msg.price as string);
+                console.log(`[MarketPanel] Adding data point to chart: ${priceValue} at ${now.toISOString()}`);
                 addDataPoint(now, 0, priceValue, 100);
+              } else {
+                console.warn(`[MarketPanel] Chart instance not available for adding data point`);
               }
             }
             break;
