@@ -54,6 +54,19 @@ class BinanceRESTClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_klines(self, symbol, interval="1m", limit=100):
+        """Get klines/candlestick data for a symbol"""
+        endpoint = "/v3/klines"
+        params = {
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "limit": limit
+        }
+        url = f"{self.base_url}{endpoint}?{urlencode(params)}"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
     def get_account_trades(self, symbol):
         endpoint = "/v3/myTrades"
         params = {"symbol": symbol.upper(), "timestamp": int(time.time() * 1000)}

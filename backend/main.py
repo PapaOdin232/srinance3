@@ -589,27 +589,10 @@ async def get_klines(symbol: str, interval: str = "1m", limit: int = 100):
     """Get klines/candlestick data for a symbol"""
     try:
         if binance_client:
-            # Note: This is a placeholder - you need to implement get_klines in binance_client
-            # For now, returning mock data
-            import time
-            current_time = int(time.time() * 1000)
-            mock_klines = []
-            for i in range(limit):
-                kline_time = current_time - (i * 60000)  # 1 minute intervals
-                mock_klines.append([
-                    kline_time,  # Open time
-                    "50000.00",  # Open price
-                    "50100.00",  # High price
-                    "49900.00",  # Low price
-                    "50050.00",  # Close price
-                    "1000.00",   # Volume
-                    kline_time + 59999,  # Close time
-                    "50000000.00",  # Quote asset volume
-                    1000,  # Number of trades
-                    "500.00",  # Taker buy base asset volume
-                    "25000000.00"  # Taker buy quote asset volume
-                ])
-            return list(reversed(mock_klines))  # Reverse to get chronological order
+            # Używaj prawdziwych danych z Binance API
+            klines_data = binance_client.get_klines(symbol, interval, limit)
+            logger.info(f"Retrieved {len(klines_data)} klines for {symbol}")
+            return klines_data
         else:
             return {"error": "Binance client not available"}
     except Exception as e:

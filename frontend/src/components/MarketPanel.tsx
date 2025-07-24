@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import 'chartjs-adapter-date-fns';
 import type { ChartConfiguration } from 'chart.js';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
@@ -24,6 +24,7 @@ const MarketPanel: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyLoaded, setHistoryLoaded] = useState<string | null>(null); // Track which symbol has history loaded
   
   // WebSocket connection state
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -93,8 +94,8 @@ const MarketPanel: React.FC = () => {
     [selectedSymbol]
   );
 
-  // Load historical data for chart
-  const loadHistoricalData = async (symbol: string) => {
+  // Load historical data for chart - zmemoizowane aby uniknąć re-renderów
+  const loadHistoricalData = useCallback(async (symbol: string) => {
     try {
       setIsLoading(true);
       console.log(`[MarketPanel] Loading historical data for ${symbol}`);
@@ -120,6 +121,7 @@ const MarketPanel: React.FC = () => {
               fill: true
             }]
           });
+          setHistoryLoaded(symbol); // Mark history as loaded for this symbol
         } else {
           console.warn(`[MarketPanel] Chart instance not available yet, data will be loaded later`);
         }
@@ -132,7 +134,7 @@ const MarketPanel: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [chartInstance, updateChart]);
 
   // Load initial data
   const loadInitialData = async (symbol: string) => {
@@ -162,7 +164,7 @@ const MarketPanel: React.FC = () => {
         });
       }
       
-      await loadHistoricalData(symbol);
+      // Nie ładuj danych historycznych tutaj - zostanie to zrobione w useEffect gdy chart będzie gotowy
     } catch (err) {
       console.error('Failed to load initial data:', err);
       setError('Nie udało się załadować danych początkowych');
@@ -171,13 +173,13 @@ const MarketPanel: React.FC = () => {
     }
   };
 
-  // Załaduj dane historyczne gdy chart będzie gotowy
+  // Załaduj dane historyczne gdy chart będzie gotowy i jeszcze nie załadowano dla tego symbolu
   useEffect(() => {
-    if (chartInstance) {
-      console.log(`[MarketPanel] Chart instance ready, loading historical data for ${selectedSymbol}`);
+    if (chartInstance && historyLoaded !== selectedSymbol) {
+      console.log(`[MarketPanel] Chart ready and history not loaded for ${selectedSymbol}, loading now...`);
       loadHistoricalData(selectedSymbol);
     }
-  }, [chartInstance, selectedSymbol]);
+  }, [chartInstance, selectedSymbol, historyLoaded, loadHistoricalData]);
 
   // Setup WebSocket connection
   useEffect(() => {
@@ -267,13 +269,14 @@ const MarketPanel: React.FC = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSymbol, chartInstance, addDataPoint]);
+  }, [selectedSymbol]); // Usunięto chartInstance i addDataPoint - nie powinny triggerować WebSocket setup
 
   const handleSymbolChange = (newSymbol: string) => {
     setSelectedSymbol(newSymbol);
     setTicker(null);
     setOrderBook(null);
     setError(null);
+    setHistoryLoaded(null); // Reset history loaded flag
   };
 
   const handleRetryConnection = () => {
