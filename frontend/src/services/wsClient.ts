@@ -12,7 +12,7 @@ export const ConnectionState = {
 export type ConnectionState = typeof ConnectionState[keyof typeof ConnectionState];
 
 export type WSMessage =
-  | { type: 'ticker', symbol: string, price: string }
+  | { type: 'ticker', symbol: string, price: string, change?: string, changePercent?: string }
   | { type: 'orderbook', symbol: string, bids: [string, string][], asks: [string, string][] }
   | { type: 'log', message: string }
   | { type: 'bot_status', status: any, running: boolean }

@@ -53,6 +53,15 @@ class BinanceRESTClient:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
+    
+    def get_ticker_24hr(self, symbol):
+        """Get 24hr ticker price change statistics including changePercent"""
+        endpoint = "/v3/ticker/24hr"
+        params = {"symbol": symbol.upper()}
+        url = f"{self.base_url}{endpoint}?{urlencode(params)}"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
 
     def get_klines(self, symbol, interval="1m", limit=100):
         """Get klines/candlestick data for a symbol"""
@@ -186,6 +195,16 @@ class BinanceClient(BinanceRESTClient):
             return result
         except Exception as e:
             print(f"[ERROR] get_ticker failed for {symbol}: {e}")
+            return None
+    
+    async def get_ticker_24hr(self, symbol):
+        """Async wrapper for get_ticker_24hr with changePercent data"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_ticker_24hr, symbol)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_ticker_24hr failed for {symbol}: {e}")
             return None
 
     async def get_order_book(self, symbol, limit=20):

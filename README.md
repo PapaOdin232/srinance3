@@ -1,133 +1,349 @@
-# Bot handlowy Binance
+# Bot handlowy Binance (srinance3)
 
 ## Cel projektu
-Automatyzacja handlu na giełdzie Binance z wykorzystaniem własnych strategii oraz panelu do zarządzania i monitorowania bota.
+Zaawansowana aplikacja do automatyzacji handlu na giełdzie Binance z wykorzystaniem własnych strategii oraz panelu webowego do zarządzania i monitorowania bota w czasie rzeczywistym.
+
+## Architektura
+- **Backend**: FastAPI z WebSocket, SQLAlchemy, trading bot
+- **Frontend**: React z TypeScript, lightweight-charts, real-time WebSocket
+- **Baza danych**: SQLite z modelami dla zleceń, logów i historii
+- **Testing**: pytest (backend), Jest/RTL + Cypress (frontend)
 
 ## Główne funkcjonalności
-- Integracja z API Binance (REST i WebSocket)
-- Panel użytkownika (saldo, historia, rynek, zarządzanie botem)
-- Obsługa środowisk testnet/produkcyjne
-- Prosta autoryzacja (token admina)
-- Logowanie działań i obsługa błędów
-- Testy jednostkowe, integracyjne i E2E
+- ✅ Integracja z API Binance (REST i WebSocket)
+- ✅ Panel użytkownika (saldo, historia, orderbook, wykresy real-time)
+- ✅ Trading bot z możliwością start/stop i monitorowaniem logów
+- ✅ Obsługa środowisk testnet/produkcyjne
+- ✅ WebSocket połączenia dla live market data i bot status
+- ✅ Kompleksowe testy jednostkowe, integracyjne i E2E
+- ✅ Lightweight charts z danymi kline w czasie rzeczywistym
 
-## Jak zacząć
-1. Sklonuj repozytorium:
-   ```bash
-   git clone <adres-repo>
-   ```
-2. Zainstaluj zależności backendu i frontendu:
-   - Backend (Python):
-     ```bash
-     cd backend
-     python -m venv venv
-     source venv/bin/activate
-     pip install -r requirements.txt
-     ```
-   - Frontend (Node.js):
-     ```bash
-     cd frontend
-     npm install
-     ```
-3. Skonfiguruj plik `.env` na podstawie `.env.example`.
-4. Uruchom backend i frontend zgodnie z instrukcją poniżej.
+## Struktura projektu
+```
+backend/                    # FastAPI aplikacja
+├── main.py                # Główna aplikacja z WebSocket endpointami
+├── binance_client.py      # Klient Binance REST/WebSocket
+├── config*.py             # Konfiguracja środowisk
+├── bot/
+│   └── trading_bot.py     # Logika trading bota
+├── database/
+│   ├── init_db.py         # Inicjalizacja bazy SQLite
+│   ├── crud.py            # Operacje CRUD
+│   └── bot.db             # Baza danych SQLite
+├── models/                # Modele SQLAlchemy
+│   ├── order.py           # Model zleceń
+│   ├── log.py             # Model logów
+│   └── history.py         # Model historii
+└── tests/                 # Testy pytest
+
+frontend/                   # React aplikacja
+├── src/
+│   ├── components/        # Komponenty React
+│   │   ├── AccountPanel.tsx    # Panel konta
+│   │   ├── MarketPanel.tsx     # Panel rynku z wykresami
+│   │   └── BotPanel.tsx        # Panel zarządzania botem
+│   ├── services/          # API i WebSocket klienty
+│   │   ├── restClient.ts       # REST API klient
+│   │   ├── binanceWSClient.ts  # Binance WebSocket
+│   │   └── wsClient.ts         # Backend WebSocket
+│   ├── hooks/             # React hooks
+│   └── types/             # TypeScript typy
+├── cypress/               # Testy E2E
+└── package.json
+
+database/                   # Pliki bazy danych i logów
+├── bot.db                 # Główna baza SQLite
+└── app.log                # Logi aplikacji
+```
 
 ## Wymagania
-- Python 3.10+
-- Node.js 18+
-- pip, npm
-- (opcjonalnie) poetry/pipenv, pre-commit, lintery
+- **Python 3.10+** z pip
+- **Node.js 18+** z npm
+- Klucze API Binance (testnet lub produkcyjne)
 
-## Lintery i pre-commit
+## Konfiguracja środowiska
 
-### Backend (Python)
-Aby uruchomić lintery i formatowanie kodu:
+### Klucze API Binance
+Utwórz plik `.env` w katalogu `backend/`:
+
+**Dla testnet:**
+```bash
+BINANCE_API_KEY=your_testnet_api_key
+BINANCE_API_SECRET=your_testnet_secret
+BINANCE_ENV=testnet
+ENV=development
+ADMIN_TOKEN=your_admin_token
+```
+
+**Dla produkcji:**
+```bash
+BINANCE_API_KEY=your_production_api_key
+BINANCE_API_SECRET=your_production_secret
+BINANCE_ENV=prod
+ENV=production
+ADMIN_TOKEN=your_admin_token
+```
+
+## Instalacja i uruchomienie
+
+### 1. Sklonuj repozytorium
+```bash
+git clone https://github.com/PapaOdin232/srinance3.git
+cd srinance3
+```
+
+### 2. Backend (Python)
 ```bash
 cd backend
-black .
-flake8 .
-isort .
-```
-Aby zainstalować i aktywować pre-commit:
-```bash
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files
+python -m venv venv
+source venv/bin/activate  # Na macOS/Linux
+# lub: venv\Scripts\activate  # Na Windows
+pip install -r requirements.txt
+
+# Inicjalizacja bazy danych
+python database/init_db.py
 ```
 
-### Frontend (Node.js)
-Aby uruchomić lintery i formatowanie kodu:
+### 3. Frontend (Node.js)
 ```bash
 cd frontend
-npx eslint .
-npx prettier --check .
+npm install
 ```
-Aby automatycznie poprawić formatowanie:
+
+### 4. Uruchomienie aplikacji
+**Backend:**
 ```bash
-npx prettier --write .
+cd backend
+source venv/bin/activate
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Uruchomienie środowiska
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
 
-## Uruchomienie środowiska
-Backend:
-  ```bash
-  cd backend
-  source venv/bin/activate
-  uvicorn main:app --reload
-  ```
-Frontend:
-  ```bash
-  cd frontend
-  npm run dev
-  ```
+Aplikacja będzie dostępna pod adresem: `http://localhost:5173`
 
-## Obsługa błędów i fallbacki
+## Endpointy API
 
-- Komponenty frontendowe (MarketPanel, BotPanel, AccountPanel) wyświetlają czytelne komunikaty w przypadku braku połączenia z backendem (np. rozłączenie WebSocket, błąd API).
-- W przypadku rozłączenia WebSocket użytkownik zobaczy komunikat o braku połączenia i aplikacja nie zawiesi się.
-- Wszelkie błędy są logowane w konsoli oraz prezentowane w UI w przyjaznej formie.
+### REST API (FastAPI)
+- `GET /account` - pobiera dane konta Binance (saldo, uprawnienia)
+- `POST /ticker` - pobiera aktualną cenę symbolu (np. BTCUSDT)
+- `GET /orderbook/{symbol}` - pobiera orderbook dla symbolu
+- `POST /bot/start` - uruchamia trading bota
+- `POST /bot/stop` - zatrzymuje trading bota
+- `GET /bot/status` - pobiera status bota
+- `GET /bot/logs` - pobiera logi bota
 
-## Testy jednostkowe
+### WebSocket Endpointy
+- `ws://localhost:8000/ws/market` - live market data (ticker, orderbook)
+- `ws://localhost:8000/ws/bot` - status bota i logi w czasie rzeczywistym
 
-- Testy jednostkowe dla kluczowych komponentów frontendowych znajdują się w plikach `*.test.tsx` w katalogu `frontend/src/components/`.
-- Testy sprawdzają poprawność renderowania danych, obsługę błędów oraz komunikatów fallbackowych.
-- Aby uruchomić testy frontendowe:
-  ```bash
-  cd frontend
-  npm test
-  ```
+### WebSocket Message Format
+**Market WebSocket:**
+```json
+{
+  "type": "ticker",
+  "data": {
+    "symbol": "BTCUSDT",
+    "price": "43250.50",
+    "change": "1250.50",
+    "changePercent": "2.98"
+  }
+}
+```
 
-## Przykładowe pliki konfiguracyjne
+**Bot WebSocket:**
+```json
+{
+  "type": "status",
+  "data": {
+    "status": "running",
+    "logs": ["Bot started at Mon Jul 29 10:30:00 2025"]
+  }
+}
+```
 
-- `backend/config.py` – ładuje zmienne środowiskowe (API KEY, SECRET, środowisko, tryb testnet/produkcyjny)
-- `frontend/.env.example` – przykładowe zmienne środowiskowe dla frontendu (np. adres API, tryb środowiska)
+## Komponenty Frontend
 
-Struktura i przykłady znajdują się w odpowiednich katalogach.
+### MarketPanel
+- Wyświetla live ticker (cena, zmiana %)
+- Orderbook w czasie rzeczywistym
+- Wykresy candlestick z lightweight-charts
+- Wybór symboli handlowych
 
-## Przełączanie środowisk
-Zmienna `BINANCE_ENV` w pliku `.env` pozwala przełączać środowisko między testnet a produkcyjnym.
+### BotPanel
+- Start/stop trading bota
+- Monitoring statusu w czasie rzeczywistym
+- Wyświetlanie logów bota
 
-## Struktura endpointów API (FastAPI)
+### AccountPanel
+- Informacje o koncie Binance
+- Saldo w różnych walutach
+- Uprawnienia API
 
-- `GET /account` – pobiera dane konta Binance (saldo, uprawnienia, limity)
-- `POST /ticker` – pobiera aktualną cenę wybranego symbolu (np. BTCUSDT)
-- (planowane) `GET /history` – historia transakcji
-- (planowane) `GET /orderbook` – orderbook wybranego symbolu
-- (planowane) `POST /bot/start` – uruchomienie bota
-- (planowane) `POST /bot/stop` – zatrzymanie bota
-- (planowane) `GET /bot/status` – status bota
-- (planowane) `GET /bot/logs` – logi działania bota
+## Testy
 
-Wszystkie endpointy będą walidowane przez Pydantic.
+### Backend (pytest)
+```bash
+cd backend
+source venv/bin/activate
+pytest -v
+pytest tests/test_binance_client.py -v  # Konkretny test
+```
 
-## Frontend – wybór frameworka
+### Frontend (Jest)
+```bash
+cd frontend
+npm test                    # Wszystkie testy
+npm test MarketPanel        # Konkretny komponent
+```
 
-Do realizacji frontendu wybrano **React**. Uzasadnienie:
-- Projekt wymaga rozbudowanego, dynamicznego UI (panele: konto, rynek z wykresami, bot z logami na żywo).
-- React zapewnia pełną kontrolę nad interfejsem użytkownika, łatwą integrację z REST API i WebSocket, obsługę dynamicznych wykresów (Chart.js, TradingView) oraz bogaty ekosystem narzędzi do testowania (Jest, React Testing Library, Cypress).
-- Framework umożliwia łatwą rozbudowę i utrzymanie kodu w miarę rozwoju projektu.
-- Streamlit jest dobry do szybkiego prototypowania, ale nie spełnia wymagań dotyczących zaawansowanego UI i komunikacji w czasie rzeczywistym.
+### E2E (Cypress)
+```bash
+cd frontend
+npx cypress open           # Interfejs graficzny
+npx cypress run            # Headless mode
+```
+
+## Lintery i formatowanie
+
+### Backend (Python)
+```bash
+cd backend
+black .                    # Formatowanie kodu
+flake8 .                   # Linting
+isort .                    # Sortowanie importów
+```
+
+### Frontend (TypeScript)
+```bash
+cd frontend
+npx eslint .               # Linting
+npx eslint . --fix         # Auto-fix
+```
+
+## Baza danych
+
+Projekt wykorzystuje SQLite z modelami:
+- **Order**: Zlecenia handlowe
+- **Log**: Logi systemowe i bota
+- **History**: Historia transakcji
+
+```bash
+# Inicjalizacja bazy danych
+cd backend
+python database/init_db.py
+```
+
+Baza jest automatycznie tworzona w `database/bot.db`
+
+## Technologie
+
+### Backend
+- **FastAPI** - nowoczesny framework webowy
+- **SQLAlchemy** - ORM dla bazy danych
+- **WebSocket** - komunikacja w czasie rzeczywistym
+- **Binance API** - integracja z giełdą
+- **pytest** - framework testowy
+- **SQLite** - baza danych
+
+### Frontend
+- **React 19** - biblioteka UI
+- **TypeScript** - typowany JavaScript
+- **Vite** - bundler i dev server
+- **lightweight-charts** - wykresy finansowe
+- **WebSocket** - real-time komunikacja
+- **Jest/RTL** - testy jednostkowe
+- **Cypress** - testy E2E
+- **ESLint** - linting kodu
+
+## Obsługa błędów
+
+### Frontend
+- **ErrorBoundary** - przechwytuje błędy React
+- **Fallback UI** - komunikaty w przypadku błędów API/WebSocket
+- **Auto-reconnect** - automatyczne przywracanie połączeń WebSocket
+- **Loading states** - wskaźniki ładowania dla lepszego UX
+
+### Backend
+- **Structured logging** - logi w formacie JSON do `database/app.log`
+- **Exception handling** - obsługa błędów API Binance
+- **Connection limits** - zabezpieczenie przed przeciążeniem WebSocket
+- **Heartbeat** - monitoring połączeń WebSocket
+
+## Zmienne środowiskowe
+
+### Backend (.env)
+```bash
+BINANCE_API_KEY=           # Klucz API Binance
+BINANCE_API_SECRET=        # Secret API Binance
+BINANCE_ENV=testnet        # testnet/prod
+ENV=development            # development/production
+ADMIN_TOKEN=               # Token autoryzacji
+```
+
+### Przełączanie środowisk
+- `BINANCE_ENV=testnet` - używa `config_testnet.py`
+- `BINANCE_ENV=prod` - używa `config_prod.py`
+
+## Rozwój projektu
+
+### Ostatnie zmiany (lipiec 2025)
+- ✅ **Usunięto integrację MCP** (Model Context Protocol)
+- ✅ **Naprawiono MarketPanel** - ticker i orderbook z backendu
+- ✅ **Dodano procentową zmianę ceny** w tickerze
+- ✅ **Ulepszone WebSocket połączenia** z heartbeat
+- ✅ **Rozszerzone testy** jednostkowe i E2E
+
+### Planowane funkcjonalności
+- [ ] Zaawansowane strategie tradingowe
+- [ ] Dashboard z metrykami performance
+- [ ] Powiadomienia (email/Slack)
+- [ ] API rate limiting
+- [ ] Backup i restore konfiguracji
+
+## Troubleshooting
+
+### Błędy połączenia z Binance
+```bash
+# Sprawdź status API
+curl https://testnet.binance.vision/api/v3/ping
+
+# Sprawdź klucze API
+cd backend
+python -c "from config import BINANCE_API_KEY; print('OK' if BINANCE_API_KEY else 'Missing API key')"
+```
+
+### Problemy z WebSocket
+- Sprawdź czy backend działa na porcie 8000
+- Sprawdź logi w `database/app.log`
+- Restart aplikacji może pomóc z connection pooling
+
+### Problemy z frontendem
+```bash
+# Sprawdź zależności
+npm audit
+
+# Rebuild node_modules
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Licencja i wkład
+
+Projekt jest rozwijany jako narzędzie edukacyjne do nauki algorytmicznego tradingu. 
+
+**⚠️ Ostrzeżenie:** Trading na giełdach kryptowalut wiąże się z ryzykiem straty kapitału. Zawsze testuj strategie na testnet przed wdrożeniem na środowisko produkcyjne.
 
 ---
-Więcej szczegółów znajdziesz w folderze `plan/` oraz w dokumentacji projektu.
+
+## Kontakt i dokumentacja
+
+- **Repository**: [github.com/PapaOdin232/srinance3](https://github.com/PapaOdin232/srinance3)
+- **Issues**: [GitHub Issues](https://github.com/PapaOdin232/srinance3/issues)
+- **Documentation**: Sprawdź folder `docs/` dla szczegółowej dokumentacji
+
+*Ostatnia aktualizacja: 29 lipca 2025*

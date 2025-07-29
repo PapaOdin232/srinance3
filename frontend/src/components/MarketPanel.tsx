@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import 'chartjs-adapter-date-fns';
-import type { ChartConfiguration } from 'chart.js';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
-import { getCurrentTicker, getOrderBook, getKlines } from '../services/restClient';
-import useChart from '../hooks/useChart';
+import { getCurrentTicker, getOrderBook } from '../services/restClient';
+import { fetchLightweightChartsKlines } from '../services/binanceAPI';
+import BinanceWSClient from '../services/binanceWSClient';
+import type { BinanceKlineData } from '../services/binanceWSClient';
+import useLightweightChart from '../hooks/useLightweightChart';
+import type { CandlestickData } from 'lightweight-charts';
 
 interface TickerData {
   symbol: string;
@@ -54,83 +56,32 @@ const MarketPanel: React.FC = () => {
     }
   }, [connectionState, connectionError]);
 
-  // Chart configuration - static configuration, data will be updated dynamically
-  const chartConfig: ChartConfiguration = useMemo(() => ({
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [{
-        label: 'Price', // Static label, will be updated when data loads
-        data: [],
-        borderColor: '#10B981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.1,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top'
-        }
-      },
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'minute',
-            displayFormats: {
-              minute: 'HH:mm'
-            }
-          }
-        },
-        y: {
-          beginAtZero: false
-        }
-      }
-    }
-  }), []); // No dependencies - static config
+  // Use lightweight charts hook
+  const { chartContainerRef, setHistoricalData, updateCandlestick, fitContent } = useLightweightChart();
+  
+  // Binance WebSocket client for real-time kline data
+  const binanceWSClientRef = useRef<BinanceWSClient | null>(null);
 
-  // Use custom chart hook - NO dependencies to prevent chart recreation
-  const { chartRef, chartInstance, addDataPoint, updateChart } = useChart(
-    chartConfig 
-    // Removed [selectedSymbol] dependency - chart will update data instead of recreating
-  );
-
-  // Load historical data for chart - zmemoizowane aby uniknąć re-renderów
+  // Load historical data for chart - using Binance API directly
   const loadHistoricalData = useCallback(async (symbol: string) => {
     try {
       setIsLoading(true);
-      console.log(`[MarketPanel] Loading historical data for ${symbol}`);
-      const klines = await getKlines(symbol, '1m', 100);
+      console.log(`[MarketPanel] Loading historical data for ${symbol} from Binance API`);
       
-      if (klines && klines.length > 0) {
-        console.log(`[MarketPanel] Got ${klines.length} historical data points`);
-        const labels = klines.map(k => new Date(k[0]));
-        const prices = klines.map(k => parseFloat(k[4])); // Close price
-        console.log(`[MarketPanel] Price range: ${Math.min(...prices)} - ${Math.max(...prices)}`);
+      const candlestickData = await fetchLightweightChartsKlines(symbol, '1m', 100);
+      
+      if (candlestickData && candlestickData.length > 0) {
+        console.log(`[MarketPanel] Got ${candlestickData.length} historical data points`);
+        console.log(`[MarketPanel] Price range: ${Math.min(...candlestickData.map(c => c.low))} - ${Math.max(...candlestickData.map(c => c.high))}`);
         
-        if (chartInstance) {
-          console.log(`[MarketPanel] Chart instance available, updating chart`);
-          // Update chart using the hook's method
-          updateChart({
-            labels,
-            datasets: [{
-              label: `${symbol} Price`,
-              data: prices,
-              borderColor: '#10B981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              tension: 0.1,
-              fill: true
-            }]
-          });
-          setHistoryLoaded(symbol); // Mark history as loaded for this symbol
-        } else {
-          console.warn(`[MarketPanel] Chart instance not available yet, data will be loaded later`);
-        }
+        // Set historical data using lightweight-charts (cast time to any for compatibility)
+        const chartData: CandlestickData[] = candlestickData.map(d => ({
+          ...d,
+          time: d.time as any
+        }));
+        setHistoricalData(chartData);
+        fitContent(); // Fit chart to content
+        setHistoryLoaded(symbol); // Mark history as loaded for this symbol
       } else {
         console.warn(`[MarketPanel] No historical data received`);
       }
@@ -140,7 +91,7 @@ const MarketPanel: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [chartInstance, updateChart]);
+  }, [setHistoricalData, fitContent]);
 
   // Load initial data
   const loadInitialData = async (symbol: string) => {
@@ -179,21 +130,66 @@ const MarketPanel: React.FC = () => {
     }
   };
 
-  // Załaduj dane historyczne gdy chart będzie gotowy i jeszcze nie załadowano dla tego symbolu
+  // Load historical data when component mounts or symbol changes
   useEffect(() => {
-    if (chartInstance && historyLoaded !== selectedSymbol) {
-      console.log(`[MarketPanel] Chart ready and history not loaded for ${selectedSymbol}, loading now...`);
+    if (historyLoaded !== selectedSymbol) {
+      console.log(`[MarketPanel] Loading historical data for ${selectedSymbol}`);
       loadHistoricalData(selectedSymbol);
     }
-  }, [chartInstance, selectedSymbol, historyLoaded, loadHistoricalData]);
+  }, [selectedSymbol, historyLoaded, loadHistoricalData]);
 
-  // Setup WebSocket connection - PERSISTENT CONNECTION (no dependencies)
+  // Setup Binance WebSocket for real-time kline data
+  useEffect(() => {
+    let mounted = true;
+    
+    console.log(`[MarketPanel] Setting up Binance WebSocket for ${selectedSymbol} klines`);
+    
+    // Create new Binance WebSocket client for kline data
+    const binanceClient = new BinanceWSClient(selectedSymbol, '1m');
+    binanceWSClientRef.current = binanceClient;
+    
+    binanceClient.addListener((data: BinanceKlineData) => {
+      if (!mounted) return;
+      
+      console.log(`[MarketPanel] Received kline data for ${data.s}:`, {
+        time: new Date(data.k.t).toISOString(),
+        open: data.k.o,
+        high: data.k.h,
+        low: data.k.l,
+        close: data.k.c,
+        isClosed: data.k.x
+      });
+      
+      // Convert to lightweight-charts format and update chart
+      const candlestick: CandlestickData = {
+        time: Math.floor(data.k.t / 1000) as any, // Convert milliseconds to seconds
+        open: parseFloat(data.k.o),
+        high: parseFloat(data.k.h),
+        low: parseFloat(data.k.l),
+        close: parseFloat(data.k.c)
+      };
+      
+      updateCandlestick(candlestick);
+      
+      // Nie aktualizuj tickera tutaj - ticker pochodzi z backend WebSocket
+    });
+    
+    return () => {
+      mounted = false;
+      console.log(`[MarketPanel] Cleaning up Binance WebSocket for ${selectedSymbol}`);
+      if (binanceWSClientRef.current) {
+        binanceWSClientRef.current.destroy();
+        binanceWSClientRef.current = null;
+      }
+    };
+  }, [selectedSymbol]);
+
+  // Setup WebSocket connection for orderbook and other data (keep existing backend connection)
   useEffect(() => {
     let mounted = true;
     let wsClientLocal: EnhancedWSClient | null = null;
 
     const setupWebSocket = () => {
-      // Don't create new connection if one already exists
       if (wsClientRef.current) {
         console.log('[MarketPanel] WebSocket connection already exists, skipping setup');
         return;
@@ -201,7 +197,7 @@ const MarketPanel: React.FC = () => {
 
       if (!mounted) return;
 
-      console.log('[MarketPanel] Setting up persistent WebSocket connection');
+      console.log('[MarketPanel] Setting up persistent WebSocket connection for orderbook/ticker');
       const wsClient = new EnhancedWSClient('ws://localhost:8000/ws/market', {
         reconnectInterval: 2000,
         maxReconnectInterval: 30000,
@@ -218,36 +214,23 @@ const MarketPanel: React.FC = () => {
         console.log(`[MarketPanel] WebSocket state changed: ${state}`);
         setConnectionState(state);
         setConnectionError(error || null);
-        // Note: Initial subscription will be handled by separate useEffect
       });
 
       wsClient.addListener((msg) => {
         if (!mounted) return;
         const currentSelectedSymbol = selectedSymbolRef.current;
+        console.log('[MarketPanel] Received WebSocket message:', msg); // Debug log
         switch (msg.type) {
           case 'ticker':
             // Filter: only process ticker for currently selected symbol
             if (msg.symbol === currentSelectedSymbol) {
-              console.log(`[MarketPanel] Received ticker for ${msg.symbol}: ${msg.price}`);
-              setTicker(prevTicker => ({
+              console.log('[MarketPanel] Processing ticker update:', msg);
+              setTicker({
                 symbol: msg.symbol as string,
                 price: msg.price as string,
-                change: prevTicker?.change || '0',
-                changePercent: prevTicker?.changePercent || '0%'
-              }));
-              
-              // Add real-time data point to chart
-              const now = new Date();
-              const priceValue = parseFloat(msg.price as string);
-              console.log(`[MarketPanel] Attempting to add data point to chart: ${priceValue} at ${now.toISOString()}`);
-              
-              // Use addDataPoint function which has internal chartInstance check
-              try {
-                addDataPoint(now, 0, priceValue, 100);
-                console.log(`[MarketPanel] Successfully added data point to chart`);
-              } catch (error) {
-                console.warn(`[MarketPanel] Failed to add data point to chart:`, error);
-              }
+                change: msg.change as string,
+                changePercent: msg.changePercent as string
+              });
             } else {
               console.log(`[MarketPanel] Filtered out ticker for ${msg.symbol} (selected: ${currentSelectedSymbol})`);
             }
@@ -274,7 +257,6 @@ const MarketPanel: React.FC = () => {
     return () => {
       mounted = false;
       clearTimeout(timeoutId);
-      // Only destroy on component unmount, not on symbol change
       if (wsClientLocal) {
         console.log('[MarketPanel] Destroying WebSocket connection on component unmount');
         wsClientLocal.destroy();
@@ -287,7 +269,7 @@ const MarketPanel: React.FC = () => {
     };
   }, []); // NO dependencies - persistent connection
 
-  // Handle symbol subscription changes - REUSE EXISTING CONNECTION
+  // Handle symbol subscription changes for orderbook
   useEffect(() => {
     if (!wsClientRef.current || connectionState !== ConnectionState.CONNECTED) {
       console.log(`[MarketPanel] WebSocket not ready for subscription. State: ${connectionState}`);
@@ -432,9 +414,7 @@ const MarketPanel: React.FC = () => {
       {/* Price Chart */}
       <div className="chart-section" style={{ marginBottom: '20px' }}>
         <h3>Wykres Cen</h3>
-        <div style={{ height: '300px', position: 'relative' }}>
-          <canvas ref={chartRef}></canvas>
-        </div>
+        <div ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
       </div>
       
       {/* Order Book */}

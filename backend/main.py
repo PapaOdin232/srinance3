@@ -305,81 +305,58 @@ app.add_middleware(
 )
 
 async def market_data_broadcaster():
-    """Background task to broadcast market data from Binance WebSocket"""
+    """Background task to broadcast market data (ticker and orderbook)"""
     logger.info("📡 Starting market data broadcaster...")
     
     while True:
         try:
-            # Check if we have connections to broadcast to
-            if not manager.market_connections:
-                await asyncio.sleep(1)
+            # Check if we have connections and client to broadcast to
+            if not manager.market_connections or not binance_client:
+                await asyncio.sleep(2)
                 continue
                 
-            # Process messages from WebSocket queue
-            try:
-                # Non-blocking get from queue
-                message = market_data_queue.get_nowait()
+            # Get unique subscribed symbols
+            subscribed_symbols = set()
+            for client_subs in manager.client_subscriptions.values():
+                subscribed_symbols.update(client_subs)
+            
+            if not subscribed_symbols:
+                await asyncio.sleep(2)
+                continue
                 
-                # Parse the WebSocket message
-                data = json.loads(message)
-                logger.debug(f"Received WebSocket data: {data}")
-                
-                # Handle single stream (testnet) vs multi-stream (prod) format
-                if 'stream' in data:
-                    # Multi-stream format (production)
-                    stream_data = data['data']
-                    stream_name = data['stream']
-                else:
-                    # Single stream format (testnet)
-                    stream_data = data
-                    # Extract stream name from data context or default
-                    stream_name = f"{stream_data.get('s', '').lower()}@ticker"
-                
-                # Process ticker data
-                if '@ticker' in stream_name:
-                    symbol = stream_data.get('s')  # Symbol like 'BTCUSDT'
-                    if symbol:
+            for symbol in subscribed_symbols:
+                try:
+                    # Get 24hr ticker data with price change percent
+                    ticker_24hr = await binance_client.get_ticker_24hr(symbol)
+                    if ticker_24hr:
                         ticker_data = {
                             "type": "ticker",
                             "symbol": symbol,
-                            "price": stream_data.get('c', '0'),  # Current price
-                            "change": stream_data.get('P', '0'),  # Price change percent
-                            "changePercent": f"{stream_data.get('P', '0')}%"  # Add % sign
+                            "price": ticker_24hr.get('lastPrice', '0'),
+                            "change": ticker_24hr.get('priceChange', '0'),
+                            "changePercent": ticker_24hr.get('priceChangePercent', '0')
                         }
-                        
                         logger.debug(f"Broadcasting ticker data for {symbol}: {ticker_data}")
                         await manager.broadcast_to_market(ticker_data)
-                
-            except queue.Empty:
-                # No messages in queue, wait a bit
-                await asyncio.sleep(0.1)
-                continue
-            
-            # Also get orderbook data via REST API (less frequent updates are OK)
-            if binance_client and manager.market_connections:
-                # Get unique subscribed symbols
-                subscribed_symbols = set()
-                for client_subs in manager.client_subscriptions.values():
-                    subscribed_symbols.update(client_subs)
-                
-                for symbol in subscribed_symbols:
-                    try:
-                        # Get order book data
-                        orderbook = await binance_client.get_order_book(symbol, limit=20)
-                        if orderbook:
-                            await manager.broadcast_to_market({
-                                "type": "orderbook",
-                                "symbol": symbol,
-                                "bids": orderbook.get('bids', [])[:10],
-                                "asks": orderbook.get('asks', [])[:10]
-                            })
-                            
-                    except Exception as e:
-                        logger.warning(f"Failed to get orderbook for {symbol}: {e}")
-                        continue
+                    
+                    # Get order book data
+                    orderbook = await binance_client.get_order_book(symbol, limit=20)
+                    if orderbook:
+                        orderbook_data = {
+                            "type": "orderbook",
+                            "symbol": symbol,
+                            "bids": orderbook.get('bids', [])[:10],
+                            "asks": orderbook.get('asks', [])[:10]
+                        }
+                        logger.debug(f"Broadcasting orderbook data for {symbol}")
+                        await manager.broadcast_to_market(orderbook_data)
                         
-                # Wait between orderbook updates
-                await asyncio.sleep(5)
+                except Exception as e:
+                    logger.warning(f"Failed to get market data for {symbol}: {e}")
+                    continue
+                    
+            # Wait between updates (ticker updates every 5 seconds)
+            await asyncio.sleep(5)
             
         except Exception as e:
             logger.error(f"Market data broadcaster error: {e}")
@@ -459,15 +436,28 @@ async def websocket_market_endpoint(websocket: WebSocket):
                     # Send immediate data for subscribed symbol
                     if binance_client:
                         try:
-                            ticker = await binance_client.get_ticker(symbol)
-                            if ticker:
+                            # Get both ticker price and 24hr data
+                            ticker_24hr = await binance_client.get_ticker_24hr(symbol)
+                            if ticker_24hr:
                                 await websocket.send_json({
                                     "type": "ticker",
                                     "symbol": symbol,
-                                    "price": ticker.get('price', '0')
+                                    "price": ticker_24hr.get('lastPrice', '0'),
+                                    "change": ticker_24hr.get('priceChange', '0'),
+                                    "changePercent": ticker_24hr.get('priceChangePercent', '0')
+                                })
+                            
+                            # Also send orderbook data
+                            orderbook = await binance_client.get_order_book(symbol, limit=20)
+                            if orderbook:
+                                await websocket.send_json({
+                                    "type": "orderbook",
+                                    "symbol": symbol,
+                                    "bids": orderbook.get('bids', [])[:10],
+                                    "asks": orderbook.get('asks', [])[:10]
                                 })
                         except Exception as e:
-                            logger.warning(f"Failed to get immediate ticker for {symbol}: {e}")
+                            logger.warning(f"Failed to get immediate data for {symbol}: {e}")
                 
                 elif message_type == 'unsubscribe':
                     symbol = data.get('symbol')
