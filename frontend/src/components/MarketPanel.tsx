@@ -6,6 +6,9 @@ import BinanceWSClient from '../services/binanceWSClient';
 import type { BinanceKlineData } from '../services/binanceWSClient';
 import useLightweightChart from '../hooks/useLightweightChart';
 import type { CandlestickData } from 'lightweight-charts';
+import AssetSelector from './AssetSelector';
+import { useAssets } from '../hooks/useAssets';
+import type { Asset } from '../types/asset';
 
 interface TickerData {
   symbol: string;
@@ -27,6 +30,9 @@ const MarketPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState<string | null>(null); // Track which symbol has history loaded
+  
+  // Hook do zarządzania aktywami z Binance API
+  const { assets, loading: assetsLoading, error: assetsError, refetch: refetchAssets, isConnected } = useAssets();
   
   // WebSocket connection state
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
@@ -297,6 +303,11 @@ const MarketPanel: React.FC = () => {
     setHistoryLoaded(null); // Reset history loaded flag
   };
 
+  // Nowa funkcja obsługi wyboru aktywa z AssetSelector
+  const handleAssetSelect = (asset: Asset) => {
+    handleSymbolChange(asset.symbol);
+  };
+
   const handleRetryConnection = () => {
     if (wsClientRef.current) {
       wsClientRef.current.reconnect();
@@ -348,22 +359,48 @@ const MarketPanel: React.FC = () => {
         )}
       </div>
       
-      {/* Symbol Selection */}
-      <div className="symbol-selection" style={{ marginBottom: '20px' }}>
-        <label htmlFor="symbol-select">Symbol: </label>
-        <select 
-          id="symbol-select"
-          value={selectedSymbol} 
-          onChange={(e) => handleSymbolChange(e.target.value)}
-          style={{ padding: '5px', marginLeft: '10px' }}
-        >
-          <option value="BTCUSDT">BTC/USDT</option>
-          <option value="ETHUSDT">ETH/USDT</option>
-          <option value="ADAUSDT">ADA/USDT</option>
-          <option value="DOTUSDT">DOT/USDT</option>
-          <option value="LINKUSDT">LINK/USDT</option>
-        </select>
-      </div>
+      {/* Asset Selection - Nowy komponent z TanStack Table + Mantine */}
+      <AssetSelector
+        selectedAsset={selectedSymbol}
+        onAssetSelect={handleAssetSelect}
+        assets={assets}
+        loading={assetsLoading}
+        error={assetsError}
+      />
+
+      {/* Dodatkowe informacje o załadowaniu aktywów */}
+      {!assetsLoading && !assetsError && assets.length > 0 && (
+        <div style={{ 
+          fontSize: '12px', 
+          color: '#888', 
+          marginBottom: '10px',
+          textAlign: 'center'
+        }}>
+          Załadowano {assets.length} par trading z Binance API
+          <span style={{ 
+            marginLeft: '10px',
+            color: isConnected ? '#4CAF50' : '#f44336',
+            fontSize: '11px'
+          }}>
+            • {isConnected ? 'LIVE' : 'OFFLINE'}
+          </span>
+          <button 
+            onClick={refetchAssets}
+            style={{ 
+              marginLeft: '10px', 
+              padding: '2px 8px', 
+              fontSize: '11px',
+              backgroundColor: 'transparent',
+              border: '1px solid #888',
+              color: '#888',
+              borderRadius: '3px',
+              cursor: 'pointer'
+            }}
+          >
+            ↻ Odśwież
+          </button>
+        </div>
+      )}
       
       {/* Error Display */}
       {error && (

@@ -2,6 +2,7 @@
 // This bypasses the backend and connects directly to Binance public API
 
 import axios from 'axios';
+import type { Asset } from '../types/asset';
 
 // Binance API base URL (public, no authentication required for market data)
 const BINANCE_API_BASE = 'https://api.binance.com/api/v3';
@@ -125,5 +126,127 @@ export async function fetchLightweightChartsKlines(
 export default {
   fetchBinanceKlines,
   convertToLightweightChartsFormat,
-  fetchLightweightChartsKlines
+  fetchLightweightChartsKlines,
+  fetchAllTradingPairs
 };
+
+// New interfaces for trading pairs API
+interface BinanceExchangeSymbol {
+  symbol: string;
+  status: string;
+  baseAsset: string;
+  quoteAsset: string;
+  baseAssetPrecision: number;
+  quotePrecision: number;
+  orderTypes: string[];
+  icebergAllowed: boolean;
+  ocoAllowed: boolean;
+  isSpotTradingAllowed: boolean;
+  isMarginTradingAllowed: boolean;
+  permissions: string[];
+}
+
+interface BinanceExchangeInfo {
+  timezone: string;
+  serverTime: number;
+  symbols: BinanceExchangeSymbol[];
+}
+
+interface Binance24hrTicker {
+  symbol: string;
+  priceChange: string;
+  priceChangePercent: string;
+  weightedAvgPrice: string;
+  prevClosePrice: string;
+  lastPrice: string;
+  lastQty: string;
+  bidPrice: string;
+  askPrice: string;
+  openPrice: string;
+  highPrice: string;
+  lowPrice: string;
+  volume: string;
+  quoteVolume: string;
+  openTime: number;
+  closeTime: number;
+  firstId: number;
+  lastId: number;
+  count: number;
+}
+
+/**
+ * Fetch all trading pairs from Binance API with 24hr statistics
+ * @returns Promise with array of Asset objects
+ */
+export async function fetchAllTradingPairs(): Promise<Asset[]> {
+  try {
+    console.log('[BinanceAPI] Fetching all trading pairs and 24hr ticker data...');
+    
+    const [exchangeInfo, ticker24hr] = await Promise.all([
+      axios.get<BinanceExchangeInfo>(`${BINANCE_API_BASE}/exchangeInfo`, {
+        timeout: 10000
+      }),
+      axios.get<Binance24hrTicker[]>(`${BINANCE_API_BASE}/ticker/24hr`, {
+        timeout: 10000
+      })
+    ]);
+
+    // Filter tylko USDT pary które są aktywne
+    const usdtPairs = exchangeInfo.data.symbols.filter(symbol => 
+      symbol.quoteAsset === 'USDT' && 
+      symbol.status === 'TRADING' &&
+      symbol.isSpotTradingAllowed
+    );
+
+    // Mapowanie danych na format Asset
+    const assets: Asset[] = usdtPairs.map(pair => {
+      const tickerData = ticker24hr.data.find(t => t.symbol === pair.symbol);
+      
+      if (!tickerData) {
+        // Fallback gdy brak ticker data
+        return {
+          symbol: pair.symbol,
+          baseAsset: pair.baseAsset,
+          quoteAsset: pair.quoteAsset,
+          price: 0,
+          priceChange: 0,
+          priceChangePercent: 0,
+          volume: 0,
+          count: 0,
+          status: pair.status,
+        };
+      }
+
+      return {
+        symbol: pair.symbol,
+        baseAsset: pair.baseAsset,
+        quoteAsset: pair.quoteAsset,
+        price: parseFloat(tickerData.lastPrice),
+        priceChange: parseFloat(tickerData.priceChange),
+        priceChangePercent: parseFloat(tickerData.priceChangePercent),
+        volume: parseFloat(tickerData.quoteVolume),
+        count: tickerData.count,
+        status: pair.status,
+        highPrice: parseFloat(tickerData.highPrice),
+        lowPrice: parseFloat(tickerData.lowPrice),
+        openPrice: parseFloat(tickerData.openPrice),
+        prevClosePrice: parseFloat(tickerData.prevClosePrice),
+        weightedAvgPrice: parseFloat(tickerData.weightedAvgPrice),
+        bidPrice: parseFloat(tickerData.bidPrice),
+        askPrice: parseFloat(tickerData.askPrice),
+        bidQty: parseFloat(tickerData.lastQty), // Using lastQty as approximation
+        askQty: parseFloat(tickerData.lastQty),
+      };
+    });
+
+    // Sortowanie po wolumenie (największe najpierw)
+    const sortedAssets = assets.sort((a, b) => b.volume - a.volume);
+
+    console.log(`[BinanceAPI] Successfully fetched ${sortedAssets.length} USDT trading pairs`);
+    return sortedAssets;
+
+  } catch (error) {
+    console.error('[BinanceAPI] Failed to fetch trading pairs:', error);
+    throw new Error(`Failed to fetch trading pairs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
