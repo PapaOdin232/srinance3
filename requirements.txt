@@ -11,3 +11,5 @@ pre-commit
 requests
 sqlalchemy
 websocket-client
+binance
+websockets
