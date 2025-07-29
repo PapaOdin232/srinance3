@@ -1,4 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Paper,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Badge,
+  Alert,
+  Loader,
+  Button,
+  Grid,
+  Box,
+} from '@mantine/core';
+import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 import { getCurrentTicker, getOrderBook } from '../services/restClient';
 import { fetchLightweightChartsKlines } from '../services/binanceAPI';
@@ -317,47 +331,36 @@ const MarketPanel: React.FC = () => {
   const connectionDisplay = getConnectionStateDisplay(connectionState);
 
   return (
-    <div className="market-panel">
-      <h2>Panel Rynkowy</h2>
+    <Stack gap="md" p="md">
+      <Title order={2}>Panel Rynkowy</Title>
       
       {/* Connection Status */}
-      <div className="connection-status" style={{ 
-        padding: '10px', 
-        borderRadius: '5px', 
-        backgroundColor: '#f8f9fa',
-        marginBottom: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '16px' }}>{connectionDisplay.icon}</span>
-          <span style={{ color: connectionDisplay.color, fontWeight: 'bold' }}>
-            {connectionDisplay.text}
-          </span>
-          {connectionError && (
-            <span style={{ color: '#EF4444', fontSize: '14px' }}>
-              ({connectionError})
-            </span>
+      <Paper p="md" withBorder>
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Text size="lg">{connectionDisplay.icon}</Text>
+            <Text fw={600} c={connectionDisplay.color === '#4CAF50' ? 'teal' : 'red'}>
+              {connectionDisplay.text}
+            </Text>
+            {connectionError && (
+              <Text size="sm" c="red">
+                ({connectionError})
+              </Text>
+            )}
+          </Group>
+          
+          {(connectionState === ConnectionState.ERROR || connectionState === ConnectionState.DISCONNECTED) && (
+            <Button
+              size="xs"
+              variant="outline"
+              leftSection={<IconRefresh size={14} />}
+              onClick={handleRetryConnection}
+            >
+              Ponów połączenie
+            </Button>
           )}
-        </div>
-        
-        {(connectionState === ConnectionState.ERROR || connectionState === ConnectionState.DISCONNECTED) && (
-          <button 
-            onClick={handleRetryConnection}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            Ponów połączenie
-          </button>
-        )}
-      </div>
+        </Group>
+      </Paper>
       
       {/* Asset Selection - Nowy komponent z TanStack Table + Mantine */}
       <AssetSelector
@@ -370,140 +373,124 @@ const MarketPanel: React.FC = () => {
 
       {/* Dodatkowe informacje o załadowaniu aktywów */}
       {!assetsLoading && !assetsError && assets.length > 0 && (
-        <div style={{ 
-          fontSize: '12px', 
-          color: '#888', 
-          marginBottom: '10px',
-          textAlign: 'center'
-        }}>
-          Załadowano {assets.length} par trading z Binance API
-          <span style={{ 
-            marginLeft: '10px',
-            color: isConnected ? '#4CAF50' : '#f44336',
-            fontSize: '11px'
-          }}>
-            • {isConnected ? 'LIVE' : 'OFFLINE'}
-          </span>
-          <button 
-            onClick={refetchAssets}
-            style={{ 
-              marginLeft: '10px', 
-              padding: '2px 8px', 
-              fontSize: '11px',
-              backgroundColor: 'transparent',
-              border: '1px solid #888',
-              color: '#888',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            ↻ Odśwież
-          </button>
-        </div>
+        <Paper p="xs" withBorder>
+          <Group justify="center" gap="md">
+            <Text size="xs" c="dimmed">
+              Załadowano {assets.length} par trading z Binance API
+            </Text>
+            <Badge color={isConnected ? 'teal' : 'red'} variant="light" size="xs">
+              {isConnected ? 'LIVE' : 'OFFLINE'}
+            </Badge>
+            <Button
+              size="xs"
+              variant="outline"
+              leftSection={<IconRefresh size={12} />}
+              onClick={refetchAssets}
+            >
+              Odśwież
+            </Button>
+          </Group>
+        </Paper>
       )}
       
       {/* Error Display */}
       {error && (
-        <div style={{ 
-          color: '#EF4444', 
-          backgroundColor: '#FEF2F2', 
-          padding: '10px', 
-          borderRadius: '5px',
-          marginBottom: '20px' 
-        }}>
+        <Alert 
+          icon={<IconAlertCircle size={16} />}
+          title="Błąd"
+          color="red"
+          variant="light"
+        >
           {error}
-        </div>
+        </Alert>
       )}
       
       {/* Loading Indicator */}
       {isLoading && (
-        <div style={{ 
-          padding: '20px', 
-          textAlign: 'center',
-          color: '#ffffff',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '8px'
-        }}>
-          Ładowanie danych...
-        </div>
+        <Paper p="xl" withBorder>
+          <Group justify="center" gap="md">
+            <Loader size="md" />
+            <Text>Ładowanie danych...</Text>
+          </Group>
+        </Paper>
       )}
       
       {/* Ticker Display */}
       {ticker && (
-        <div className="ticker-section" style={{ 
-          marginBottom: '20px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          padding: '16px'
-        }}>
-          <h3 style={{ color: '#ffffff', marginBottom: '12px' }}>Aktualna Cena</h3>
-          <div style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold',
-            color: '#10B981' 
-          }}>
-            {ticker.symbol}: ${parseFloat(ticker.price).toFixed(2)}
-          </div>
-          {ticker.change && (
-            <div style={{ 
-              fontSize: '14px',
-              color: parseFloat(ticker.change) >= 0 ? '#10B981' : '#EF4444'
-            }}>
-              {parseFloat(ticker.change) >= 0 ? '+' : ''}{ticker.change} ({ticker.changePercent})
-            </div>
-          )}
-        </div>
+        <Paper p="md" withBorder>
+          <Stack gap="sm">
+            <Title order={3}>Aktualna Cena</Title>
+            <Group gap="md" align="baseline">
+              <Text size="xl" fw={700} c="teal">
+                {ticker.symbol}: ${parseFloat(ticker.price).toFixed(2)}
+              </Text>
+              {ticker.change && (
+                <Badge 
+                  color={parseFloat(ticker.change) >= 0 ? 'teal' : 'red'}
+                  variant="light"
+                  size="lg"
+                >
+                  {parseFloat(ticker.change) >= 0 ? '+' : ''}{ticker.change} ({ticker.changePercent})
+                </Badge>
+              )}
+            </Group>
+          </Stack>
+        </Paper>
       )}
       
       {/* Price Chart */}
-      <div className="chart-section" style={{ 
-        marginBottom: '20px',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '8px',
-        padding: '16px'
-      }}>
-        <h3 style={{ color: '#ffffff', marginBottom: '16px' }}>Wykres Cen</h3>
-        <div ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
-      </div>
+      <Paper p="md" withBorder>
+        <Stack gap="md">
+          <Title order={3}>Wykres Cen</Title>
+          <Box ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
+        </Stack>
+      </Paper>
       
       {/* Order Book */}
       {orderBook && (
-        <div className="orderbook-section" style={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          padding: '16px'
-        }}>
-          <h3 style={{ color: '#ffffff', marginBottom: '16px' }}>Księga Zleceń - {orderBook.symbol}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <h4 style={{ color: '#EF4444' }}>Asks (Sprzedaż)</h4>
-              <div style={{ fontSize: '12px', color: '#ffffff' }}>
-                {orderBook.asks.slice(0, 10).map((ask, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                    <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{parseFloat(ask[0]).toFixed(2)}</span>
-                    <span style={{ color: '#ffffff' }}>{parseFloat(ask[1]).toFixed(6)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 style={{ color: '#10B981' }}>Bids (Kupno)</h4>
-              <div style={{ fontSize: '12px', color: '#ffffff' }}>
-                {orderBook.bids.slice(0, 10).map((bid, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                    <span style={{ color: '#10B981', fontWeight: 'bold' }}>{parseFloat(bid[0]).toFixed(2)}</span>
-                    <span style={{ color: '#ffffff' }}>{parseFloat(bid[1]).toFixed(6)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <Paper p="md" withBorder>
+          <Stack gap="md">
+            <Title order={3}>Księga Zleceń - {orderBook.symbol}</Title>
+            <Grid>
+              <Grid.Col span={6}>
+                <Stack gap="xs">
+                  <Text fw={600} c="red">Asks (Sprzedaż)</Text>
+                  <Stack gap={2}>
+                    {orderBook.asks.slice(0, 10).map((ask, i) => (
+                      <Group key={i} justify="space-between">
+                        <Text size="sm" ff="monospace" c="red" fw={600}>
+                          {parseFloat(ask[0]).toFixed(2)}
+                        </Text>
+                        <Text size="sm" ff="monospace">
+                          {parseFloat(ask[1]).toFixed(6)}
+                        </Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Stack gap="xs">
+                  <Text fw={600} c="teal">Bids (Kupno)</Text>
+                  <Stack gap={2}>
+                    {orderBook.bids.slice(0, 10).map((bid, i) => (
+                      <Group key={i} justify="space-between">
+                        <Text size="sm" ff="monospace" c="teal" fw={600}>
+                          {parseFloat(bid[0]).toFixed(2)}
+                        </Text>
+                        <Text size="sm" ff="monospace">
+                          {parseFloat(bid[1]).toFixed(6)}
+                        </Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Stack>
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </Paper>
       )}
-    </div>
+    </Stack>
   );
 };
 
