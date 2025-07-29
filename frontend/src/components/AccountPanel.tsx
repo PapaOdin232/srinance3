@@ -50,7 +50,7 @@ const AccountPanel: React.FC = () => {
         justifyContent: 'space-between',
         marginBottom: '20px'
       }}>
-        <h2 style={{ margin: 0, fontSize: '24px' }}>Panel konta</h2>
+        <h2 style={{ margin: 0, fontSize: '24px' }}>Dashboard</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
@@ -66,7 +66,7 @@ const AccountPanel: React.FC = () => {
         </div>
       </div>
 
-      <h3 style={{ marginBottom: '15px', fontSize: '20px' }}>Panel Rynkowy</h3>
+      <h3 style={{ marginBottom: '15px', fontSize: '20px' }}>Informacje o koncie</h3>
 
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '20px' }}>
