@@ -1,0 +1,83 @@
+/* Dodatkowe style dla lepszej widoczności danych */
+
+/* Poprawiony kontrast dla wszystkich elementów */
+.market-data {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.price-positive {
+  color: #10B981 !important;
+  font-weight: bold;
+}
+
+.price-negative {
+  color: #EF4444 !important;
+  font-weight: bold;
+}
+
+.price-neutral {
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+/* Tło dla paneli z danymi */
+.data-panel {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+}
+
+/* Lepsze style dla tabel danych */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.data-table td {
+  color: #ffffff;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Highlighting for important data */
+.highlight-data {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3B82F6;
+  padding-left: 12px;
+}
+
+/* Status indicators with better visibility */
+.status-connected {
+  color: #10B981 !important;
+  background-color: rgba(16, 185, 129, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.status-disconnected {
+  color: #EF4444 !important;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.status-loading {
+  color: #F59E0B !important;
+  background-color: rgba(245, 158, 11, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}

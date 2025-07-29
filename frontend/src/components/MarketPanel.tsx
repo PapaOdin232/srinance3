@@ -383,7 +383,9 @@ const MarketPanel: React.FC = () => {
         <div style={{ 
           padding: '20px', 
           textAlign: 'center',
-          color: '#6B7280' 
+          color: '#ffffff',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px'
         }}>
           Ładowanie danych...
         </div>
@@ -391,8 +393,14 @@ const MarketPanel: React.FC = () => {
       
       {/* Ticker Display */}
       {ticker && (
-        <div className="ticker-section" style={{ marginBottom: '20px' }}>
-          <h3>Aktualna Cena</h3>
+        <div className="ticker-section" style={{ 
+          marginBottom: '20px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px',
+          padding: '16px'
+        }}>
+          <h3 style={{ color: '#ffffff', marginBottom: '12px' }}>Aktualna Cena</h3>
           <div style={{ 
             fontSize: '24px', 
             fontWeight: 'bold',
@@ -412,34 +420,45 @@ const MarketPanel: React.FC = () => {
       )}
       
       {/* Price Chart */}
-      <div className="chart-section" style={{ marginBottom: '20px' }}>
-        <h3>Wykres Cen</h3>
+      <div className="chart-section" style={{ 
+        marginBottom: '20px',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '8px',
+        padding: '16px'
+      }}>
+        <h3 style={{ color: '#ffffff', marginBottom: '16px' }}>Wykres Cen</h3>
         <div ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
       </div>
       
       {/* Order Book */}
       {orderBook && (
-        <div className="orderbook-section">
-          <h3>Księga Zleceń - {orderBook.symbol}</h3>
+        <div className="orderbook-section" style={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px',
+          padding: '16px'
+        }}>
+          <h3 style={{ color: '#ffffff', marginBottom: '16px' }}>Księga Zleceń - {orderBook.symbol}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div>
               <h4 style={{ color: '#EF4444' }}>Asks (Sprzedaż)</h4>
-              <div style={{ fontSize: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#ffffff' }}>
                 {orderBook.asks.slice(0, 10).map((ask, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{parseFloat(ask[0]).toFixed(2)}</span>
-                    <span>{parseFloat(ask[1]).toFixed(6)}</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                    <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{parseFloat(ask[0]).toFixed(2)}</span>
+                    <span style={{ color: '#ffffff' }}>{parseFloat(ask[1]).toFixed(6)}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div>
               <h4 style={{ color: '#10B981' }}>Bids (Kupno)</h4>
-              <div style={{ fontSize: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#ffffff' }}>
                 {orderBook.bids.slice(0, 10).map((bid, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{parseFloat(bid[0]).toFixed(2)}</span>
-                    <span>{parseFloat(bid[1]).toFixed(6)}</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                    <span style={{ color: '#10B981', fontWeight: 'bold' }}>{parseFloat(bid[0]).toFixed(2)}</span>
+                    <span style={{ color: '#ffffff' }}>{parseFloat(bid[1]).toFixed(6)}</span>
                   </div>
                 ))}
               </div>
