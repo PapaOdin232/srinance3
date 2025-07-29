@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +6,6 @@ from contextlib import asynccontextmanager
 from typing import Dict, List, Optional
 import uvicorn
 import os
-import threading
 import queue
 
 from backend.binance_client import BinanceClient, BinanceWebSocketClient
@@ -129,7 +127,7 @@ class ConnectionManager:
                     
                 try:
                     await websocket.send_json({"type": "ping"})
-                    logger.debug(f"Sent ping to WebSocket")
+                    logger.debug("Sent ping to WebSocket")
                 except Exception as e:
                     logger.warning(f"Failed to send ping: {e}")
                     break
@@ -771,10 +769,15 @@ async def get_bot_logs():
 
 if __name__ == "__main__":
     logger.info("🚀 Starting SRInance3 server...")
+    
+    # Make host configurable for security
+    host = os.getenv("SERVER_HOST", "127.0.0.1")  # Default to localhost for security
+    port = int(os.getenv("SERVER_PORT", "8000"))
+    
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
+        host=host,
+        port=port,
         reload=True,
         log_level="info"
     )

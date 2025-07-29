@@ -6,7 +6,7 @@ interface BotStatus {
   symbol?: string;
   strategy?: string;
   balance?: number;
-  position?: any;
+  position?: unknown;  // Changed from any to unknown for safety
   last_action?: string;
   timestamp?: string;
 }
@@ -17,6 +17,36 @@ interface LogEntry {
   timestamp: string;
   level?: 'INFO' | 'WARNING' | 'ERROR' | 'DEBUG';
 }
+
+// WebSocket message type definitions
+interface BaseBotMessage {
+  type: string;
+}
+
+interface BotStatusMessage extends BaseBotMessage {
+  type: 'bot_status';
+  running: boolean;
+  status?: {
+    symbol?: string;
+    strategy?: string;
+    balance?: number;
+    position?: unknown;
+    last_action?: string;
+    timestamp?: string;
+  };
+}
+
+interface BotLogMessage extends BaseBotMessage {
+  type: 'log';
+  message: string;
+}
+
+interface BotErrorMessage extends BaseBotMessage {
+  type: 'error';
+  message: string;
+}
+
+type BotMessage = BotStatusMessage | BotLogMessage | BotErrorMessage;
 
 const BotPanel: React.FC = () => {
   const [botStatus, setBotStatus] = useState<BotStatus>({ running: false });
@@ -80,31 +110,36 @@ const BotPanel: React.FC = () => {
         
         console.log('[BotPanel] Received message:', msg);
         
-        switch ((msg as any).type) {
-          case 'bot_status':
+        const message = msg as BotMessage;
+        
+        switch (message.type) {
+          case 'bot_status': {
+            const statusMsg = message as BotStatusMessage;
             setBotStatus({
-              running: (msg as any).running || false,
-              symbol: (msg as any).status?.symbol,
-              strategy: (msg as any).status?.strategy,
-              balance: (msg as any).status?.balance,
-              position: (msg as any).status?.position,
-              last_action: (msg as any).status?.last_action,
-              timestamp: (msg as any).status?.timestamp
+              running: statusMsg.running,
+              symbol: statusMsg.status?.symbol,
+              strategy: statusMsg.status?.strategy,
+              balance: statusMsg.status?.balance,
+              position: statusMsg.status?.position,
+              last_action: statusMsg.status?.last_action,
+              timestamp: statusMsg.status?.timestamp
             });
             
             // Reset loading states when status changes
-            if ((msg as any).running !== undefined) {
+            if (statusMsg.running !== undefined) {
               setIsStarting(false);
               setIsStopping(false);
             }
             break;
+          }
             
-          case 'log':
+          case 'log': {
+            const logMsg = message as BotLogMessage;
             const newLog: LogEntry = {
               id: logIdCounterRef.current++,
-              message: (msg as any).message || 'Empty log message',
+              message: logMsg.message || 'Empty log message',
               timestamp: new Date().toLocaleTimeString(),
-              level: extractLogLevel((msg as any).message || '')
+              level: extractLogLevel(logMsg.message || '')
             };
             
             setLogs(prevLogs => {
@@ -113,12 +148,15 @@ const BotPanel: React.FC = () => {
               return updatedLogs.slice(-1000);
             });
             break;
+          }
             
-          case 'error':
-            setError((msg as any).message || 'Unknown error occurred');
+          case 'error': {
+            const errorMsg = message as BotErrorMessage;
+            setError(errorMsg.message || 'Unknown error occurred');
             setIsStarting(false);
             setIsStopping(false);
             break;
+          }
         }
       });
     };
@@ -367,7 +405,7 @@ const BotPanel: React.FC = () => {
         alignItems: 'center'
       }}>
         <button
-          onClick={handleStartBot}
+          onClick={() => void handleStartBot()}
           disabled={botStatus.running || isStarting || !wsClientRef.current?.isConnected()}
           style={{
             padding: '10px 20px',
@@ -386,7 +424,7 @@ const BotPanel: React.FC = () => {
         </button>
         
         <button
-          onClick={handleStopBot}
+          onClick={() => void handleStopBot()}
           disabled={!botStatus.running || isStopping || !wsClientRef.current?.isConnected()}
           style={{
             padding: '10px 20px',

@@ -31,11 +31,29 @@ ChartJS.register(
 
 console.log('[useChart] Chart.js components registered successfully');
 
+// Type definitions for better type safety
+export type ChartUpdateMode = 'default' | 'none' | 'resize' | 'reset' | 'show' | 'hide' | 'active';
+
+export type ChartDataValue = number | { x: number; y: number } | [number, number] | null;
+
+export interface SafeChartOptions extends ChartOptions {
+  // Add any specific options we need
+}
+
 export interface ChartConfiguration {
   type: 'line' | 'bar' | 'pie' | 'doughnut' | 'polarArea' | 'radar' | 'scatter' | 'bubble';
   data: ChartData;
   options?: ChartOptions;
 }
+
+// Safety validation functions
+const validateDatasetIndex = (index: number, datasets: unknown[]): boolean => {
+  return Number.isInteger(index) && index >= 0 && index < datasets.length;
+};
+
+const isValidChartData = (data: unknown): data is ChartData => {
+  return typeof data === 'object' && data !== null && 'datasets' in data;
+};
 
 /**
  * Custom hook for managing Chart.js instances with proper lifecycle management
@@ -89,7 +107,8 @@ export function useChart(
     }
 
     try {
-      chartInstanceRef.current = new ChartJS(canvas, config as any);
+      // Safe type assertion - ChartConfiguration is compatible with Chart.js config
+      chartInstanceRef.current = new ChartJS(canvas, config);
       console.log('[useChart] Chart.js instance created successfully');
     } catch (error) {
       console.error('[useChart] Error creating chart:', error);
@@ -125,18 +144,23 @@ export function useChart(
     };
   }, []);
 
-  const updateChart = useCallback((data?: ChartData, options: any = 'default') => {
+  const updateChart = useCallback((data?: ChartData, options: ChartUpdateMode = 'default') => {
     if (chartInstanceRef.current) {
-      if (data) {
+      if (data && isValidChartData(data)) {
         console.log('[useChart] Updating chart data');
-        chartInstanceRef.current.data = data as any;
+        chartInstanceRef.current.data = data;
       }
       chartInstanceRef.current.update(options);
     }
   }, []);
 
-  const updateDataset = useCallback((datasetIndex: number, newData: any[]) => {
-    if (chartInstanceRef.current && chartInstanceRef.current.data.datasets?.[datasetIndex]) {
+  const updateDataset = useCallback((datasetIndex: number, newData: ChartDataValue[]) => {
+    if (chartInstanceRef.current && chartInstanceRef.current.data.datasets) {
+      if (!validateDatasetIndex(datasetIndex, chartInstanceRef.current.data.datasets)) {
+        console.error(`[useChart] Invalid dataset index: ${datasetIndex}`);
+        return;
+      }
+      
       console.log(`[useChart] Updating dataset ${datasetIndex} with ${newData.length} points`);
       chartInstanceRef.current.data.datasets[datasetIndex].data = newData;
       chartInstanceRef.current.update();
@@ -144,29 +168,48 @@ export function useChart(
   }, []);
 
   const addDataPoint = useCallback((label: Date | string | number, datasetIndex: number, value: number, maxPoints = 100) => {
-    console.log(`[useChart] Adding data point: label=${label}, value=${value}, datasetIndex=${datasetIndex}`);
+    console.log(`[useChart] Adding data point: label=${String(label)}, value=${value}, datasetIndex=${datasetIndex}`);
     
-    if (chartInstanceRef.current && chartInstanceRef.current.data.datasets?.[datasetIndex]) {
-      const chart = chartInstanceRef.current;
-      
-      // Add new data
-      chart.data.labels?.push(label as any);
-      (chart.data.datasets[datasetIndex].data as any[]).push(value);
-      
-      console.log(`[useChart] Chart data after adding: labels=${chart.data.labels?.length}, data=${chart.data.datasets[datasetIndex].data.length}`);
-      
-      // Remove oldest data if exceeding maxPoints
-      if (chart.data.labels && chart.data.labels.length > maxPoints) {
-        chart.data.labels.shift();
-        (chart.data.datasets[datasetIndex].data as any[]).shift();
-        console.log(`[useChart] Removed old data point, current length: ${chart.data.labels.length}`);
-      }
-      
-      chart.update('none' as any);
-      console.log(`[useChart] Chart updated successfully`);
-    } else {
-      console.error(`[useChart] Cannot add data point: chart=${!!chartInstanceRef.current}, dataset=${chartInstanceRef.current?.data.datasets?.[datasetIndex] ? 'exists' : 'missing'}`);
+    if (!chartInstanceRef.current || !chartInstanceRef.current.data.datasets) {
+      console.error('[useChart] Chart instance or datasets not available');
+      return;
     }
+
+    if (!validateDatasetIndex(datasetIndex, chartInstanceRef.current.data.datasets)) {
+      console.error(`[useChart] Invalid dataset index: ${datasetIndex}`);
+      return;
+    }
+    
+    const chart = chartInstanceRef.current;
+    const dataset = chart.data.datasets[datasetIndex];
+    
+    if (!dataset) {
+      console.error(`[useChart] Dataset at index ${datasetIndex} not found`);
+      return;
+    }
+    
+    // Safely add new data
+    if (!chart.data.labels) {
+      chart.data.labels = [];
+    }
+    if (!Array.isArray(dataset.data)) {
+      dataset.data = [];
+    }
+    
+    chart.data.labels.push(label);
+    (dataset.data as ChartDataValue[]).push(value);
+    
+    console.log(`[useChart] Chart data after adding: labels=${chart.data.labels.length}, data=${dataset.data.length}`);
+    
+    // Remove oldest data if exceeding maxPoints
+    if (chart.data.labels.length > maxPoints) {
+      chart.data.labels.shift();
+      (dataset.data as ChartDataValue[]).shift();
+      console.log(`[useChart] Removed old data point, current length: ${chart.data.labels.length}`);
+    }
+    
+    chart.update('none');
+    console.log('[useChart] Chart updated successfully');
   }, []);
 
   const clearChart = useCallback(() => {
@@ -196,8 +239,8 @@ export function useChart(
 export interface ChartHookReturn {
   chartRef: React.RefObject<HTMLCanvasElement>;
   chartInstance: ChartJS | null;
-  updateChart: (data?: ChartData, options?: any) => void;
-  updateDataset: (datasetIndex: number, newData: any[]) => void;
+  updateChart: (data?: ChartData, options?: ChartUpdateMode) => void;
+  updateDataset: (datasetIndex: number, newData: ChartDataValue[]) => void;
   addDataPoint: (label: Date | string | number, datasetIndex: number, value: number, maxPoints?: number) => void;
   clearChart: () => void;
 }
