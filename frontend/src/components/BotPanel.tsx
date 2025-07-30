@@ -1,4 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import {
+  Paper,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Badge,
+  Button,
+  Alert,
+  Loader,
+  Grid,
+  Box,
+} from '@mantine/core';
+import {
+  IconPlayerPlay,
+  IconPlayerStop,
+  IconTrash,
+  IconRefresh,
+  IconAlertCircle,
+  IconRobot,
+  IconTrendingUp,
+  IconCurrencyDollar,
+  IconClock,
+} from '@tabler/icons-react';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 
 interface BotStatus {
@@ -272,236 +296,227 @@ const BotPanel: React.FC = () => {
 
   const connectionDisplay = getConnectionStateDisplay(connectionState);
 
+  // Format balance similar to PriceDisplay
+  const formatBalance = (balance: number): string => {
+    return balance.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   return (
-    <div className="bot-panel">
-      <h2>Panel Bota Tradingowego</h2>
+    <Stack gap="md" p="md">
+      <Title order={2}>Panel Bota Tradingowego</Title>
       
       {/* Connection Status */}
-      <div className="connection-status" style={{ 
-        padding: '10px', 
-        borderRadius: '5px', 
-        backgroundColor: '#f8f9fa',
-        marginBottom: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '16px' }}>{connectionDisplay.icon}</span>
-          <span style={{ color: connectionDisplay.color, fontWeight: 'bold' }}>
-            {connectionDisplay.text}
-          </span>
-          {connectionError && (
-            <span style={{ color: '#EF4444', fontSize: '14px' }}>
-              ({connectionError})
-            </span>
+      <Paper p="md" withBorder>
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Text size="lg">{connectionDisplay.icon}</Text>
+            <Text fw={600} c={connectionDisplay.color === '#4CAF50' ? 'teal' : 'red'}>
+              {connectionDisplay.text}
+            </Text>
+            {connectionError && (
+              <Text size="sm" c="red">
+                ({connectionError})
+              </Text>
+            )}
+          </Group>
+          
+          {(connectionState === ConnectionState.ERROR || connectionState === ConnectionState.DISCONNECTED) && (
+            <Button
+              size="xs"
+              variant="outline"
+              leftSection={<IconRefresh size={14} />}
+              onClick={handleRetryConnection}
+            >
+              Ponów połączenie
+            </Button>
           )}
-        </div>
-        
-        {(connectionState === ConnectionState.ERROR || connectionState === ConnectionState.DISCONNECTED) && (
-          <button 
-            onClick={handleRetryConnection}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#3B82F6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            Ponów połączenie
-          </button>
-        )}
-      </div>
+        </Group>
+      </Paper>
       
       {/* Error Display */}
       {error && (
-        <div style={{ 
-          color: '#EF4444', 
-          backgroundColor: '#FEF2F2', 
-          padding: '10px', 
-          borderRadius: '5px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{error}</span>
-          <button 
-            onClick={() => setError(null)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#EF4444', 
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            ×
-          </button>
-        </div>
+        <Alert 
+          icon={<IconAlertCircle size={16} />}
+          title="Błąd"
+          color="red"
+          variant="light"
+          withCloseButton
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
       )}
       
       {/* Bot Status */}
-      <div className="bot-status" style={{ 
-        padding: '15px', 
-        backgroundColor: '#f8f9fa', 
-        borderRadius: '8px',
-        marginBottom: '20px'
-      }}>
-        <h3>Status Bota</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '10px', alignItems: 'center' }}>
-          <strong>Status:</strong>
-          <span style={{ 
-            color: botStatus.running ? '#10B981' : '#6B7280',
-            fontWeight: 'bold'
-          }}>
-            {botStatus.running ? '🟢 Uruchomiony' : '⚫ Zatrzymany'}
-          </span>
+      <Paper p="md" withBorder>
+        <Stack gap="sm">
+          <Group justify="space-between" align="center">
+            <Group gap="xs">
+              <IconRobot size={20} />
+              <Title order={3}>Status Bota</Title>
+            </Group>
+            <Badge 
+              color={botStatus.running ? 'teal' : 'gray'}
+              variant="filled"
+              size="lg"
+              leftSection={botStatus.running ? <IconTrendingUp size={14} /> : null}
+            >
+              {botStatus.running ? 'Uruchomiony' : 'Zatrzymany'}
+            </Badge>
+          </Group>
           
-          {botStatus.symbol && (
-            <>
-              <strong>Symbol:</strong>
-              <span>{botStatus.symbol}</span>
-            </>
-          )}
-          
-          {botStatus.strategy && (
-            <>
-              <strong>Strategia:</strong>
-              <span>{botStatus.strategy}</span>
-            </>
-          )}
-          
-          {botStatus.balance !== undefined && (
-            <>
-              <strong>Saldo:</strong>
-              <span>${botStatus.balance.toFixed(2)}</span>
-            </>
-          )}
-          
-          {botStatus.last_action && (
-            <>
-              <strong>Ostatnia akcja:</strong>
-              <span>{botStatus.last_action}</span>
-            </>
-          )}
-          
-          {botStatus.timestamp && (
-            <>
-              <strong>Ostatnia aktualizacja:</strong>
-              <span>{new Date(botStatus.timestamp).toLocaleString()}</span>
-            </>
-          )}
-        </div>
-      </div>
+          <Grid>
+            {botStatus.symbol && (
+              <Grid.Col span={6}>
+                <Stack gap={2}>
+                  <Text size="sm" c="dimmed" fw={500}>Symbol</Text>
+                  <Text fw={600}>{botStatus.symbol}</Text>
+                </Stack>
+              </Grid.Col>
+            )}
+            
+            {botStatus.strategy && (
+              <Grid.Col span={6}>
+                <Stack gap={2}>
+                  <Text size="sm" c="dimmed" fw={500}>Strategia</Text>
+                  <Text fw={600}>{botStatus.strategy}</Text>
+                </Stack>
+              </Grid.Col>
+            )}
+            
+            {botStatus.balance !== undefined && (
+              <Grid.Col span={6}>
+                <Stack gap={2}>
+                  <Text size="sm" c="dimmed" fw={500}>Saldo</Text>
+                  <Group gap="xs">
+                    <IconCurrencyDollar size={16} color="var(--mantine-color-teal-6)" />
+                    <Text fw={700} ff="monospace" size="lg">
+                      ${formatBalance(botStatus.balance)}
+                    </Text>
+                  </Group>
+                </Stack>
+              </Grid.Col>
+            )}
+            
+            {botStatus.last_action && (
+              <Grid.Col span={6}>
+                <Stack gap={2}>
+                  <Text size="sm" c="dimmed" fw={500}>Ostatnia akcja</Text>
+                  <Text fw={600}>{botStatus.last_action}</Text>
+                </Stack>
+              </Grid.Col>
+            )}
+            
+            {botStatus.timestamp && (
+              <Grid.Col span={12}>
+                <Stack gap={2}>
+                  <Text size="sm" c="dimmed" fw={500}>Ostatnia aktualizacja</Text>
+                  <Group gap="xs">
+                    <IconClock size={14} />
+                    <Text size="sm">{new Date(botStatus.timestamp).toLocaleString()}</Text>
+                  </Group>
+                </Stack>
+              </Grid.Col>
+            )}
+          </Grid>
+        </Stack>
+      </Paper>
       
       {/* Bot Controls */}
-      <div className="bot-controls" style={{ 
-        marginBottom: '20px',
-        display: 'flex',
-        gap: '10px',
-        alignItems: 'center'
-      }}>
-        <button
-          onClick={() => void handleStartBot()}
-          disabled={botStatus.running || isStarting || !wsClientRef.current?.isConnected()}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: botStatus.running || isStarting ? '#9CA3AF' : '#10B981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: (botStatus.running || isStarting || !wsClientRef.current?.isConnected()) ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px'
-          }}
-        >
-          {isStarting ? '⏳' : '▶️'} 
-          {isStarting ? 'Uruchamianie...' : 'Uruchom Bota'}
-        </button>
-        
-        <button
-          onClick={() => void handleStopBot()}
-          disabled={!botStatus.running || isStopping || !wsClientRef.current?.isConnected()}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: (!botStatus.running || isStopping) ? '#9CA3AF' : '#EF4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: (!botStatus.running || isStopping || !wsClientRef.current?.isConnected()) ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px'
-          }}
-        >
-          {isStopping ? '⏳' : '⏹️'} 
-          {isStopping ? 'Zatrzymywanie...' : 'Zatrzymaj Bota'}
-        </button>
-        
-        <button
-          onClick={handleClearLogs}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#6B7280',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer'
-          }}
-        >
-          🗑️ Wyczyść Logi
-        </button>
-      </div>
+      <Paper p="md" withBorder>
+        <Stack gap="sm">
+          <Title order={4}>Kontrola Bota</Title>
+          <Group gap="sm">
+            <Button
+              leftSection={isStarting ? <Loader size={16} /> : <IconPlayerPlay size={16} />}
+              onClick={() => void handleStartBot()}
+              disabled={botStatus.running || isStarting || !wsClientRef.current?.isConnected()}
+              color="teal"
+              variant={botStatus.running || isStarting ? "light" : "filled"}
+              size="md"
+            >
+              {isStarting ? 'Uruchamianie...' : 'Uruchom Bota'}
+            </Button>
+            
+            <Button
+              leftSection={isStopping ? <Loader size={16} /> : <IconPlayerStop size={16} />}
+              onClick={() => void handleStopBot()}
+              disabled={!botStatus.running || isStopping || !wsClientRef.current?.isConnected()}
+              color="red"
+              variant={(!botStatus.running || isStopping) ? "light" : "filled"}
+              size="md"
+            >
+              {isStopping ? 'Zatrzymywanie...' : 'Zatrzymaj Bota'}
+            </Button>
+            
+            <Button
+              leftSection={<IconTrash size={16} />}
+              onClick={handleClearLogs}
+              color="gray"
+              variant="outline"
+              size="md"
+            >
+              Wyczyść Logi
+            </Button>
+          </Group>
+        </Stack>
+      </Paper>
       
       {/* Live Logs */}
-      <div className="bot-logs">
-        <h3>Logi na żywo ({logs.length})</h3>
-        <div style={{ 
-          height: '400px', 
-          overflow: 'auto', 
-          backgroundColor: '#000', 
-          color: '#fff', 
-          padding: '10px',
-          borderRadius: '5px',
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          border: '1px solid #374151'
-        }}>
-          {logs.length === 0 ? (
-            <div style={{ color: '#6B7280', fontStyle: 'italic' }}>
-              Brak logów. Uruchom bota aby zobaczyć aktywność.
-            </div>
-          ) : (
-            logs.map((log) => (
-              <div key={log.id} style={{ 
-                marginBottom: '4px',
-                display: 'flex',
-                gap: '8px'
-              }}>
-                <span style={{ color: '#6B7280', minWidth: '80px' }}>
-                  [{log.timestamp}]
-                </span>
-                <span style={{ 
-                  color: getLogLevelColor(log.level),
-                  minWidth: '60px',
-                  fontWeight: 'bold'
-                }}>
-                  {log.level}:
-                </span>
-                <span style={{ wordBreak: 'break-word' }}>
-                  {log.message}
-                </span>
-              </div>
-            ))
-          )}
-          <div ref={logsEndRef} />
-        </div>
-      </div>
-    </div>
+      <Paper p="md" withBorder>
+        <Stack gap="sm">
+          <Group justify="space-between" align="center">
+            <Title order={4}>Logi na żywo</Title>
+            <Badge color="blue" variant="light" size="lg">
+              {logs.length}
+            </Badge>
+          </Group>
+          
+          <Box
+            style={{ 
+              height: '400px', 
+              overflow: 'auto', 
+              backgroundColor: '#1a1b1e', 
+              color: '#ffffff', 
+              padding: '12px',
+              borderRadius: '8px',
+              fontFamily: 'var(--mantine-font-family-monospace)',
+              fontSize: '13px',
+              border: '1px solid var(--mantine-color-gray-3)',
+            }}
+          >
+            {logs.length === 0 ? (
+              <Text c="dimmed" fs="italic">
+                Brak logów. Uruchom bota aby zobaczyć aktywność.
+              </Text>
+            ) : (
+              logs.map((log) => (
+                <Group key={log.id} gap="sm" align="flex-start" wrap="nowrap" mb="xs">
+                  <Text c="dimmed" size="xs" style={{ minWidth: '80px', fontFamily: 'monospace' }}>
+                    [{log.timestamp}]
+                  </Text>
+                  <Text 
+                    size="xs"
+                    fw={700}
+                    c={getLogLevelColor(log.level)}
+                    style={{ minWidth: '70px' }}
+                  >
+                    {log.level}:
+                  </Text>
+                  <Text size="xs" style={{ wordBreak: 'break-word', flex: 1 }}>
+                    {log.message}
+                  </Text>
+                </Group>
+              ))
+            )}
+            <div ref={logsEndRef} />
+          </Box>
+        </Stack>
+      </Paper>
+    </Stack>
   );
 };
 
