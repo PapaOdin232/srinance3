@@ -53,10 +53,12 @@ const BotPanel: React.FC = () => {
   const [isStopping, setIsStopping] = useState(false);
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [botConfig, setBotConfig] = useState<any>(null);
 
   const wsClientRef = useRef<EnhancedWSClient | null>(null);
   const logIdCounterRef = useRef(1);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
 
   const formatBalance = (balance: number): string => {
     return balance.toLocaleString('en-US', {
@@ -71,9 +73,21 @@ const BotPanel: React.FC = () => {
     }
   };
 
-  // Auto-scroll logs to bottom
+  const loadBotConfig = async () => {
+    try {
+      const response = await fetch('http://localhost:8001/bot/config');
+      const data = await response.json();
+      setBotConfig(data.config || null);
+    } catch (error) {
+      console.error('Failed to load bot config:', error);
+    }
+  };
+
+  // Auto-scroll logs to bottom (only within logs container)
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    }
   }, [logs]);
 
   // Connection state change handler
@@ -84,6 +98,7 @@ const BotPanel: React.FC = () => {
     if (state === ConnectionState.CONNECTED) {
       setError(null);
       requestStatus();
+      loadBotConfig(); // Załaduj konfigurację po połączeniu
     }
   };
 
@@ -99,11 +114,20 @@ const BotPanel: React.FC = () => {
     try {
       switch (message.type) {
         case 'bot_status':
-          setBotStatus(message.status || message);
+          console.log('Received bot_status:', message); // Debug
+          
+          // Sprawdź czy running jest na najwyższym poziomie lub w status
+          const running = message.running !== undefined ? message.running : message.status?.running;
+          const statusData = {
+            running: running,
+            ...message.status
+          };
+          
+          setBotStatus(statusData);
           
           // Reset loading states based on bot status
-          if (message.running !== undefined) {
-            if (message.running) {
+          if (running !== undefined) {
+            if (running) {
               setIsStarting(false);
             } else {
               setIsStopping(false);
@@ -208,14 +232,30 @@ const BotPanel: React.FC = () => {
       setIsStarting(true);
       setError(null);
       
-      wsClientRef.current.send({
-        type: 'start_bot'
-      });
+      // Załaduj aktualną konfigurację przed uruchomieniem
+      let currentConfig = botConfig;
+      try {
+        const response = await fetch('http://localhost:8001/bot/config');
+        const data = await response.json();
+        currentConfig = data.config || null;
+        setBotConfig(currentConfig);
+      } catch (configError) {
+        console.error('Failed to load config, using cached version:', configError);
+      }
+      
+      const startCommand = {
+        type: 'start_bot',
+        symbol: currentConfig?.symbol || 'BTCUSDT',
+        strategy: currentConfig?.type || 'simple_momentum'
+      };
+      
+      console.log('Sending start command with config:', { currentConfig, startCommand });
+      wsClientRef.current.send(startCommand);
       
       // Add local log entry
       const startLog: LogEntry = {
         id: logIdCounterRef.current++,
-        message: 'Wysłano komendę uruchomienia bota...',
+        message: `Wysłano komendę uruchomienia bota z strategią ${startCommand.strategy} dla ${startCommand.symbol}...`,
         timestamp: new Date().toLocaleTimeString(),
         level: 'INFO'
       };
@@ -442,6 +482,7 @@ const BotPanel: React.FC = () => {
                 </Group>
                 
                 <Box
+                  ref={logsContainerRef}
                   style={{ 
                     height: '400px', 
                     overflow: 'auto', 
@@ -489,9 +530,10 @@ const BotPanel: React.FC = () => {
           <BotConfigPanel 
             isRunning={botStatus.running}
             onConfigUpdate={() => {
-              // Refresh bot status after config update
+              // Refresh bot status and config after config update
               setTimeout(() => {
                 requestStatus();
+                loadBotConfig();
               }, 500);
             }}
           />

@@ -114,8 +114,11 @@ class TradingBot:
                 future = asyncio.run_coroutine_threadsafe(
                     self.broadcast_callback({
                         "type": "bot_status",
-                        "status": self.get_status(),
-                        "running": self.running
+                        "running": self.running,
+                        "status": {
+                            "running": self.running,
+                            **self.get_status()
+                        }
                     }),
                     self.main_loop
                 )

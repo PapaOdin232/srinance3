@@ -29,12 +29,28 @@ interface StrategyConfig {
   symbol: string;
   timeframe: string;
   parameters: {
+    // Common parameters
     period?: number;
+    
+    // RSI strategy parameters
     rsi_period?: number;
-    rsi_lower?: number;
-    rsi_upper?: number;
-    sma_period?: number;
+    rsi_overbought?: number;  // Changed from rsi_upper
+    rsi_oversold?: number;    // Changed from rsi_lower
+    
+    // Simple MA strategy parameters
+    ma_period?: number;       // Changed from sma_period
+    ma_type?: string;
     threshold?: number;
+    
+    // Grid trading parameters
+    grid_levels?: number;
+    grid_spacing?: number;
+    grid_amount?: number;
+    
+    // DCA strategy parameters
+    dca_interval?: number;
+    dca_amount?: number;
+    dca_price_drop?: number;
   };
   risk_management: {
     max_position_size: number;
@@ -215,7 +231,7 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
           </Grid.Col>
         </Grid>
 
-        <Accordion defaultValue="risk">
+        <Accordion defaultValue="strategy">
           <Accordion.Item value="strategy">
             <Accordion.Control>Strategy Parameters</Accordion.Control>
             <Accordion.Panel>
@@ -224,11 +240,11 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
                   <>
                     <Grid.Col span={6}>
                       <NumberInput
-                        label="SMA Period"
-                        value={config.parameters.sma_period || 20}
+                        label="MA Period"
+                        value={config.parameters.ma_period || 20}
                         onChange={(value) => setConfig({
                           ...config,
-                          parameters: { ...config.parameters, sma_period: Number(value) }
+                          parameters: { ...config.parameters, ma_period: Number(value) }
                         })}
                         disabled={isRunning}
                         min={5}
@@ -252,7 +268,7 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
                   </>
                 )}
                 
-                {config.type === 'rsi_strategy' && (
+                {config.type === 'rsi' && (
                   <>
                     <Grid.Col span={4}>
                       <NumberInput
@@ -269,11 +285,11 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
                     </Grid.Col>
                     <Grid.Col span={4}>
                       <NumberInput
-                        label="RSI Lower"
-                        value={config.parameters.rsi_lower || 30}
+                        label="RSI Oversold"
+                        value={config.parameters.rsi_oversold || 30}
                         onChange={(value) => setConfig({
                           ...config,
-                          parameters: { ...config.parameters, rsi_lower: Number(value) }
+                          parameters: { ...config.parameters, rsi_oversold: Number(value) }
                         })}
                         disabled={isRunning}
                         min={10}
@@ -282,11 +298,11 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
                     </Grid.Col>
                     <Grid.Col span={4}>
                       <NumberInput
-                        label="RSI Upper"
-                        value={config.parameters.rsi_upper || 70}
+                        label="RSI Overbought"
+                        value={config.parameters.rsi_overbought || 70}
                         onChange={(value) => setConfig({
                           ...config,
-                          parameters: { ...config.parameters, rsi_upper: Number(value) }
+                          parameters: { ...config.parameters, rsi_overbought: Number(value) }
                         })}
                         disabled={isRunning}
                         min={60}
@@ -294,6 +310,112 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
                       />
                     </Grid.Col>
                   </>
+                )}
+
+                {config.type === 'grid' && (
+                  <>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="Grid Levels"
+                        value={config.parameters.grid_levels || 10}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, grid_levels: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={3}
+                        max={50}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="Grid Spacing (%)"
+                        value={config.parameters.grid_spacing || 1}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, grid_spacing: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="Grid Amount ($)"
+                        value={config.parameters.grid_amount || 100}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, grid_amount: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={10}
+                        max={1000}
+                      />
+                    </Grid.Col>
+                  </>
+                )}
+
+                {config.type === 'dca' && (
+                  <>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="DCA Interval (seconds)"
+                        value={config.parameters.dca_interval || 3600}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, dca_interval: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={60}
+                        max={86400}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="DCA Amount ($)"
+                        value={config.parameters.dca_amount || 50}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, dca_amount: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={10}
+                        max={1000}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                      <NumberInput
+                        label="Price Drop Trigger (%)"
+                        value={config.parameters.dca_price_drop || 2}
+                        onChange={(value) => setConfig({
+                          ...config,
+                          parameters: { ...config.parameters, dca_price_drop: Number(value) }
+                        })}
+                        disabled={isRunning}
+                        min={0.5}
+                        max={20}
+                        step={0.1}
+                      />
+                    </Grid.Col>
+                  </>
+                )}
+
+                {!config.type && (
+                  <Grid.Col span={12}>
+                    <Text c="dimmed" fs="italic" ta="center" py="xl">
+                      Select a strategy type to configure parameters
+                    </Text>
+                  </Grid.Col>
+                )}
+
+                {config.type && !['simple_ma', 'rsi', 'grid', 'dca'].includes(config.type) && (
+                  <Grid.Col span={12}>
+                    <Text c="dimmed" fs="italic" ta="center" py="xl">
+                      Parameters for "{config.type}" strategy are not yet implemented
+                    </Text>
+                  </Grid.Col>
                 )}
               </Grid>
             </Accordion.Panel>

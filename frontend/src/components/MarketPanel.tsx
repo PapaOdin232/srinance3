@@ -23,6 +23,7 @@ import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
 import PriceDisplay from './PriceDisplay';
 import IntervalSelector, { type TimeInterval } from './IntervalSelector';
+import IndicatorPanel from './IndicatorPanel';
 import { useAssets } from '../hooks/useAssets';
 import type { Asset } from '../types/asset';
 
@@ -47,6 +48,7 @@ const MarketPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState<string | null>(null); // Track which symbol has history loaded
+  const [candlestickData, setCandlestickData] = useState<any[]>([]); // Store historical data for indicators
   
   // Hook do zarządzania aktywami z Binance API
   const { assets, loading: assetsLoading, error: assetsError, refetch: refetchAssets, isConnected } = useAssets();
@@ -80,7 +82,7 @@ const MarketPanel: React.FC = () => {
   }, [connectionState, connectionError]);
 
   // Use lightweight charts hook
-  const { chartContainerRef, setHistoricalData, updateCandlestick, fitContent } = useLightweightChart();
+  const { chartContainerRef, chartInstance, setHistoricalData, updateCandlestick, fitContent } = useLightweightChart();
   
   // Binance WebSocket client for real-time kline data
   const binanceWSClientRef = useRef<BinanceWSClient | null>(null);
@@ -103,6 +105,7 @@ const MarketPanel: React.FC = () => {
           time: d.time as any
         }));
         setHistoricalData(chartData);
+        setCandlestickData(candlestickData); // Store for indicators
         fitContent(); // Fit chart to content
         setHistoryLoaded(`${symbol}_${interval}`); // Mark history as loaded for this symbol and interval
       } else {
@@ -448,6 +451,12 @@ const MarketPanel: React.FC = () => {
           <Box ref={chartContainerRef} style={{ width: '100%', height: '500px', borderRadius: '8px' }} />
         </Stack>
       </Paper>
+      
+      {/* Technical Indicators Panel */}
+      <IndicatorPanel 
+        chartInstance={chartInstance} 
+        historicalData={candlestickData}
+      />
       
       {/* Order Book */}
       {orderBook && (

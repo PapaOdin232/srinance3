@@ -373,6 +373,7 @@ async def bot_log_broadcaster():
                     "type": "bot_status",
                     "running": trading_bot.running,
                     "status": {
+                        "running": trading_bot.running,
                         "symbol": getattr(trading_bot, 'symbol', None),
                         "strategy": getattr(trading_bot, 'strategy', None),
                         "balance": getattr(trading_bot, 'balance', 0),
@@ -503,6 +504,7 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                 "type": "bot_status",
                 "running": trading_bot.running,
                 "status": {
+                    "running": trading_bot.running,
                     "symbol": getattr(trading_bot, 'symbol', None),
                     "strategy": getattr(trading_bot, 'strategy', None),
                     "balance": getattr(trading_bot, 'balance', 0),
@@ -531,7 +533,10 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                         await websocket.send_json({
                             "type": "bot_status",
                             "running": trading_bot.running,
-                            "status": trading_bot.get_status()
+                            "status": {
+                                "running": trading_bot.running,
+                                **trading_bot.get_status()
+                            }
                         })
 
                 elif message_type == 'get_logs':
@@ -568,6 +573,7 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                                 "type": "bot_status",
                                 "running": True,
                                 "status": {
+                                    "running": True,
                                     "symbol": symbol,
                                     "strategy": strategy,
                                     "balance": getattr(trading_bot, 'balance', 0),
@@ -605,7 +611,9 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                             await websocket.send_json({
                                 "type": "bot_status",
                                 "running": False,
-                                "status": {}
+                                "status": {
+                                    "running": False
+                                }
                             })
                             
                         except Exception as e:
