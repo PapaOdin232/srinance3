@@ -57,10 +57,13 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
   const debouncedGlobalFilter = useDebounced(globalFilter, 300);
   
   // Hook do animacji zmian cen
-  const priceChanges = usePriceChangeAnimation(balances.map(b => ({ symbol: b.asset, price: b.currentPrice || 0 })));
+  const priceChanges = usePriceChangeAnimation(
+    Array.isArray(balances) ? balances.map(b => ({ symbol: b.asset, price: b.currentPrice || 0 })) : []
+  );
 
   // Filter balances based on hideZeroBalances setting
   const filteredBalances = useMemo(() => {
+    if (!Array.isArray(balances)) return [];
     if (!hideZeroBalances) return balances;
     return balances.filter(balance => balance.total > 0.00000001);
   }, [balances, hideZeroBalances]);

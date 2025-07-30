@@ -99,20 +99,10 @@ const BotPanel: React.FC = () => {
     try {
       switch (message.type) {
         case 'bot_status':
-          setBotStatus(message.status || message);
-          
-          // Reset loading states based on bot status
-          if (message.running !== undefined) {
-            if (message.running) {
-              setIsStarting(false);
-            } else {
-              setIsStopping(false);
-            }
-          }
+          setBotStatus(message.status);
           break;
           
         case 'bot_log':
-        case 'log':
           const logEntry: LogEntry = {
             id: logIdCounterRef.current++,
             message: message.message,
@@ -123,12 +113,10 @@ const BotPanel: React.FC = () => {
           break;
           
         case 'bot_error':
-        case 'error':
-          const errorMessage = message.error || message.message;
-          setError(errorMessage);
+          setError(message.error);
           const errorLog: LogEntry = {
             id: logIdCounterRef.current++,
-            message: `ERROR: ${errorMessage}`,
+            message: `ERROR: ${message.error}`,
             timestamp: new Date().toLocaleTimeString(),
             level: 'ERROR'
           };
@@ -168,7 +156,7 @@ const BotPanel: React.FC = () => {
 
   // Initialize WebSocket connection
   useEffect(() => {
-    wsClientRef.current = new EnhancedWSClient('ws://localhost:8001/ws/bot');
+    wsClientRef.current = new EnhancedWSClient('/ws/bot');
     wsClientRef.current.addListener(handleMessage);
     wsClientRef.current.addStateListener(handleConnectionStateChange);
 

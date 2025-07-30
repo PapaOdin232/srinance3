@@ -222,7 +222,7 @@ const MarketPanel: React.FC = () => {
       if (!mounted) return;
 
       console.log('[MarketPanel] Setting up persistent WebSocket connection for orderbook/ticker');
-      const wsClient = new EnhancedWSClient('ws://localhost:8000/ws/market', {
+      const wsClient = new EnhancedWSClient('ws://localhost:8001/ws/market', {
         reconnectInterval: 2000,
         maxReconnectInterval: 30000,
         maxReconnectAttempts: 5,

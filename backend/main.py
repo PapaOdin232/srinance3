@@ -786,10 +786,59 @@ async def get_bot_status():
 async def get_bot_logs():
     """Get bot logs"""
     try:
-        # For now, return placeholder logs
-        return {"logs": ["Bot initialized", "Ready for trading"]}
+        if trading_bot:
+            return {"logs": trading_bot.get_logs()}
+        else:
+            return {"logs": ["Bot not initialized"]}
     except Exception as e:
         logger.error(f"Bot logs endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.post("/bot/config")
+async def update_bot_config(config: dict):
+    """Update bot strategy configuration"""
+    try:
+        if trading_bot:
+            success = trading_bot.update_strategy_config(config)
+            if success:
+                return {"status": "success", "message": "Config updated"}
+            else:
+                return {"error": "Failed to update config"}
+        else:
+            return {"error": "Bot not available"}
+    except Exception as e:
+        logger.error(f"Bot config update endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/bot/strategies")
+async def get_available_strategies():
+    """Get available trading strategies"""
+    try:
+        if trading_bot:
+            strategies = trading_bot.get_available_strategies()
+            return {"strategies": strategies}
+        else:
+            return {"error": "Bot not available"}
+    except Exception as e:
+        logger.error(f"Bot strategies endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/bot/config")
+async def get_bot_config():
+    """Get current bot configuration"""
+    try:
+        if trading_bot:
+            status = trading_bot.get_status()
+            return {
+                "config": status.get("strategy_config", {}),
+                "state": status.get("strategy_state", {}),
+                "position": status.get("position", {}),
+                "daily_stats": status.get("daily_stats", {})
+            }
+        else:
+            return {"error": "Bot not available"}
+    except Exception as e:
+        logger.error(f"Bot config endpoint error: {e}")
         return {"error": str(e)}
 
 if __name__ == "__main__":

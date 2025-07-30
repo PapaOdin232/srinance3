@@ -28,7 +28,7 @@ const AccountPanel: React.FC = () => {
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
 
   // Calculate active assets count
-  const activeAssets = balances.filter(b => b.total > 0.00000001).length;
+  const activeAssets = Array.isArray(balances) ? balances.filter(b => b.total > 0.00000001).length : 0;
 
   return (
     <Stack gap="md" p="md">

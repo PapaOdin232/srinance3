@@ -4,7 +4,7 @@ import axios from 'axios';
 import { getEnvVar } from './getEnvVar';
 
 
-const API_BASE_URL = getEnvVar('VITE_API_URL', 'http://localhost:8000');
+const API_BASE_URL = getEnvVar('VITE_API_URL', 'http://localhost:8001');
 const AUTH_TOKEN = getEnvVar('VITE_AUTH_TOKEN', 'example_admin_token');
 
 export const api = axios.create({

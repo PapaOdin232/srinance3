@@ -46,7 +46,11 @@ export const usePortfolio = (): UsePortfolioReturn => {
 
   // Transform account balances to portfolio format with market data
   const balances: PortfolioBalance[] = useMemo(() => {
-    return accountData?.balances?.map((balance: Balance) => {
+    if (!accountData?.balances || !Array.isArray(accountData.balances)) {
+      return [];
+    }
+    
+    return accountData.balances.map((balance: Balance) => {
       const asset = balance.asset;
       const free = parseFloat(balance.free);
       const locked = parseFloat(balance.locked);
@@ -73,7 +77,7 @@ export const usePortfolio = (): UsePortfolioReturn => {
         valueUSD,
         valueChange24h,
       };
-    }) || [];
+    });
   }, [accountData?.balances, marketData]);
 
   // Calculate portfolio metrics
