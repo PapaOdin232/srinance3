@@ -27,38 +27,87 @@ export function useLightweightChart() {
 
     console.log('[useLightweightChart] Creating new Lightweight Chart instance');
 
-    // Create chart with configuration
+    // Create chart with enhanced configuration
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: chartContainerRef.current.clientHeight,
       layout: {
-        background: { color: '#ffffff' },
-        textColor: '#333',
+        background: { 
+          color: '#fafafa' 
+        },
+        textColor: '#2e2e2e',
+        fontSize: 12,
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
       },
       grid: {
-        vertLines: { color: '#e1e1e1' },
-        horzLines: { color: '#e1e1e1' },
+        vertLines: { 
+          color: '#e9ecef',
+          style: 1, // dotted
+        },
+        horzLines: { 
+          color: '#e9ecef',
+          style: 1, // dotted
+        },
       },
       crosshair: {
         mode: 1, // Normal crosshair mode
+        vertLine: {
+          color: '#6c757d',
+          width: 1,
+          style: 2, // dashed
+        },
+        horzLine: {
+          color: '#6c757d',
+          width: 1,
+          style: 2, // dashed
+        },
       },
       rightPriceScale: {
-        borderColor: '#cccccc',
+        borderColor: '#dee2e6',
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+        autoScale: true,
+      },
+      leftPriceScale: {
+        visible: false,
       },
       timeScale: {
-        borderColor: '#cccccc',
+        borderColor: '#dee2e6',
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 5,
+        barSpacing: 8,
+        minBarSpacing: 0.5,
+        fixLeftEdge: false,
+        fixRightEdge: false,
+      },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
     });
 
-    // Add candlestick series
+    // Add candlestick series with enhanced styling
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
+      upColor: '#00b894', // Green for bullish candles
+      downColor: '#e17055', // Red for bearish candles
       borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
+      wickUpColor: '#00b894',
+      wickDownColor: '#e17055',
+      priceFormat: {
+        type: 'price',
+        precision: 2,
+        minMove: 0.01,
+      },
     });
 
     chartInstanceRef.current = chart;

@@ -21,6 +21,8 @@ import type { BinanceKlineData } from '../services/binanceWSClient';
 import useLightweightChart from '../hooks/useLightweightChart';
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
+import PriceDisplay from './PriceDisplay';
+import IntervalSelector, { type TimeInterval } from './IntervalSelector';
 import { useAssets } from '../hooks/useAssets';
 import type { Asset } from '../types/asset';
 
@@ -41,6 +43,7 @@ const MarketPanel: React.FC = () => {
   const [ticker, setTicker] = useState<TickerData | null>(null);
   const [orderBook, setOrderBook] = useState<OrderBookData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
+  const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('1m');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState<string | null>(null); // Track which symbol has history loaded
@@ -83,12 +86,12 @@ const MarketPanel: React.FC = () => {
   const binanceWSClientRef = useRef<BinanceWSClient | null>(null);
 
   // Load historical data for chart - using Binance API directly
-  const loadHistoricalData = useCallback(async (symbol: string) => {
+  const loadHistoricalData = useCallback(async (symbol: string, interval: TimeInterval = '1m') => {
     try {
       setIsLoading(true);
-      console.log(`[MarketPanel] Loading historical data for ${symbol} from Binance API`);
+      console.log(`[MarketPanel] Loading historical data for ${symbol} (${interval}) from Binance API`);
       
-      const candlestickData = await fetchLightweightChartsKlines(symbol, '1m', 100);
+      const candlestickData = await fetchLightweightChartsKlines(symbol, interval, 100);
       
       if (candlestickData && candlestickData.length > 0) {
         console.log(`[MarketPanel] Got ${candlestickData.length} historical data points`);
@@ -101,7 +104,7 @@ const MarketPanel: React.FC = () => {
         }));
         setHistoricalData(chartData);
         fitContent(); // Fit chart to content
-        setHistoryLoaded(symbol); // Mark history as loaded for this symbol
+        setHistoryLoaded(`${symbol}_${interval}`); // Mark history as loaded for this symbol and interval
       } else {
         console.warn(`[MarketPanel] No historical data received`);
       }
@@ -150,22 +153,23 @@ const MarketPanel: React.FC = () => {
     }
   };
 
-  // Load historical data when component mounts or symbol changes
+  // Load historical data when component mounts or symbol/interval changes
   useEffect(() => {
-    if (historyLoaded !== selectedSymbol) {
-      console.log(`[MarketPanel] Loading historical data for ${selectedSymbol}`);
-      loadHistoricalData(selectedSymbol);
+    const historyKey = `${selectedSymbol}_${selectedInterval}`;
+    if (historyLoaded !== historyKey) {
+      console.log(`[MarketPanel] Loading historical data for ${selectedSymbol} (${selectedInterval})`);
+      loadHistoricalData(selectedSymbol, selectedInterval);
     }
-  }, [selectedSymbol, historyLoaded, loadHistoricalData]);
+  }, [selectedSymbol, selectedInterval, historyLoaded, loadHistoricalData]);
 
   // Setup Binance WebSocket for real-time kline data
   useEffect(() => {
     let mounted = true;
     
-    console.log(`[MarketPanel] Setting up Binance WebSocket for ${selectedSymbol} klines`);
+    console.log(`[MarketPanel] Setting up Binance WebSocket for ${selectedSymbol} klines (${selectedInterval})`);
     
     // Create new Binance WebSocket client for kline data
-    const binanceClient = new BinanceWSClient(selectedSymbol, '1m');
+    const binanceClient = new BinanceWSClient(selectedSymbol, selectedInterval);
     binanceWSClientRef.current = binanceClient;
     
     binanceClient.addListener((data: BinanceKlineData) => {
@@ -196,13 +200,13 @@ const MarketPanel: React.FC = () => {
     
     return () => {
       mounted = false;
-      console.log(`[MarketPanel] Cleaning up Binance WebSocket for ${selectedSymbol}`);
+      console.log(`[MarketPanel] Cleaning up Binance WebSocket for ${selectedSymbol} (${selectedInterval})`);
       if (binanceWSClientRef.current) {
         binanceWSClientRef.current.destroy();
         binanceWSClientRef.current = null;
       }
     };
-  }, [selectedSymbol]);
+  }, [selectedSymbol, selectedInterval]);
 
   // Setup WebSocket connection for orderbook and other data (keep existing backend connection)
   useEffect(() => {
@@ -317,6 +321,11 @@ const MarketPanel: React.FC = () => {
     setHistoryLoaded(null); // Reset history loaded flag
   };
 
+  const handleIntervalChange = (newInterval: TimeInterval) => {
+    setSelectedInterval(newInterval);
+    setHistoryLoaded(null); // Reset history loaded flag to force reload
+  };
+
   // Nowa funkcja obsługi wyboru aktywa z AssetSelector
   const handleAssetSelect = (asset: Asset) => {
     handleSymbolChange(asset.symbol);
@@ -415,34 +424,28 @@ const MarketPanel: React.FC = () => {
         </Paper>
       )}
       
-      {/* Ticker Display */}
+      {/* Price Display - Enhanced */}
       {ticker && (
-        <Paper p="md" withBorder>
-          <Stack gap="sm">
-            <Title order={3}>Aktualna Cena</Title>
-            <Group gap="md" align="baseline">
-              <Text size="xl" fw={700} c="teal">
-                {ticker.symbol}: ${parseFloat(ticker.price).toFixed(2)}
-              </Text>
-              {ticker.change && (
-                <Badge 
-                  color={parseFloat(ticker.change) >= 0 ? 'teal' : 'red'}
-                  variant="light"
-                  size="lg"
-                >
-                  {parseFloat(ticker.change) >= 0 ? '+' : ''}{ticker.change} ({ticker.changePercent})
-                </Badge>
-              )}
-            </Group>
-          </Stack>
-        </Paper>
+        <PriceDisplay ticker={ticker} />
       )}
+      
+      {/* Chart Controls */}
+      <IntervalSelector 
+        selectedInterval={selectedInterval}
+        onIntervalChange={handleIntervalChange}
+        disabled={isLoading}
+      />
       
       {/* Price Chart */}
       <Paper p="md" withBorder>
         <Stack gap="md">
-          <Title order={3}>Wykres Cen</Title>
-          <Box ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
+          <Group justify="space-between" align="center">
+            <Title order={3}>Wykres Cen</Title>
+            <Badge variant="light" color="blue" size="sm">
+              {selectedInterval.toUpperCase()} • Żywo
+            </Badge>
+          </Group>
+          <Box ref={chartContainerRef} style={{ width: '100%', height: '500px', borderRadius: '8px' }} />
         </Stack>
       </Paper>
       
