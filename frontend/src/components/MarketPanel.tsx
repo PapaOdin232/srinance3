@@ -169,6 +169,14 @@ const MarketPanel: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     
+    // Check if Binance streams are enabled
+    const binanceStreamsEnabled = import.meta.env.VITE_ENABLE_BINANCE_STREAMS === 'true';
+    
+    if (!binanceStreamsEnabled) {
+      console.log(`[MarketPanel] Binance streams disabled via VITE_ENABLE_BINANCE_STREAMS`);
+      return;
+    }
+    
     console.log(`[MarketPanel] Setting up Binance WebSocket for ${selectedSymbol} klines (${selectedInterval})`);
     
     // Create new Binance WebSocket client for kline data

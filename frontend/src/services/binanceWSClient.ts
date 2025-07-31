@@ -50,7 +50,9 @@ export class BinanceWSClient {
       return;
     }
 
-    const url = `wss://stream.binance.com:9443/ws/${this.symbol}@kline_${this.interval}`;
+    // Use environment variable for Binance WebSocket URL
+    const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://stream.binance.com:9443/ws';
+    const url = `${baseUrl}/${this.symbol}@kline_${this.interval}`;
     console.log(`[BinanceWSClient] Connecting to ${url}`);
 
     try {
@@ -75,11 +77,28 @@ export class BinanceWSClient {
 
       this.ws.onerror = (error) => {
         console.error('[BinanceWSClient] WebSocket error:', error);
+        console.error('[BinanceWSClient] Connection URL:', url);
+        console.error('[BinanceWSClient] WebSocket readyState:', this.ws?.readyState);
+        
+        // Additional error information
+        if (this.ws?.readyState === WebSocket.CLOSING) {
+          console.warn('[BinanceWSClient] WebSocket is closing');
+        } else if (this.ws?.readyState === WebSocket.CLOSED) {
+          console.warn('[BinanceWSClient] WebSocket is closed');
+        }
       };
 
       this.ws.onclose = (event) => {
         console.log(`[BinanceWSClient] Connection closed: ${event.code} ${event.reason}`);
         this.ws = null;
+        
+        // Don't attempt reconnection if the close was due to an invalid endpoint (code 1006)
+        if (event.code === 1006) {
+          console.warn('[BinanceWSClient] Connection failed - possibly invalid endpoint or unsupported stream. Check if testnet supports kline streams.');
+          console.warn('[BinanceWSClient] Consider setting VITE_ENABLE_BINANCE_STREAMS=false in development.');
+          this.shouldReconnect = false;
+          return;
+        }
         
         if (this.shouldReconnect && !this.isDestroyed && this.reconnectAttempts < this.maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
@@ -89,6 +108,8 @@ export class BinanceWSClient {
             this.reconnectAttempts++;
             this.connect();
           }, delay);
+        } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.error('[BinanceWSClient] Max reconnection attempts reached. Giving up.');
         }
       };
 
