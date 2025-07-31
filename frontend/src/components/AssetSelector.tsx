@@ -1,25 +1,20 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  Modal,
-  TextInput,
-  Button,
-  Group,
-  Stack,
   Table,
+  TextInput,
+  Paper,
+  Group,
   Text,
-  ScrollArea,
+  Loader,
   Badge,
-  LoadingOverlay,
-  Notification,
-  Divider,
-  Switch,
   ActionIcon,
-  Box
+  Box,
+  Select,
+  Button,
+  Stack
 } from '@mantine/core';
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { IconSearch, IconX, IconRefresh, IconEye, IconEyeOff } from '@tabler/icons-react';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { getEnvVar } from '../services/getEnvVar';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, getPaginationRowModel, type SortingState, type ColumnFiltersState } from '@tanstack/react-table';
+import { IconSearch, IconRefresh, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { PriceCell } from './shared';
 import type { Asset, AssetSelectorProps } from '../types/asset';
 import { useDebounced } from '../hooks/useDebounced';

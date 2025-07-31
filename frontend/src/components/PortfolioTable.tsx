@@ -1,36 +1,37 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Text,
   Table,
-  ScrollArea,
-  Badge,
-  Container,
-  Card,
-  Title,
+  Paper,
   Group,
+  Loader,
+  Badge,
   ActionIcon,
-  Notification,
-  Flex,
+  Box,
+  Switch,
   Button,
   Stack,
-  Modal,
-  TextInput,
-  NumberInput,
-  Select,
-  Alert,
   Progress,
-  Pagination
+  Select,
+  TextInput,
 } from '@mantine/core';
 import { 
   getCoreRowModel, 
   flexRender, 
   createColumnHelper, 
-  useReactTable 
+  useReactTable,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type SortingState,
+  type ColumnFiltersState,
 } from '@tanstack/react-table';
-import { IconRefresh, IconExclamationCircle, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { secureApiCall } from '../config/api';
+import { IconRefresh, IconSearch, IconSortAscending, IconSortDescending, IconEye, IconEyeOff } from '@tabler/icons-react';
 import { PriceCell } from './shared';
+import type { PortfolioBalance, PortfolioTableProps } from '../types/portfolio';
+import { useDebounced } from '../hooks/useDebounced';
+import { usePriceChangeAnimation } from '../hooks/usePriceChangeAnimation';
+import { formatCurrency, formatCrypto } from '../types/portfolio';
 
 const columnHelper = createColumnHelper<PortfolioBalance>();
 
@@ -108,7 +109,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
           return (
             <PriceCell 
               price={price}
-              change={change}
+              change={change || undefined}
               isUSDT={asset === 'USDT'}
             />
           );
