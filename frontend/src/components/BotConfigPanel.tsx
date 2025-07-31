@@ -22,7 +22,7 @@ import {
   IconX,
   IconInfoCircle,
 } from '@tabler/icons-react';
-import axios from 'axios';
+import { secureApiCall, API_CONFIG } from '../config/api';
 
 interface StrategyConfig {
   type: string;
@@ -75,10 +75,11 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:8001/bot/config');
-      console.log('Bot config response:', response.data);
-      if (response.data && (response.data as any).config) {
-        setConfig((response.data as any).config);
+      const response = await secureApiCall(API_CONFIG.ENDPOINTS.BOT_CONFIG);
+      const data = await response.json();
+      console.log('Bot config response:', data);
+      if (data && data.config) {
+        setConfig(data.config);
       }
     } catch (error) {
       console.error('Failed to load bot config:', error);
@@ -90,11 +91,12 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
 
   const loadStrategies = async () => {
     try {
-      const response = await axios.get('http://localhost:8001/bot/strategies');
-      console.log('Strategies response:', response.data);
-      if (response.data && (response.data as any).strategies) {
+      const response = await secureApiCall(API_CONFIG.ENDPOINTS.BOT_STRATEGIES);
+      const data = await response.json();
+      console.log('Strategies response:', data);
+      if (data && data.strategies) {
         // Przekształć obiekt strategii na tablicę dla Select komponentu
-        const strategiesObj = (response.data as any).strategies;
+        const strategiesObj = data.strategies;
         const strategiesArray = Object.keys(strategiesObj).map(key => ({
           value: key,
           label: strategiesObj[key].name || key
@@ -116,8 +118,15 @@ const BotConfigPanel: React.FC<BotConfigPanelProps> = ({ isRunning, onConfigUpda
       setSuccess(false);
       
       console.log('Sending config update:', config);
-      const response = await axios.post('http://localhost:8001/bot/config', config);
-      console.log('Config update response:', response.data);
+      const response = await fetch(API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.BOT_CONFIG, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config),
+      });
+      const data = await response.json();
+      console.log('Config update response:', data);
       
       setSuccess(true);
       if (onConfigUpdate) {

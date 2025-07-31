@@ -89,7 +89,7 @@ class TradingBot:
                 # Używamy asyncio.run_coroutine_threadsafe zamiast call_soon_threadsafe
                 import asyncio
                 print(f"[DEBUG] Broadcasting log via WebSocket: {message[:50]}...")  # Debug
-                future = asyncio.run_coroutine_threadsafe(
+                broadcast_future = asyncio.run_coroutine_threadsafe(
                     self.broadcast_callback({
                         "type": "log",
                         "message": message,
@@ -97,12 +97,13 @@ class TradingBot:
                     }),
                     self.main_loop
                 )
-                print(f"[DEBUG] Broadcast future created successfully")  # Debug
-                # Nie czekamy na future.result() żeby nie blokować
+                print("[DEBUG] Broadcast future created successfully")  # Debug
+                # Store future reference for monitoring if needed
+                self._last_broadcast_future = broadcast_future
             except Exception as e:
                 print(f"Error broadcasting log: {e}")
         else:
-            print(f"[DEBUG] No broadcast_callback or main_loop available")
+            print("[DEBUG] No broadcast_callback or main_loop available")
 
     def _broadcast_status(self):
         """Wyślij status przez WebSocket jeśli dostępny"""
@@ -181,8 +182,11 @@ class TradingBot:
             if event_type == '24hrTicker':
                 # Analiza ticker data (24h stats)
                 current_price = float(market_data.get('c', 0))
-                price_change = float(market_data.get('P', 0))
+                price_change_percent = float(market_data.get('P', 0))
                 volume = float(market_data.get('v', 0))
+                
+                # Log price change for analysis
+                self._add_log(f"Price change: {price_change_percent:.2f}%, Volume: {volume:.2f}")
                 
                 # Execute configured strategy
                 await self._execute_configured_strategy(current_price, market_data)

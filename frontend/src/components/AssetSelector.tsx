@@ -1,30 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  Table,
+  Modal,
   TextInput,
-  Paper,
-  Group,
-  Text,
-  Loader,
-  Badge,
-  ActionIcon,
-  Box,
-  Select,
   Button,
-  Stack
+  Group,
+  Stack,
+  Table,
+  Text,
+  ScrollArea,
+  Badge,
+  LoadingOverlay,
+  Notification,
+  Divider,
+  Switch,
+  ActionIcon,
+  Box
 } from '@mantine/core';
-import { IconSearch, IconSortAscending, IconSortDescending, IconRefresh } from '@tabler/icons-react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  flexRender,
-  createColumnHelper,
-  type SortingState,
-  type ColumnFiltersState,
-} from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { IconSearch, IconX, IconRefresh, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { getEnvVar } from '../services/getEnvVar';
+import { PriceCell } from './shared';
 import type { Asset, AssetSelectorProps } from '../types/asset';
 import { useDebounced } from '../hooks/useDebounced';
 import { usePriceChangeAnimation } from '../hooks/usePriceChangeAnimation';
@@ -69,23 +65,13 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
         cell: (info) => {
           const symbol = info.row.original.symbol;
           const change = priceChanges.get(symbol);
-          const animationStyle = change 
-            ? {
-                backgroundColor: change === 'up' ? '#4CAF5020' : '#f4433620',
-                transition: 'background-color 0.3s ease',
-              }
-            : {};
+          const price = info.getValue();
           
           return (
-            <Text 
-              ta="right" 
-              ff="monospace"
-              style={animationStyle}
-              px="xs"
-              py="2px"
-            >
-              ${info.getValue().toFixed(4)}
-            </Text>
+            <PriceCell 
+              price={price}
+              change={change || undefined}
+            />
           );
         },
       }),
@@ -148,7 +134,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    debugTable: process.env.NODE_ENV === 'development',
+    debugTable: import.meta.env.MODE === 'development',
   });
 
   if (loading) {

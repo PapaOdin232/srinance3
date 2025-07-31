@@ -8,6 +8,8 @@ def setup_database():
     init_db()
 
 def test_create_and_get_order():
-    order = create_order(symbol="BTCUSDT", side="BUY", price=30000, quantity=0.1, status="NEW")
+    created_order = create_order(symbol="BTCUSDT", side="BUY", price=30000, quantity=0.1, status="NEW")
     orders = get_orders()
     assert any(o.symbol == "BTCUSDT" for o in orders)
+    # Sprawdź czy order został utworzony
+    assert created_order is not None

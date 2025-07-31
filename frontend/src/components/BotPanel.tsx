@@ -27,6 +27,7 @@ import {
 } from '@tabler/icons-react';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
 import BotConfigPanel from './BotConfigPanel';
+import { secureApiCall, API_CONFIG } from '../config/api';
 
 interface BotStatus {
   running: boolean;
@@ -75,7 +76,7 @@ const BotPanel: React.FC = () => {
 
   const loadBotConfig = async () => {
     try {
-      const response = await fetch('http://localhost:8001/bot/config');
+      const response = await secureApiCall(API_CONFIG.ENDPOINTS.BOT_CONFIG);
       const data = await response.json();
       setBotConfig(data.config || null);
     } catch (error) {

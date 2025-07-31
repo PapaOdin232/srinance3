@@ -1,4 +1,4 @@
-// getEnvVar.ts - tylko process.env, do użycia w testach i kodzie współdzielonym
+// getEnvVar.ts - Helper for environment variables in Vite
 
 // Whitelist dozwolonych kluczy środowiskowych dla bezpieczeństwa
 const ALLOWED_ENV_KEYS = [
@@ -7,7 +7,7 @@ const ALLOWED_ENV_KEYS = [
   'VITE_API_KEY',
   'VITE_SECRET_KEY',
   'VITE_AUTH_TOKEN',
-  'NODE_ENV',
+  'MODE',
   'API_URL',
   'WS_URL'
 ] as const;
@@ -21,8 +21,7 @@ export function getEnvVar(key: AllowedEnvKey, fallback?: string): string {
     return fallback ?? '';
   }
   
-  if (typeof process !== 'undefined' && typeof process.env !== 'undefined' && Object.prototype.hasOwnProperty.call(process.env, key)) {
-    return process.env[key] ?? fallback ?? '';
-  }
-  return fallback ?? '';
+  // Use Vite's import.meta.env instead of process.env
+  const envValue = import.meta.env[key];
+  return envValue ?? fallback ?? '';
 }

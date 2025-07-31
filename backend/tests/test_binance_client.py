@@ -1,14 +1,3 @@
-def test_get_ticker_testnet():
-    client = BinanceRESTClient()
-    result = client.get_ticker("BTCUSDT")
-    assert "symbol" in result
-from backend.binance_client import BinanceRESTClient
-
-def test_get_account_info():
-    client = BinanceRESTClient()
-    result = client.get_account_info()
-    assert isinstance(result, dict)
-import pytest
 from backend.binance_client import BinanceRESTClient
 
 class DummyResponse:
@@ -18,6 +7,16 @@ class DummyResponse:
         return self._json
     def raise_for_status(self):
         pass
+
+def test_get_ticker_testnet():
+    client = BinanceRESTClient()
+    result = client.get_ticker("BTCUSDT")
+    assert "symbol" in result
+
+def test_get_account_info():
+    client = BinanceRESTClient()
+    result = client.get_account_info()
+    assert isinstance(result, dict)
 
 def test_get_ticker(monkeypatch):
     client = BinanceRESTClient()

@@ -1,36 +1,36 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
-  Table,
-  TextInput,
-  Paper,
-  Group,
   Text,
-  Loader,
+  Table,
+  ScrollArea,
   Badge,
+  Container,
+  Card,
+  Title,
+  Group,
   ActionIcon,
-  Box,
-  Switch,
+  Notification,
+  Flex,
   Button,
   Stack,
-  Progress,
+  Modal,
+  TextInput,
+  NumberInput,
   Select,
+  Alert,
+  Progress,
+  Pagination
 } from '@mantine/core';
-import { IconSearch, IconSortAscending, IconSortDescending, IconRefresh, IconEye, IconEyeOff } from '@tabler/icons-react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  flexRender,
-  createColumnHelper,
-  type SortingState,
-  type ColumnFiltersState,
+import { 
+  getCoreRowModel, 
+  flexRender, 
+  createColumnHelper, 
+  useReactTable 
 } from '@tanstack/react-table';
-import type { PortfolioBalance, PortfolioTableProps } from '../types/portfolio';
-import { useDebounced } from '../hooks/useDebounced';
-import { usePriceChangeAnimation } from '../hooks/usePriceChangeAnimation';
-import { formatCurrency, formatCrypto } from '../types/portfolio';
+import { IconRefresh, IconExclamationCircle, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { secureApiCall } from '../config/api';
+import { PriceCell } from './shared';
 
 const columnHelper = createColumnHelper<PortfolioBalance>();
 
@@ -105,24 +105,12 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
             return <Text c="dimmed" size="sm">-</Text>;
           }
           
-          const animationStyle = change 
-            ? {
-                backgroundColor: change === 'up' ? '#4CAF5020' : '#f4433620',
-                transition: 'background-color 0.3s ease',
-              }
-            : {};
-          
           return (
-            <Text 
-              ta="right" 
-              ff="monospace"
-              style={animationStyle}
-              px="xs"
-              py="2px"
-              size="sm"
-            >
-              {asset === 'USDT' ? '$1.00' : `$${price.toFixed(4)}`}
-            </Text>
+            <PriceCell 
+              price={price}
+              change={change}
+              isUSDT={asset === 'USDT'}
+            />
           );
         },
       }),
@@ -222,7 +210,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    debugTable: process.env.NODE_ENV === 'development',
+    debugTable: import.meta.env.MODE === 'development',
   });
 
   if (loading) {
