@@ -236,7 +236,7 @@ const BotPanel: React.FC = () => {
       // Załaduj aktualną konfigurację przed uruchomieniem
       let currentConfig = botConfig;
       try {
-        const response = await fetch('http://localhost:8001/bot/config');
+        const response = await secureApiCall('/bot/config');
         const data = await response.json();
         currentConfig = data.config || null;
         setBotConfig(currentConfig);
