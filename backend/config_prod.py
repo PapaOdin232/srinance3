@@ -7,4 +7,5 @@ BINANCE_ENV = os.getenv("BINANCE_ENV", "prod")
 
 # Produkcyjne endpointy Binance
 BINANCE_API_URL = "https://api.binance.com/api"
-BINANCE_WS_URL = "wss://stream.binance.com:9443"
+# Using data-stream.binance.vision for optimized market data performance
+BINANCE_WS_URL = "wss://data-stream.binance.vision"

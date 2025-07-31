@@ -37,9 +37,13 @@ export class BinanceTickerWSClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private isDestroyed = false;
-  private readonly url = 'wss://stream.binance.com:9443/ws/!ticker@arr';
+  private readonly url: string;
 
   constructor() {
+    // Use environment variable for Binance WebSocket URL, with fallback
+    const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
+    this.url = `${baseUrl}/!ticker@arr`;
+    console.log(`[BinanceTickerWSClient] Will connect to ${this.url}`);
     this.connect();
   }
 
@@ -82,11 +86,20 @@ export class BinanceTickerWSClient {
 
       this.ws.onerror = (error) => {
         console.error('[BinanceTickerWSClient] WebSocket error:', error);
+        console.error('[BinanceTickerWSClient] Connection URL:', this.url);
+        console.error('[BinanceTickerWSClient] WebSocket readyState:', this.ws?.readyState);
       };
 
       this.ws.onclose = (event) => {
         console.log(`[BinanceTickerWSClient] Connection closed: ${event.code} ${event.reason}`);
         this.ws = null;
+        
+        // Don't attempt reconnection if the close was due to an invalid endpoint
+        if (event.code === 1006) {
+          console.warn('[BinanceTickerWSClient] Connection failed - possibly invalid endpoint. Check VITE_BINANCE_WS_URL configuration.');
+          this.shouldReconnect = false;
+          return;
+        }
         
         if (this.shouldReconnect && !this.isDestroyed && this.reconnectAttempts < this.maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
@@ -96,6 +109,8 @@ export class BinanceTickerWSClient {
             this.reconnectAttempts++;
             this.connect();
           }, delay);
+        } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.error('[BinanceTickerWSClient] Max reconnection attempts reached. Giving up.');
         }
       };
 

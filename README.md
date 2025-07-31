@@ -289,6 +289,18 @@ ADMIN_TOKEN=               # Token autoryzacji
 - `BINANCE_ENV=testnet` - używa `config_testnet.py`
 - `BINANCE_ENV=prod` - używa `config_prod.py`
 
+### Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:8001          # Backend REST API
+VITE_WS_URL=ws://localhost:8001/ws          # Backend WebSocket
+VITE_BINANCE_WS_URL=wss://data-stream.binance.vision/ws  # Binance market data WebSocket
+VITE_ENABLE_BINANCE_STREAMS=true            # Enable/disable Binance real-time streams
+```
+
+**Uwagi:**
+- `VITE_BINANCE_WS_URL` używa `data-stream.binance.vision` dla lepszej wydajności market data
+- W przypadku problemów można zmienić na `wss://stream.binance.com:9443/ws`
+
 ## Rozwój projektu
 
 ### Ostatnie zmiany (lipiec 2025)
@@ -297,6 +309,26 @@ ADMIN_TOKEN=               # Token autoryzacji
 - ✅ **Dodano procentową zmianę ceny** w tickerze
 - ✅ **Ulepszone WebSocket połączenia** z heartbeat
 - ✅ **Rozszerzone testy** jednostkowe i E2E
+- ✅ **Optymalizacja WebSocket połączeń** - przejście na `data-stream.binance.vision`
+
+### Optymalizacja WebSocket Binance (31.07.2025)
+Projekt został zoptymalizowany pod kątem WebSocket połączeń z Binance:
+
+**Frontend:**
+- Zmieniono endpoint z `wss://stream.binance.com:9443/ws` na `wss://data-stream.binance.vision/ws`
+- Ujednolicono konfigurację WebSocket poprzez zmienne środowiskowe
+- Usunięto hard-coded URL z `BinanceTickerWSClient`
+- Ulepszone error handling i logging
+
+**Backend:**
+- Zaktualizowano `config_prod.py` do `data-stream.binance.vision`
+- Zachowano `stream.testnet.binance.vision` dla środowiska testowego
+
+**Korzyści:**
+- `data-stream.binance.vision` jest zoptymalizowany tylko dla market data
+- Lepsza stabilność i wydajność połączeń
+- Centralna konfiguracja WebSocket endpoints
+- Zgodność z najlepszymi praktykami Binance API
 
 ### Planowane funkcjonalności
 - [ ] Zaawansowane strategie tradingowe

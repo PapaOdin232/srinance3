@@ -1,6 +1,8 @@
 // Binance WebSocket Client for Kline/Candlestick streams
 // Dedicated client for real-time candlestick data from Binance WebSocket API
 
+import { WEBSOCKET_CONFIG } from '../config/websocket';
+
 export interface BinanceKlineData {
   e: string;      // Event type (always "kline")
   E: number;      // Event time (timestamp in milliseconds)
@@ -51,9 +53,10 @@ export class BinanceWSClient {
     }
 
     // Use environment variable for Binance WebSocket URL
-    const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://stream.binance.com:9443/ws';
+    const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
     const url = `${baseUrl}/${this.symbol}@kline_${this.interval}`;
     console.log(`[BinanceWSClient] Connecting to ${url}`);
+    console.log(`[BinanceWSClient] Using ${baseUrl.includes('data-stream') ? 'data-stream.binance.vision (optimized for market data)' : 'stream.binance.com (full API)'}`);
 
     try {
       this.ws = new WebSocket(url);
