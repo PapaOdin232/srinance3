@@ -130,50 +130,6 @@ export default {
   fetchAllTradingPairs
 };
 
-// New interfaces for trading pairs API
-interface BinanceExchangeSymbol {
-  symbol: string;
-  status: string;
-  baseAsset: string;
-  quoteAsset: string;
-  baseAssetPrecision: number;
-  quotePrecision: number;
-  orderTypes: string[];
-  icebergAllowed: boolean;
-  ocoAllowed: boolean;
-  isSpotTradingAllowed: boolean;
-  isMarginTradingAllowed: boolean;
-  permissions: string[];
-}
-
-interface BinanceExchangeInfo {
-  timezone: string;
-  serverTime: number;
-  symbols: BinanceExchangeSymbol[];
-}
-
-interface Binance24hrTicker {
-  symbol: string;
-  priceChange: string;
-  priceChangePercent: string;
-  weightedAvgPrice: string;
-  prevClosePrice: string;
-  lastPrice: string;
-  lastQty: string;
-  bidPrice: string;
-  askPrice: string;
-  openPrice: string;
-  highPrice: string;
-  lowPrice: string;
-  volume: string;
-  quoteVolume: string;
-  openTime: number;
-  closeTime: number;
-  firstId: number;
-  lastId: number;
-  count: number;
-}
-
 /**
  * Fetch all trading pairs from local backend API with 24hr statistics
  * This reduces direct calls to Binance API and uses cached data
