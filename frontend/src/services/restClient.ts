@@ -221,6 +221,25 @@ export const getOrderBook = getOrderbook;
 // Alias for compatibility with MarketPanel.tsx
 export const getCurrentTicker = getTicker;
 
+// Exchange info and 24hr ticker endpoints
+export async function getExchangeInfo() {
+  try {
+    const res = await api.get('/exchangeInfo');
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function get24hrTicker() {
+  try {
+    const res = await api.get('/24hr');
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
 // Klines response type (Binance returns arrays of values)
 export type KlineResponse = [
   number,  // Open time

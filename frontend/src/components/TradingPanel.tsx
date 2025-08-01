@@ -47,32 +47,44 @@ const TradingPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [ticker, setTicker] = useState<TickerData | null>(null);
 
-  // Assets hook for symbol selection
+  // Assets hook for symbol selection and real-time ticker data
   const { assets } = useAssets();
 
-  // Load ticker data for selected symbol
+  // Get ticker data from assets instead of polling
+  const currentAsset = assets.find(asset => asset.symbol === symbol);
+  
   useEffect(() => {
-    const loadTicker = async () => {
-      try {
-        const tickerData = await getCurrentTicker(symbol);
-        if (tickerData) {
-          setTicker({
-            symbol: tickerData.symbol,
-            price: tickerData.price,
-            change: '0', // Basic ticker doesn't have change data
-            changePercent: '0%'
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load ticker:', err);
-      }
-    };
+    if (currentAsset) {
+      setTicker({
+        symbol: currentAsset.symbol,
+        price: currentAsset.price.toString(),
+        change: currentAsset.priceChange?.toString() || '0',
+        changePercent: `${currentAsset.priceChangePercent?.toFixed(2) || '0'}%`
+      });
+    }
+  }, [currentAsset]);
 
-    loadTicker();
-    // Refresh ticker every 5 seconds
-    const interval = setInterval(loadTicker, 5000);
-    return () => clearInterval(interval);
-  }, [symbol]);
+  // Fallback: Load ticker data only once on mount if no WebSocket data
+  useEffect(() => {
+    if (!currentAsset && symbol) {
+      const loadTicker = async () => {
+        try {
+          const tickerData = await getCurrentTicker(symbol);
+          if (tickerData) {
+            setTicker({
+              symbol: tickerData.symbol,
+              price: tickerData.price,
+              change: '0',
+              changePercent: '0%'
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load ticker:', err);
+        }
+      };
+      loadTicker();
+    }
+  }, [symbol, currentAsset]);
 
   const handleTestOrder = async () => {
     setTestLoading(true);

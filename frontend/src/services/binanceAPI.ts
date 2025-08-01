@@ -175,32 +175,29 @@ interface Binance24hrTicker {
 }
 
 /**
- * Fetch all trading pairs from Binance API with 24hr statistics
+ * Fetch all trading pairs from local backend API with 24hr statistics
+ * This reduces direct calls to Binance API and uses cached data
  * @returns Promise with array of Asset objects
  */
 export async function fetchAllTradingPairs(): Promise<Asset[]> {
   try {
-    console.log('[BinanceAPI] Fetching all trading pairs and 24hr ticker data...');
+    console.log('[BinanceAPI] Fetching trading pairs from local backend...');
     
     const [exchangeInfo, ticker24hr] = await Promise.all([
-      axios.get<BinanceExchangeInfo>(`${BINANCE_API_BASE}/exchangeInfo`, {
-        timeout: 10000
-      }),
-      axios.get<Binance24hrTicker[]>(`${BINANCE_API_BASE}/ticker/24hr`, {
-        timeout: 10000
-      })
+      axios.get('/api/exchangeInfo', { timeout: 10000 }),
+      axios.get('/api/24hr', { timeout: 10000 })
     ]);
 
     // Filter tylko USDT pary które są aktywne
-    const usdtPairs = exchangeInfo.data.symbols.filter(symbol => 
+    const usdtPairs = (exchangeInfo.data as any).symbols.filter((symbol: any) => 
       symbol.quoteAsset === 'USDT' && 
       symbol.status === 'TRADING' &&
       symbol.isSpotTradingAllowed
     );
 
     // Mapowanie danych na format Asset
-    const assets: Asset[] = usdtPairs.map(pair => {
-      const tickerData = ticker24hr.data.find(t => t.symbol === pair.symbol);
+    const assets: Asset[] = usdtPairs.map((pair: any) => {
+      const tickerData = (ticker24hr.data as any[]).find((t: any) => t.symbol === pair.symbol);
       
       if (!tickerData) {
         // Fallback gdy brak ticker data

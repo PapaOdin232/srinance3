@@ -5,6 +5,7 @@ import requests
 import threading
 import websocket
 import json
+from datetime import datetime, timedelta
 
 from urllib.parse import urlencode
 from backend.config import BINANCE_API_URL, BINANCE_WS_URL
@@ -15,6 +16,12 @@ class BinanceRESTClient:
         self.api_key = BINANCE_API_KEY
         self.api_secret = BINANCE_API_SECRET
         self.base_url = BINANCE_API_URL
+        
+        # Cache for exchange info (updates rarely)
+        self._exchange_info_cache = None
+        self._exchange_info_cache_time = None
+        self._exchange_info_cache_ttl = 3600  # 1 hour TTL
+        
         print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", self.api_key)
         print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", self.api_secret)
 
@@ -59,6 +66,38 @@ class BinanceRESTClient:
         endpoint = "/v3/ticker/24hr"
         params = {"symbol": symbol.upper()}
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_exchange_info(self):
+        """Get exchange info with caching to reduce API calls"""
+        now = datetime.now()
+        
+        # Check if cache is valid
+        if (self._exchange_info_cache and 
+            self._exchange_info_cache_time and 
+            now - self._exchange_info_cache_time < timedelta(seconds=self._exchange_info_cache_ttl)):
+            print("[DEBUG] Using cached exchange info")
+            return self._exchange_info_cache
+        
+        # Fetch new data
+        endpoint = "/v3/exchangeInfo"
+        url = f"{self.base_url}{endpoint}"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        
+        # Update cache
+        self._exchange_info_cache = resp.json()
+        self._exchange_info_cache_time = now
+        print("[DEBUG] Fetched and cached new exchange info")
+        
+        return self._exchange_info_cache
+
+    def get_ticker_24hr_all(self):
+        """Get 24hr ticker for all symbols"""
+        endpoint = "/v3/ticker/24hr"
+        url = f"{self.base_url}{endpoint}"
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -359,6 +398,26 @@ class BinanceClient(BinanceRESTClient):
             return result
         except Exception as e:
             print(f"[ERROR] get_ticker_24hr failed for {symbol}: {e}")
+            return None
+
+    async def get_exchange_info_async(self):
+        """Async wrapper for get_exchange_info"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_exchange_info)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_exchange_info failed: {e}")
+            return None
+
+    async def get_ticker_24hr_all_async(self):
+        """Async wrapper for get_ticker_24hr_all"""
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().get_ticker_24hr_all)
+            return result
+        except Exception as e:
+            print(f"[ERROR] get_ticker_24hr_all failed: {e}")
             return None
 
     async def get_order_book(self, symbol, limit=20):

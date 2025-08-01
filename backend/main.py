@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import Dict, List, Optional
@@ -748,6 +748,32 @@ async def get_klines(symbol: str, interval: str = "1m", limit: int = 100):
     except Exception as e:
         logger.error(f"Klines endpoint error: {e}")
         return {"error": str(e)}
+
+@app.get("/exchangeInfo")
+async def get_exchange_info():
+    """Get exchange information (cached for 1 hour)"""
+    try:
+        if not binance_client:
+            raise HTTPException(status_code=503, detail="Binance client not available")
+        
+        exchange_info = await binance_client.get_exchange_info_async()
+        return exchange_info
+    except Exception as e:
+        logger.error(f"Exchange info endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/24hr")
+async def get_24hr_ticker():
+    """Get 24hr ticker for all symbols"""
+    try:
+        if not binance_client:
+            raise HTTPException(status_code=503, detail="Binance client not available")
+        
+        ticker_data = await binance_client.get_ticker_24hr_all_async()
+        return ticker_data
+    except Exception as e:
+        logger.error(f"24hr ticker endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/account/history")
 async def get_account_history(symbol: str):

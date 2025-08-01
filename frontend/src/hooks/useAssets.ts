@@ -24,13 +24,25 @@ export const useAssets = (): UseAssetsReturn => {
   const [isConnected, setIsConnected] = useState(false);
   
   const wsClientRef = useRef<BinanceTickerWSClient | null>(null);
+  const lastFetchRef = useRef<number>(0);
+  const FETCH_COOLDOWN = 60000; // 1 minute cooldown between fetchAllTradingPairs calls
 
-  const fetchAssets = async () => {
+  const fetchAssets = async (forceFetch: boolean = false) => {
+    const now = Date.now();
+    
+    // Skip if recently fetched (unless forced)
+    if (!forceFetch && now - lastFetchRef.current < FETCH_COOLDOWN) {
+      console.log('[useAssets] Skipping fetch - too recent');
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
       const data = await fetchAllTradingPairs();
       setAssets(data);
+      lastFetchRef.current = now;
+      console.log('[useAssets] Fetched assets successfully');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch assets');
       console.error('Error fetching assets:', err);
@@ -92,13 +104,15 @@ export const useAssets = (): UseAssetsReturn => {
 
   useEffect(() => {
     // Initial data fetch
-    fetchAssets();
+    fetchAssets(true); // Force initial fetch
     
-    // Periodic refresh every 30 seconds for fallback
+    // Reduced periodic refresh - only if no WebSocket data
     const refreshInterval = setInterval(() => {
-      console.log('[useAssets] Periodic refresh - fetching latest data');
-      fetchAssets();
-    }, 30000);
+      if (!isConnected) {
+        console.log('[useAssets] WebSocket disconnected - fallback fetch');
+        fetchAssets(false); // Respect cooldown
+      }
+    }, 120000); // 2 minutes instead of 30 seconds
     
     // Cleanup WebSocket and intervals on unmount
     return () => {
@@ -109,10 +123,10 @@ export const useAssets = (): UseAssetsReturn => {
         wsClientRef.current = null;
       }
     };
-  }, []);
+  }, [isConnected]);
 
   const refetch = () => {
-    fetchAssets();
+    fetchAssets(true); // Force refetch when requested manually
   };
 
   return {
