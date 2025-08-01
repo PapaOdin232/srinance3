@@ -79,6 +79,42 @@ export interface BotLogsResponse {
   logs: string[];
 }
 
+// Order Management Types
+export interface OrderResponse {
+  symbol: string;
+  orderId: number;
+  orderListId: number;
+  clientOrderId: string;
+  price: string;
+  origQty: string;
+  executedQty: string;
+  cummulativeQuoteQty: string;
+  status: string;
+  timeInForce: string;
+  type: string;
+  side: string;
+  stopPrice?: string;
+  icebergQty?: string;
+  time: number;
+  updateTime: number;
+  isWorking: boolean;
+  workingTime?: number;
+  origQuoteOrderQty: string;
+  selfTradePreventionMode?: string;
+}
+
+export interface OpenOrdersResponse {
+  orders: OrderResponse[];
+}
+
+export interface OrderHistoryResponse {
+  orders: OrderResponse[];
+}
+
+export interface OrderStatusResponse {
+  order: OrderResponse;
+}
+
 // Przykładowe funkcje API
 export async function getAccount() {
   try {
@@ -121,6 +157,58 @@ export async function getAccountBalance(asset: string) {
 export async function getOrderbook(symbol: string) {
   try {
     const res = await api.get<OrderbookResponse>(`/orderbook?symbol=${symbol}`);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+// Order Management Functions
+export async function getOpenOrders(symbol?: string) {
+  try {
+    const url = symbol ? `/orders/open?symbol=${encodeURIComponent(symbol)}` : '/orders/open';
+    const res = await api.get<OpenOrdersResponse>(url);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function getOrdersHistory(
+  symbol: string,
+  limit: number = 100,
+  orderId?: number,
+  startTime?: number,
+  endTime?: number
+) {
+  try {
+    const params = new URLSearchParams({
+      symbol,
+      limit: limit.toString(),
+    });
+    
+    if (orderId) params.append('orderId', orderId.toString());
+    if (startTime) params.append('startTime', startTime.toString());
+    if (endTime) params.append('endTime', endTime.toString());
+
+    const res = await api.get<OrderHistoryResponse>(`/orders/history?${params}`);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function getOrderStatus(orderId: number, symbol: string, origClientOrderId?: string) {
+  try {
+    const params = new URLSearchParams({
+      symbol,
+    });
+    
+    if (origClientOrderId) {
+      params.append('origClientOrderId', origClientOrderId);
+    }
+
+    const res = await api.get<OrderStatusResponse>(`/orders/${orderId}?${params}`);
     return res.data;
   } catch (err) {
     handleError(err);
@@ -170,6 +258,68 @@ export async function getBotStatus() {
 export async function getBotLogs() {
   try {
     const res = await api.get<BotLogsResponse>('/bot/logs');
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+// ===== ORDER MANAGEMENT FUNCTIONS =====
+
+export interface PlaceOrderRequest {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  type: 'MARKET' | 'LIMIT' | 'STOP_LOSS' | 'STOP_LOSS_LIMIT' | 'TAKE_PROFIT' | 'TAKE_PROFIT_LIMIT';
+  quantity: string;
+  price?: string;
+  timeInForce?: 'GTC' | 'IOC' | 'FOK';
+}
+
+export interface PlaceOrderResponse {
+  success: boolean;
+  order?: any;
+  error?: string;
+}
+
+export interface TestOrderResponse {
+  success: boolean;
+  message?: string;
+  test_result?: any;
+  error?: string;
+}
+
+export interface CancelOrderResponse {
+  success: boolean;
+  cancelled_order?: any;
+  error?: string;
+}
+
+export async function placeOrder(orderData: PlaceOrderRequest) {
+  try {
+    const res = await api.post<PlaceOrderResponse>('/orders', orderData);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function testOrder(orderData: PlaceOrderRequest) {
+  try {
+    const res = await api.post<TestOrderResponse>('/orders/test', orderData);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+export async function cancelOrder(orderId: number, symbol: string, origClientOrderId?: string) {
+  try {
+    const params = new URLSearchParams({ symbol });
+    if (origClientOrderId) {
+      params.append('origClientOrderId', origClientOrderId);
+    }
+    
+    const res = await api.delete<CancelOrderResponse>(`/orders/${orderId}?${params}`);
     return res.data;
   } catch (err) {
     handleError(err);

@@ -775,6 +775,64 @@ async def get_account_balance(asset: str):
         logger.error(f"Account balance endpoint error: {e}")
         return {"error": str(e)}
 
+@app.get("/orders/open")
+async def get_open_orders(symbol: Optional[str] = None):
+    """Get current open orders for a symbol or all symbols"""
+    try:
+        if binance_client:
+            orders = await binance_client.get_open_orders_async(symbol)
+            if orders is not None:
+                return {"orders": orders}
+            else:
+                return {"error": "Failed to fetch open orders"}
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Open orders endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/orders/history")
+async def get_orders_history(symbol: str, limit: int = 100, orderId: Optional[int] = None, startTime: Optional[int] = None, endTime: Optional[int] = None):
+    """Get orders history for a symbol"""
+    try:
+        if binance_client:
+            orders = await binance_client.get_all_orders_async(
+                symbol=symbol,
+                limit=min(limit, 1000),  # Respect API limit
+                order_id=orderId,
+                start_time=startTime,
+                end_time=endTime
+            )
+            if orders is not None:
+                return {"orders": orders}
+            else:
+                return {"error": "Failed to fetch orders history"}
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Orders history endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.get("/orders/{order_id}")
+async def get_order_status(order_id: int, symbol: str, origClientOrderId: Optional[str] = None):
+    """Get specific order status"""
+    try:
+        if binance_client:
+            order = await binance_client.get_order_status_async(
+                symbol=symbol,
+                order_id=order_id if order_id else None,
+                orig_client_order_id=origClientOrderId
+            )
+            if order is not None:
+                return {"order": order}
+            else:
+                return {"error": "Failed to fetch order status"}
+        else:
+            return {"error": "Binance client not available"}
+    except Exception as e:
+        logger.error(f"Order status endpoint error: {e}")
+        return {"error": str(e)}
+
 @app.get("/bot/status")
 async def get_bot_status():
     """Get bot status"""
@@ -847,6 +905,128 @@ async def get_bot_config():
             return {"error": "Bot not available"}
     except Exception as e:
         logger.error(f"Bot config endpoint error: {e}")
+        return {"error": str(e)}
+
+# ===== ORDER MANAGEMENT ENDPOINTS =====
+
+@app.post("/orders")
+async def place_order(order_data: dict):
+    """Place a new order on Binance
+    
+    Expected body:
+    {
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "type": "MARKET",
+        "quantity": "0.001",
+        "price": "50000.00",  // Optional for MARKET orders
+        "timeInForce": "GTC"  // Optional, default GTC
+    }
+    """
+    try:
+        if not binance_client:
+            return {"error": "Binance client not available"}
+            
+        # Validate required fields
+        required_fields = ["symbol", "side", "type", "quantity"]
+        for field in required_fields:
+            if field not in order_data:
+                return {"error": f"Missing required field: {field}"}
+        
+        symbol = order_data["symbol"]
+        side = order_data["side"]
+        order_type = order_data["type"]
+        quantity = order_data["quantity"]
+        price = order_data.get("price")
+        time_in_force = order_data.get("timeInForce", "GTC")
+        
+        result = await binance_client.place_order_async(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            quantity=quantity,
+            price=price,
+            time_in_force=time_in_force
+        )
+        
+        if result:
+            logger.info(f"Order placed successfully: {result}")
+            return {"success": True, "order": result}
+        else:
+            return {"error": "Failed to place order"}
+            
+    except Exception as e:
+        logger.error(f"Place order endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.post("/orders/test")
+async def test_order(order_data: dict):
+    """Test a new order (validation without execution)
+    
+    Expected body: Same as place_order
+    """
+    try:
+        if not binance_client:
+            return {"error": "Binance client not available"}
+            
+        # Validate required fields
+        required_fields = ["symbol", "side", "type", "quantity"]
+        for field in required_fields:
+            if field not in order_data:
+                return {"error": f"Missing required field: {field}"}
+        
+        symbol = order_data["symbol"]
+        side = order_data["side"]
+        order_type = order_data["type"]
+        quantity = order_data["quantity"]
+        price = order_data.get("price")
+        time_in_force = order_data.get("timeInForce", "GTC")
+        
+        result = await binance_client.test_order_async(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            quantity=quantity,
+            price=price,
+            time_in_force=time_in_force
+        )
+        
+        if result is not None:  # Test order returns empty dict on success
+            logger.info(f"Order test successful: {result}")
+            return {"success": True, "message": "Order validation passed", "test_result": result}
+        else:
+            return {"error": "Order test failed"}
+            
+    except Exception as e:
+        logger.error(f"Test order endpoint error: {e}")
+        return {"error": str(e)}
+
+@app.delete("/orders/{order_id}")
+async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[str] = None):
+    """Cancel an active order
+    
+    Query parameters:
+    - symbol: Trading pair (required)
+    - origClientOrderId: Client order ID (optional, alternative to orderId)
+    """
+    try:
+        if not binance_client:
+            return {"error": "Binance client not available"}
+            
+        result = await binance_client.cancel_order_async(
+            symbol=symbol,
+            order_id=order_id if order_id != 0 else None,
+            orig_client_order_id=origClientOrderId
+        )
+        
+        if result:
+            logger.info(f"Order cancelled successfully: {result}")
+            return {"success": True, "cancelled_order": result}
+        else:
+            return {"error": "Failed to cancel order"}
+            
+    except Exception as e:
+        logger.error(f"Cancel order endpoint error: {e}")
         return {"error": str(e)}
 
 if __name__ == "__main__":
