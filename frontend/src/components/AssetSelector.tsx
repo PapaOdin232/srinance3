@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect } from 'react';
 import {
   Table,
   TextInput,
@@ -129,8 +129,22 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    // Ważne: nie resetuj paginacji przy każdej zmianie danych (np. update tickera)
+    autoResetPageIndex: false,
     debugTable: import.meta.env.MODE === 'development',
   });
+
+  // Zabezpieczenie: jeśli po filtracji/zmianie pageSize obecny pageIndex wykracza poza zakres, zawęź go
+  useEffect(() => {
+    const pageCount = table.getPageCount();
+    if (pageCount === 0 && pagination.pageIndex !== 0) {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      return;
+    }
+    if (pageCount > 0 && pagination.pageIndex > pageCount - 1) {
+      setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
+    }
+  }, [assets.length, debouncedGlobalFilter, pagination.pageSize, sorting, table, pagination.pageIndex]);
 
   if (loading) {
     return (
