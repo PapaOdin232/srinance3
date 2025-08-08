@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import {
   Paper,
   Stack,
@@ -423,4 +423,4 @@ const TradingPanel: React.FC = () => {
   );
 };
 
-export default TradingPanel;
+export default memo(TradingPanel);

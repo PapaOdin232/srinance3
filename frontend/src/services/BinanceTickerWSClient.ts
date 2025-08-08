@@ -1,5 +1,6 @@
-// Binance WebSocket Client for All Market Tickers (!ticker@arr)
-// Provides real-time 24hr ticker statistics for all symbols
+// Optimized Binance WebSocket Client for Selected Tickers
+// Provides real-time 24hr ticker statistics for specific symbols only
+// Fixes performance issue: was downloading 570MB for all symbols, now only selected ones
 
 export interface BinanceTicker24hr {
   e: string;      // Event type (always "24hrTicker")
@@ -37,14 +38,64 @@ export class BinanceTickerWSClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private isDestroyed = false;
-  private readonly url: string;
+  private readonly baseUrl: string;
+  private subscribedSymbols = new Set<string>();
 
   constructor() {
     // Use environment variable for Binance WebSocket URL, with fallback
-    const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
-    this.url = `${baseUrl}/!ticker@arr`;
-    console.log(`[BinanceTickerWSClient] Will connect to ${this.url}`);
-    this.connect();
+    this.baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
+    console.log(`[BinanceTickerWSClient] Initialized with base URL: ${this.baseUrl}`);
+    // Don't auto-connect, wait for subscriptions
+  }
+
+  // Subscribe to specific symbols for ticker updates
+  subscribe(symbols: string[]) {
+    symbols.forEach(symbol => {
+      const symbolLower = symbol.toLowerCase();
+      if (!this.subscribedSymbols.has(symbolLower)) {
+        this.subscribedSymbols.add(symbolLower);
+        console.log(`[BinanceTickerWSClient] Added subscription for ${symbol}`);
+      }
+    });
+    
+    if (this.subscribedSymbols.size > 0 && !this.ws) {
+      this.connect();
+    }
+  }
+
+  // Unsubscribe from specific symbols
+  unsubscribe(symbols: string[]) {
+    symbols.forEach(symbol => {
+      const symbolLower = symbol.toLowerCase();
+      this.subscribedSymbols.delete(symbolLower);
+      console.log(`[BinanceTickerWSClient] Removed subscription for ${symbol}`);
+    });
+    
+    if (this.subscribedSymbols.size === 0 && this.ws) {
+      console.log(`[BinanceTickerWSClient] No more subscriptions, closing connection`);
+      this.ws.close();
+    }
+  }
+
+  private buildStreamUrl(): string {
+    if (this.subscribedSymbols.size === 0) {
+      throw new Error('No symbols subscribed');
+    }
+    
+    // Build streams for subscribed symbols: symbol@ticker
+    const streams = Array.from(this.subscribedSymbols).map(symbol => `${symbol}@ticker`);
+    const streamParam = streams.join('/');
+
+    // Support both single-stream (/ws/<stream>) and combined streams (/stream?streams=...)
+    // If only one stream and baseUrl ends with /ws, use single stream path for efficiency
+    if (streams.length === 1 && this.baseUrl.endsWith('/ws')) {
+      return `${this.baseUrl}/${streams[0]}`;
+    }
+
+    // Otherwise use combined stream format regardless of trailing segment in baseUrl
+    // Normalize to data-stream root, preserving potential custom host in baseUrl
+    const root = this.baseUrl.replace(/\/ws$/i, '').replace(/\/stream\??streams=?$/i, '');
+    return `${root}/stream?streams=${encodeURIComponent(streamParam)}`;
   }
 
   private connect() {
@@ -53,30 +104,42 @@ export class BinanceTickerWSClient {
       return;
     }
 
-    console.log(`[BinanceTickerWSClient] Connecting to ${this.url}`);
+    if (this.subscribedSymbols.size === 0) {
+      console.log('[BinanceTickerWSClient] No symbols subscribed, skipping connect');
+      return;
+    }
+
+  const url = this.buildStreamUrl();
+    console.log(`[BinanceTickerWSClient] Connecting to ${url}`);
 
     try {
-      this.ws = new WebSocket(this.url);
+      this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-        console.log(`[BinanceTickerWSClient] Connected to all market tickers stream`);
+        console.log(`[BinanceTickerWSClient] Connected to ${this.subscribedSymbols.size} ticker streams`);
         this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
-          const tickers: BinanceTicker24hr[] = JSON.parse(event.data);
+          const data = JSON.parse(event.data);
           
-          // Validate that we received an array of tickers
-          if (Array.isArray(tickers) && tickers.length > 0) {
+          // Handle single ticker update (not array like before)
+          if (data.e === '24hrTicker') {
             // Filter only USDT pairs to match our asset list
-            const usdtTickers = tickers.filter(ticker => 
-              ticker.s && ticker.s.endsWith('USDT') && ticker.e === '24hrTicker'
-            );
-            
-            if (usdtTickers.length > 0) {
-              console.log(`[BinanceTickerWSClient] Received ${usdtTickers.length} USDT ticker updates`);
-              this.notifyListeners(usdtTickers);
+            if (data.s && data.s.endsWith('USDT')) {
+              console.log(`[BinanceTickerWSClient] Received ticker update for ${data.s}`);
+              this.notifyListeners([data]); // Wrap in array for compatibility
+            }
+          } else if (Array.isArray(data)) {
+            // Some endpoints may send arrays (safety)
+            const filtered = (data as BinanceTicker24hr[]).filter(t => t.s && t.s.endsWith('USDT'));
+            if (filtered.length) this.notifyListeners(filtered);
+          } else if (data && data.stream && data.data) {
+            // Combined stream payload: { stream: 'btcusdt@ticker', data: {...} }
+            const payload = data.data as BinanceTicker24hr;
+            if (payload.e === '24hrTicker' && payload.s && payload.s.endsWith('USDT')) {
+              this.notifyListeners([payload]);
             }
           }
         } catch (error) {
@@ -86,7 +149,7 @@ export class BinanceTickerWSClient {
 
       this.ws.onerror = (error) => {
         console.error('[BinanceTickerWSClient] WebSocket error:', error);
-        console.error('[BinanceTickerWSClient] Connection URL:', this.url);
+        console.error('[BinanceTickerWSClient] Connection URL:', url);
         console.error('[BinanceTickerWSClient] WebSocket readyState:', this.ws?.readyState);
       };
 
@@ -101,7 +164,7 @@ export class BinanceTickerWSClient {
           return;
         }
         
-        if (this.shouldReconnect && !this.isDestroyed && this.reconnectAttempts < this.maxReconnectAttempts) {
+        if (this.shouldReconnect && !this.isDestroyed && this.reconnectAttempts < this.maxReconnectAttempts && this.subscribedSymbols.size > 0) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
           console.log(`[BinanceTickerWSClient] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
           
@@ -117,6 +180,29 @@ export class BinanceTickerWSClient {
     } catch (error) {
       console.error('[BinanceTickerWSClient] Failed to create WebSocket:', error);
     }
+  }
+
+  // Replace current subscriptions with a new set and reconnect
+  setSubscriptions(symbols: string[]) {
+    const next = new Set(symbols.map(s => s.toLowerCase()));
+    // If identical, do nothing
+    if (
+      next.size === this.subscribedSymbols.size &&
+      Array.from(next).every(s => this.subscribedSymbols.has(s))
+    ) {
+      return;
+    }
+
+    console.log(`[BinanceTickerWSClient] Updating subscriptions to ${next.size} symbols`);
+    this.subscribedSymbols = next;
+
+    // Reconnect with new streams
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.reconnectAttempts = 0;
+    this.connect();
   }
 
   private notifyListeners(tickers: BinanceTicker24hr[]) {

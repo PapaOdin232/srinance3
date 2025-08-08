@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import {
   Table,
   TextInput,
@@ -293,4 +293,4 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
   );
 };
 
-export default AssetSelector;
+export default memo(AssetSelector);

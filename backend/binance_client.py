@@ -16,12 +16,14 @@ class BinanceRESTClient:
         self.api_key = BINANCE_API_KEY
         self.api_secret = BINANCE_API_SECRET
         self.base_url = BINANCE_API_URL
-        
         # Cache for exchange info (updates rarely)
         self._exchange_info_cache = None
         self._exchange_info_cache_time = None
         self._exchange_info_cache_ttl = 3600  # 1 hour TTL
-        
+        # Short cache for 24hr ticker (all symbols) to cut bandwidth
+        self._ticker24_all_cache = None
+        self._ticker24_all_cache_time = None
+        self._ticker24_all_cache_ttl = 5  # 5 seconds TTL
         print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", self.api_key)
         print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", self.api_secret)
 
@@ -95,12 +97,23 @@ class BinanceRESTClient:
         return self._exchange_info_cache
 
     def get_ticker_24hr_all(self):
-        """Get 24hr ticker for all symbols"""
+        """Get 24hr ticker for all symbols with short-lived caching"""
+        now = datetime.now()
+        if (
+            self._ticker24_all_cache is not None and
+            self._ticker24_all_cache_time is not None and
+            (now - self._ticker24_all_cache_time) < timedelta(seconds=self._ticker24_all_cache_ttl)
+        ):
+            return self._ticker24_all_cache
+
         endpoint = "/v3/ticker/24hr"
         url = f"{self.base_url}{endpoint}"
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        self._ticker24_all_cache = data
+        self._ticker24_all_cache_time = now
+        return data
 
     def get_klines(self, symbol, interval="1m", limit=100):
         """Get klines/candlestick data for a symbol"""

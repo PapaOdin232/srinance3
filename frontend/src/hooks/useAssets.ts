@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchAllTradingPairs } from '../services/binanceAPI';
 import BinanceTickerWSClient from '../services/BinanceTickerWSClient';
 import type { BinanceTicker24hr } from '../services/BinanceTickerWSClient';
@@ -12,128 +12,160 @@ export interface UseAssetsReturn {
   isConnected: boolean;
 }
 
-/**
- * Hook do zarządzania danymi o aktywach z Binance API
- * Automatycznie pobiera dane przy pierwszym użyciu i subskrybuje live updates
- * @returns {UseAssetsReturn} Obiekt z danymi, loading state, błędami, funkcją refetch i status połączenia
- */
-export const useAssets = (): UseAssetsReturn => {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  
-  const wsClientRef = useRef<BinanceTickerWSClient | null>(null);
-  const lastFetchRef = useRef<number>(0);
-  const FETCH_COOLDOWN = 60000; // 1 minute cooldown between fetchAllTradingPairs calls
+type AssetsState = {
+  assets: Asset[];
+  loading: boolean;
+  error: string | null;
+  isConnected: boolean;
+};
 
-  const fetchAssets = async (forceFetch: boolean = false) => {
+const MAX_SUBSCRIPTIONS = Number(import.meta.env.VITE_MAX_TICKER_SUBS || 100);
+const FETCH_COOLDOWN = 60000; // 60s
+const UPDATE_THROTTLE_MS = 500; // ~2/s
+
+class AssetStore {
+  state: AssetsState = { assets: [], loading: true, error: null, isConnected: false };
+  subscribers = new Set<(s: AssetsState) => void>();
+  initialized = false;
+  wsClient: BinanceTickerWSClient | null = null;
+  connectionInterval: number | null = null;
+  refreshInterval: number | null = null;
+  lastFetch = 0;
+  pendingTickers = new Map<string, BinanceTicker24hr>();
+  throttleTimer: number | null = null;
+
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+    this.fetchAssets(true);
+
+    // Fallback periodic refresh if WS not connected
+    this.refreshInterval = window.setInterval(() => {
+      const connected = this.wsClient?.isConnected ?? false;
+      if (!connected) this.fetchAssets(false);
+    }, 120000);
+
+    window.addEventListener('beforeunload', () => this.destroy());
+  }
+
+  destroy() {
+    if (this.connectionInterval) {
+      clearInterval(this.connectionInterval);
+      this.connectionInterval = null;
+    }
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+    if (this.throttleTimer) {
+      clearTimeout(this.throttleTimer);
+      this.throttleTimer = null;
+    }
+    if (this.wsClient) {
+      this.wsClient.destroy();
+      this.wsClient = null;
+    }
+    this.subscribers.clear();
+    this.initialized = false;
+  }
+
+  notify() {
+    for (const cb of this.subscribers) cb(this.state);
+  }
+
+  async fetchAssets(force = false) {
     const now = Date.now();
-    
-    // Skip if recently fetched (unless forced)
-    if (!forceFetch && now - lastFetchRef.current < FETCH_COOLDOWN) {
-      console.log('[useAssets] Skipping fetch - too recent');
-      return;
-    }
-    
+    if (!force && now - this.lastFetch < FETCH_COOLDOWN) return;
+
     try {
-      setLoading(true);
-      setError(null);
+      this.state = { ...this.state, loading: true, error: null };
+      this.notify();
       const data = await fetchAllTradingPairs();
-      setAssets(data);
-      lastFetchRef.current = now;
-      console.log('[useAssets] Fetched assets successfully');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch assets');
-      console.error('Error fetching assets:', err);
-    } finally {
-      setLoading(false);
+      this.state = { ...this.state, assets: data, loading: false };
+      this.lastFetch = now;
+      this.notify();
+      if (!this.wsClient) this.initWS();
+      else this.updateSubscriptions();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to fetch assets';
+      this.state = { ...this.state, error: msg, loading: false };
+      this.notify();
     }
-  };
+  }
 
-  // Handle incoming ticker updates from WebSocket
-  const handleTickerUpdates = (tickers: BinanceTicker24hr[]) => {
-    setAssets(currentAssets => {
-      // Create a map for quick lookups
-      const tickerMap = new Map(tickers.map(ticker => [ticker.s, ticker]));
-      
-      // Update existing assets with new ticker data
-      return currentAssets.map(asset => {
-        const ticker = tickerMap.get(asset.symbol);
-        if (ticker) {
+  initWS() {
+    if (this.wsClient) return;
+    this.wsClient = new BinanceTickerWSClient();
+    this.wsClient.addListener((tickers) => this.onTickers(tickers));
+    // Connection monitor
+    this.connectionInterval = window.setInterval(() => {
+      const connected = this.wsClient?.isConnected ?? false;
+      if (connected !== this.state.isConnected) {
+        this.state = { ...this.state, isConnected: connected };
+        this.notify();
+      }
+    }, 5000);
+    this.updateSubscriptions();
+  }
+
+  updateSubscriptions() {
+    if (!this.wsClient || this.state.assets.length === 0) return;
+    const usdtTop = this.state.assets
+      .filter(a => a.symbol.endsWith('USDT'))
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, MAX_SUBSCRIPTIONS)
+      .map(a => a.symbol);
+    this.wsClient.setSubscriptions(usdtTop);
+  }
+
+  onTickers(tickers: BinanceTicker24hr[]) {
+    for (const t of tickers) this.pendingTickers.set(t.s, t);
+    if (this.throttleTimer === null) {
+      this.throttleTimer = window.setTimeout(() => {
+        this.throttleTimer = null;
+        if (this.pendingTickers.size === 0) return;
+        const updates = new Map(this.pendingTickers);
+        this.pendingTickers.clear();
+        const next = this.state.assets.map(a => {
+          const t = updates.get(a.symbol);
+          if (!t) return a;
           return {
-            ...asset,
-            price: parseFloat(ticker.c), // Last price
-            change24h: parseFloat(ticker.P), // Price change percent
-            volume24h: parseFloat(ticker.q), // Quote asset volume
-            high24h: parseFloat(ticker.h), // High price
-            low24h: parseFloat(ticker.l), // Low price
-            lastUpdated: new Date().toISOString(),
-          };
-        }
-        return asset;
-      });
-    });
-  };
-
-  useEffect(() => {
-    // Initialize WebSocket client after initial data load
-    if (!loading && assets.length > 0 && !wsClientRef.current) {
-      console.log('[useAssets] Initializing WebSocket client for live updates');
-      wsClientRef.current = new BinanceTickerWSClient();
-      
-      // Add listener for ticker updates
-      wsClientRef.current.addListener(handleTickerUpdates);
-      
-      // Monitor connection status
-      const checkConnection = () => {
-        setIsConnected(wsClientRef.current?.isConnected ?? false);
-      };
-      
-      // Check connection status periodically
-      const connectionInterval = setInterval(checkConnection, 5000);
-      
-      // Initial connection check
-      checkConnection();
-      
-      return () => {
-        clearInterval(connectionInterval);
-      };
+            ...a,
+            price: parseFloat(t.c),
+            priceChangePercent: parseFloat(t.P),
+            volume: parseFloat(t.q),
+            highPrice: parseFloat(t.h),
+            lowPrice: parseFloat(t.l),
+          } as Asset;
+        });
+        this.state = { ...this.state, assets: next };
+        this.notify();
+      }, UPDATE_THROTTLE_MS);
     }
-  }, [loading, assets.length]);
+  }
+}
+
+const store = new AssetStore();
+
+export const useAssets = (): UseAssetsReturn => {
+  const [state, setState] = useState<AssetsState>(store.state);
 
   useEffect(() => {
-    // Initial data fetch
-    fetchAssets(true); // Force initial fetch
-    
-    // Reduced periodic refresh - only if no WebSocket data
-    const refreshInterval = setInterval(() => {
-      if (!isConnected) {
-        console.log('[useAssets] WebSocket disconnected - fallback fetch');
-        fetchAssets(false); // Respect cooldown
-      }
-    }, 120000); // 2 minutes instead of 30 seconds
-    
-    // Cleanup WebSocket and intervals on unmount
+    store.init();
+    setState(store.state);
+    const cb = (s: AssetsState) => setState(s);
+    store.subscribers.add(cb);
     return () => {
-      clearInterval(refreshInterval);
-      if (wsClientRef.current) {
-        console.log('[useAssets] Destroying WebSocket client');
-        wsClientRef.current.destroy();
-        wsClientRef.current = null;
-      }
+      store.subscribers.delete(cb);
+      // Don't destroy global store on unmount of a single consumer
     };
-  }, [isConnected]);
-
-  const refetch = () => {
-    fetchAssets(true); // Force refetch when requested manually
-  };
+  }, []);
 
   return {
-    assets,
-    loading,
-    error,
-    refetch,
-    isConnected,
+    assets: state.assets,
+    loading: state.loading,
+    error: state.error,
+    refetch: () => store.fetchAssets(true),
+    isConnected: state.isConnected,
   };
 };

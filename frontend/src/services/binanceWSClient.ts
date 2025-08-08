@@ -1,8 +1,6 @@
 // Binance WebSocket Client for Kline/Candlestick streams
 // Dedicated client for real-time candlestick data from Binance WebSocket API
 
-import { WEBSOCKET_CONFIG } from '../config/websocket';
-
 export interface BinanceKlineData {
   e: string;      // Event type (always "kline")
   E: number;      // Event time (timestamp in milliseconds)
