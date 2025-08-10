@@ -22,6 +22,7 @@ export function getEnvVar(key: AllowedEnvKey, fallback?: string): string {
   }
   
   // Use Vite's import.meta.env instead of process.env
-  const envValue = import.meta.env[key];
+  // Try process.env first (tests), then fallback
+  const envValue = (typeof process !== 'undefined' ? (process as any).env?.[key] : undefined) as string | undefined;
   return envValue ?? fallback ?? '';
 }

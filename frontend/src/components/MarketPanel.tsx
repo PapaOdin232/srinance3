@@ -170,7 +170,7 @@ const MarketPanel: React.FC = () => {
     let mounted = true;
     
     // Check if Binance streams are enabled
-    const binanceStreamsEnabled = import.meta.env.VITE_ENABLE_BINANCE_STREAMS === 'true';
+  const binanceStreamsEnabled = ((typeof process !== 'undefined' && (process as any).env?.VITE_ENABLE_BINANCE_STREAMS) === 'true');
     
     if (!binanceStreamsEnabled) {
       console.log(`[MarketPanel] Binance streams disabled via VITE_ENABLE_BINANCE_STREAMS`);

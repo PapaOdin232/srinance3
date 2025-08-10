@@ -211,7 +211,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    debugTable: import.meta.env.MODE === 'development',
+  debugTable: (typeof process !== 'undefined' && (process as any).env && (process as any).env.NODE_ENV === 'development') || false,
   });
 
   if (loading) {

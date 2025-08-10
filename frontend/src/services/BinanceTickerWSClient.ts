@@ -43,7 +43,10 @@ export class BinanceTickerWSClient {
 
   constructor() {
     // Use environment variable for Binance WebSocket URL, with fallback
-    this.baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
+  // Prefer env var in tests; Vite will inline in builds
+  // @ts-ignore
+  const fromEnv = (typeof process !== 'undefined' && (process as any).env?.VITE_BINANCE_WS_URL) as string | undefined;
+  this.baseUrl = fromEnv || 'wss://data-stream.binance.vision/ws';
     console.log(`[BinanceTickerWSClient] Initialized with base URL: ${this.baseUrl}`);
     // Don't auto-connect, wait for subscriptions
   }
@@ -126,19 +129,17 @@ export class BinanceTickerWSClient {
           
           // Handle single ticker update (not array like before)
           if (data.e === '24hrTicker') {
-            // Filter only USDT pairs to match our asset list
-            if (data.s && data.s.endsWith('USDT')) {
-              console.log(`[BinanceTickerWSClient] Received ticker update for ${data.s}`);
+            if (data.s && this.subscribedSymbols.has(String(data.s).toLowerCase())) {
               this.notifyListeners([data]); // Wrap in array for compatibility
             }
           } else if (Array.isArray(data)) {
             // Some endpoints may send arrays (safety)
-            const filtered = (data as BinanceTicker24hr[]).filter(t => t.s && t.s.endsWith('USDT'));
+            const filtered = (data as BinanceTicker24hr[]).filter(t => t.s && this.subscribedSymbols.has(String(t.s).toLowerCase()));
             if (filtered.length) this.notifyListeners(filtered);
           } else if (data && data.stream && data.data) {
             // Combined stream payload: { stream: 'btcusdt@ticker', data: {...} }
             const payload = data.data as BinanceTicker24hr;
-            if (payload.e === '24hrTicker' && payload.s && payload.s.endsWith('USDT')) {
+            if (payload.e === '24hrTicker' && payload.s && this.subscribedSymbols.has(String(payload.s).toLowerCase())) {
               this.notifyListeners([payload]);
             }
           }

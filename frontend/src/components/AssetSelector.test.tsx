@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import axios from 'axios';
+jest.mock('axios');
 import AssetSelector from './AssetSelector';
 import type { Asset } from '../types/asset';
 
@@ -79,6 +81,17 @@ describe('AssetSelector', () => {
 
   // Uproszczony test sprawdzający czy komponent renderuje się z podstawowymi danymi
   test('renders basic component structure', () => {
+    // Mock backend calls used by useAssets to avoid network
+    (axios.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/exchangeInfo')) {
+        return Promise.resolve({ data: { symbols: [] } });
+      }
+      if (url.includes('/api/24hr')) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
     render(
       <MantineProvider defaultColorScheme="dark">
         <AssetSelector

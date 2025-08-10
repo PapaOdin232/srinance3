@@ -144,15 +144,21 @@ export async function fetchAllTradingPairs(): Promise<Asset[]> {
       axios.get('/api/24hr', { timeout: 10000 })
     ]);
 
-    // Filter tylko USDT pary które są aktywne
-    const usdtPairs = (exchangeInfo.data as any).symbols.filter((symbol: any) => 
-      symbol.quoteAsset === 'USDT' && 
+    // Dozwolone rynki (quote) — domyślnie USDT,BTC,ETH,BNB; można nadpisać VITE_MARKET_QUOTES
+  const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDT,BTC,ETH,BNB'))
+      .split(',')
+      .map((q: string) => q.trim().toUpperCase())
+      .filter(Boolean);
+
+    // Filtruj tylko aktywne pary dla wybranych rynków
+    const filteredPairs = (exchangeInfo.data as any).symbols.filter((symbol: any) => 
+      MARKET_QUOTES.includes(symbol.quoteAsset) &&
       symbol.status === 'TRADING' &&
       symbol.isSpotTradingAllowed
     );
 
     // Mapowanie danych na format Asset
-    const assets: Asset[] = usdtPairs.map((pair: any) => {
+  const assets: Asset[] = filteredPairs.map((pair: any) => {
       const tickerData = (ticker24hr.data as any[]).find((t: any) => t.symbol === pair.symbol);
       
       if (!tickerData) {
@@ -195,7 +201,7 @@ export async function fetchAllTradingPairs(): Promise<Asset[]> {
     // Sortowanie po wolumenie (największe najpierw)
     const sortedAssets = assets.sort((a, b) => b.volume - a.volume);
 
-    console.log(`[BinanceAPI] Successfully fetched ${sortedAssets.length} USDT trading pairs`);
+  console.log(`[BinanceAPI] Successfully fetched ${sortedAssets.length} trading pairs across markets: ${MARKET_QUOTES.join(',')}`);
     return sortedAssets;
 
   } catch (error) {

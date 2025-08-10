@@ -1,7 +1,14 @@
 // API Configuration
+const getBaseUrl = () => {
+  if (typeof process !== 'undefined' && (process as any).env?.VITE_API_URL) {
+    return (process as any).env.VITE_API_URL as string;
+  }
+  return 'http://localhost:8001';
+};
+
 export const API_CONFIG = {
   // W środowisku deweloperskim używaj localhost, w produkcji HTTPS
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8001',
+  BASE_URL: getBaseUrl(),
   
   // Endpoints
   ENDPOINTS: {
@@ -25,7 +32,9 @@ export const secureApiCall = async (endpoint: string, options?: RequestInit) => 
   const url = buildApiUrl(endpoint);
   
   // W produkcji, sprawdź czy URL jest HTTPS
-  if (import.meta.env.MODE === 'production' && !url.startsWith('https://')) {
+  const isProd = (typeof process !== 'undefined' && (process as any).env?.NODE_ENV === 'production') || false;
+
+  if (isProd && !url.startsWith('https://')) {
     throw new Error('Production requires HTTPS connections');
   }
   

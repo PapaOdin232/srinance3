@@ -19,6 +19,7 @@ import { PriceCell } from './shared';
 import type { Asset, AssetSelectorProps } from '../types/asset';
 import { useDebounced } from '../hooks/useDebounced';
 import { usePriceChangeAnimation } from '../hooks/usePriceChangeAnimation';
+import { useAssets } from '../hooks/useAssets';
 
 const columnHelper = createColumnHelper<Asset>();
 
@@ -37,23 +38,70 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     pageIndex: 0,
     pageSize: 10,
   });
+  // Filtr rynku (quote): ALL, USDT, BTC, ETH, BNB
+  const [selectedMarket, setSelectedMarket] = useState<'ALL' | 'USDT' | 'BTC' | 'ETH' | 'BNB'>('USDT');
+
+  // Skieruj subskrypcje WS na wybrany rynek (optymalizacja ruchu)
+  const { setPreferredQuotes } = useAssets();
+  useEffect(() => {
+    if (selectedMarket === 'ALL') {
+      setPreferredQuotes(null);
+    } else {
+      setPreferredQuotes([selectedMarket]);
+    }
+    // po zmianie rynku wróć na pierwszą stronę
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [selectedMarket]);
 
   // Debounced search dla lepszej wydajności
   const debouncedGlobalFilter = useDebounced(globalFilter, 300);
   
   // Hook do animacji zmian cen
-  const priceChanges = usePriceChangeAnimation(assets);
+  // Filtrowanie/grupowanie wg wybranego rynku
+  const displayAssets = useMemo(() => {
+    if (selectedMarket !== 'ALL') {
+      return assets.filter(a => a.quoteAsset === selectedMarket);
+    }
+    // ALL: wybierz dla każdej monety jedną parę wg preferencji quote
+    const preference = ['USDT', 'BTC', 'ETH', 'BNB'];
+    const byBase = new Map<string, Asset>();
+    for (const asset of assets) {
+      const current = byBase.get(asset.baseAsset);
+      if (!current) {
+        byBase.set(asset.baseAsset, asset);
+        continue;
+      }
+      const curRank = preference.indexOf(current.quoteAsset);
+      const nextRank = preference.indexOf(asset.quoteAsset);
+      const curScore = curRank === -1 ? Number.MAX_SAFE_INTEGER : curRank;
+      const nextScore = nextRank === -1 ? Number.MAX_SAFE_INTEGER : nextRank;
+      if (nextScore < curScore) byBase.set(asset.baseAsset, asset);
+      // jeśli ten sam priorytet, wybierz większy wolumen
+      else if (nextScore === curScore && asset.volume > current.volume) byBase.set(asset.baseAsset, asset);
+    }
+    return Array.from(byBase.values());
+  }, [assets, selectedMarket]);
+
+  // Hook do animacji zmian cen bazujący na faktycznie renderowanych wierszach
+  const priceChanges = usePriceChangeAnimation(displayAssets);
 
   // Definicja kolumn dla tabeli
   const columns = useMemo(
     () => [
-      columnHelper.accessor('symbol', {
-        header: 'Para',
-        cell: (info) => (
-          <Text fw={600} c="blue">
-            {info.getValue()}
-          </Text>
-        ),
+      columnHelper.accessor('baseAsset', {
+        header: 'Krypto',
+        cell: (info) => {
+          const base = info.getValue();
+          const quote = info.row.original.quoteAsset;
+          return (
+            <Group gap={6} wrap="nowrap">
+              <Text fw={600} c="blue">{base}</Text>
+              {selectedMarket === 'ALL' && (
+                <Badge variant="light" size="xs" color="gray">{quote}</Badge>
+              )}
+            </Group>
+          );
+        },
       }),
       columnHelper.accessor('price', {
         header: 'Cena',
@@ -113,7 +161,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
 
   // Konfiguracja tabeli TanStack
   const table = useReactTable({
-    data: assets,
+    data: displayAssets,
     columns,
     state: {
       sorting,
@@ -131,7 +179,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     getPaginationRowModel: getPaginationRowModel(),
     // Ważne: nie resetuj paginacji przy każdej zmianie danych (np. update tickera)
     autoResetPageIndex: false,
-    debugTable: import.meta.env.MODE === 'development',
+  debugTable: (typeof process !== 'undefined' && (process as any).env && (process as any).env.NODE_ENV === 'development') || false,
   });
 
   // Zabezpieczenie: jeśli po filtracji/zmianie pageSize obecny pageIndex wykracza poza zakres, zawęź go
@@ -144,7 +192,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     if (pageCount > 0 && pagination.pageIndex > pageCount - 1) {
       setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
     }
-  }, [assets.length, debouncedGlobalFilter, pagination.pageSize, sorting, table, pagination.pageIndex]);
+  }, [displayAssets.length, debouncedGlobalFilter, pagination.pageSize, sorting, table, pagination.pageIndex]);
 
   if (loading) {
     return (
@@ -181,7 +229,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
             </Text>
             <Group gap="xs">
               <Text size="sm" c="dimmed">
-                Znaleziono: {table.getFilteredRowModel().rows.length} aktywów
+                Widoczne: {table.getFilteredRowModel().rows.length} / {assets.length} aktywów {selectedMarket !== 'ALL' ? `(rynek ${selectedMarket})` : ``}
               </Text>
             </Group>
           </Group>
@@ -193,6 +241,19 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
               value={globalFilter ?? ''}
               onChange={(event) => setGlobalFilter(event.currentTarget.value)}
               style={{ flexGrow: 1 }}
+            />
+            <Select
+              placeholder="Rynek"
+              data={[
+                { value: 'ALL', label: 'Wszystkie rynki' },
+                { value: 'USDT', label: 'Rynek USDT' },
+                { value: 'BNB', label: 'Rynki BNB' },
+                { value: 'BTC', label: 'Rynki BTC' },
+                { value: 'ETH', label: 'Rynki ETH' },
+              ]}
+              value={selectedMarket}
+              onChange={(value) => setSelectedMarket((value as any) ?? 'ALL')}
+              w={160}
             />
             <Select
               placeholder="Rozmiar strony"

@@ -1,17 +1,61 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { MantineProvider } from '@mantine/core';
 import '@testing-library/jest-dom';
 import MarketPanel from './MarketPanel';
 
 // Mock dependencies
-jest.mock('../services/wsClient');
+jest.mock('../services/wsClient', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => mockEnhancedWSClient),
+  ConnectionState: {
+    CONNECTED: 'CONNECTED',
+    DISCONNECTED: 'DISCONNECTED',
+    ERROR: 'ERROR'
+  },
+  getConnectionStateDisplay: jest.fn(() => ({ icon: '🟢', text: 'Połączony', color: '#4CAF50' }))
+}));
 jest.mock('../services/binanceWSClient');
 jest.mock('../hooks/useLightweightChart');
+jest.mock('../services/restClient', () => ({
+  getCurrentTicker: jest.fn(async (symbol: string) => ({ symbol, price: '45000.00', change: '1000.00', changePercent: '2.27%' })),
+  getOrderBook: jest.fn(async (symbol: string) => ({ symbol, bids: [['45000.00','1.0']], asks: [['45001.00','1.5']] }))
+}));
+jest.mock('../hooks/useAssets', () => ({
+  useAssets: () => ({
+    assets: [{ symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', price: 45000, priceChange: 1000, priceChangePercent: 2.27, volume: 1_000_000, count: 1, status: 'TRADING' }],
+    loading: false,
+    error: null,
+    refetch: jest.fn(),
+  isConnected: true,
+  setPreferredQuotes: jest.fn()
+  })
+}));
+jest.mock('lightweight-charts', () => ({
+  createChart: jest.fn(() => ({
+    addSeries: jest.fn(() => ({ setData: jest.fn(), update: jest.fn(), applyOptions: jest.fn() })),
+    addCandlestickSeries: jest.fn(() => ({ setData: jest.fn(), update: jest.fn(), applyOptions: jest.fn() })),
+    timeScale: jest.fn(() => ({ fitContent: jest.fn() })),
+    remove: jest.fn(),
+    applyOptions: jest.fn(),
+  })),
+  CandlestickSeries: jest.fn(),
+}));
+jest.mock('../services/binanceAPI', () => ({
+  fetchLightweightChartsKlines: jest.fn(async (_symbol: string, _interval: string, limit: number) => Array.from({ length: limit }, (_, i) => ({
+    time: 1700000000 + i * 60,
+    open: 100 + i,
+    high: 101 + i,
+    low: 99 + i,
+    close: 100.5 + i,
+  })))
+}));
 
 const mockEnhancedWSClient = {
   addListener: jest.fn(),
-  addStateListener: jest.fn(),
+  addStateListener: jest.fn((cb?: any) => cb && cb('CONNECTED')),
   send: jest.fn(),
   destroy: jest.fn(),
+  isConnected: jest.fn(() => true)
 };
 
 const mockBinanceWSClient = {
@@ -28,11 +72,9 @@ const mockChart = {
 
 describe('MarketPanel - Ticker and OrderBook Integration', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
-    
-    // Mock EnhancedWSClient
-    require('../services/wsClient').EnhancedWSClient = jest.fn(() => mockEnhancedWSClient);
-    
+    // EnhancedWSClient mock already provided by jest.mock above
     // Mock BinanceWSClient
     require('../services/binanceWSClient').default = jest.fn(() => mockBinanceWSClient);
     
@@ -40,11 +82,26 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
     require('../hooks/useLightweightChart').default = jest.fn(() => mockChart);
   });
 
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  const renderWithTimers = () => {
+    process.env.VITE_ENABLE_BINANCE_STREAMS = 'true';
+    render(<MantineProvider><MarketPanel /></MantineProvider>);
+    act(() => {
+      jest.runAllTimers();
+    });
+  };
+
   test('should handle ticker message from backend WebSocket', async () => {
-    render(<MarketPanel />);
+  renderWithTimers();
     
-    // Get the WebSocket listener that was added
-    const wsListener = mockEnhancedWSClient.addListener.mock.calls[0][0];
+  // Wait for listener attachment
+  await waitFor(() => expect(mockEnhancedWSClient.addListener).toHaveBeenCalled());
+  const wsListener = mockEnhancedWSClient.addListener.mock.calls[0]?.[0];
+  expect(wsListener).toBeDefined();
     
     // Simulate receiving ticker message
     const tickerMessage = {
@@ -55,20 +112,22 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
       changePercent: '2.27'
     };
     
-    wsListener(tickerMessage);
+    act(() => {
+      wsListener(tickerMessage);
+    });
     
     // Wait for state updates
-    await waitFor(() => {
-      expect(screen.getByText(/BTCUSDT: \$45000.00/)).toBeInTheDocument();
-      expect(screen.getByText(/\+1000.00 \(2.27\)/)).toBeInTheDocument();
-    });
+  // PriceDisplay rozbija dane na różne elementy - sprawdzamy symbol i cenę oddzielnie
+  await waitFor(() => expect(screen.getByText('BTC/USDT')).toBeInTheDocument());
+  expect(screen.getByText('$45,000.00')).toBeInTheDocument();
+  expect(screen.getByText('+1,000.00')).toBeInTheDocument();
   });
 
   test('should handle orderbook message from backend WebSocket', async () => {
-    render(<MarketPanel />);
-    
-    // Get the WebSocket listener that was added
-    const wsListener = mockEnhancedWSClient.addListener.mock.calls[0][0];
+  renderWithTimers();
+  await waitFor(() => expect(mockEnhancedWSClient.addListener).toHaveBeenCalled());
+  const wsListener = mockEnhancedWSClient.addListener.mock.calls[0]?.[0];
+  expect(wsListener).toBeDefined();
     
     // Simulate receiving orderbook message
     const orderbookMessage = {
@@ -78,21 +137,21 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
       asks: [['45001.00', '1.5'], ['45002.00', '0.5']]
     };
     
-    wsListener(orderbookMessage);
+    act(() => {
+      wsListener(orderbookMessage);
+    });
     
     // Wait for state updates
-    await waitFor(() => {
-      expect(screen.getByText('Księga Zleceń - BTCUSDT')).toBeInTheDocument();
-      expect(screen.getByText('45000.00')).toBeInTheDocument();
-      expect(screen.getByText('45001.00')).toBeInTheDocument();
-    });
+  await waitFor(() => expect(screen.getByText('Księga Zleceń - BTCUSDT')).toBeInTheDocument());
+  expect(screen.getAllByText('45000.00').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('45001.00').length).toBeGreaterThan(0);
   });
 
   test('should filter out ticker messages for unselected symbols', async () => {
-    render(<MarketPanel />);
-    
-    // Get the WebSocket listener that was added
-    const wsListener = mockEnhancedWSClient.addListener.mock.calls[0][0];
+  renderWithTimers();
+  await waitFor(() => expect(mockEnhancedWSClient.addListener).toHaveBeenCalled());
+  const wsListener = mockEnhancedWSClient.addListener.mock.calls[0]?.[0];
+  expect(wsListener).toBeDefined();
     
     // Simulate receiving ticker message for different symbol
     const tickerMessage = {
@@ -103,7 +162,9 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
       changePercent: '3.45'
     };
     
-    wsListener(tickerMessage);
+    act(() => {
+      wsListener(tickerMessage);
+    });
     
     // Should not update UI for unselected symbol
     await waitFor(() => {
@@ -112,10 +173,10 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
   });
 
   test('should update chart with Binance kline data', async () => {
-    render(<MarketPanel />);
-    
-    // Get the Binance WebSocket listener that was added
-    const binanceListener = mockBinanceWSClient.addListener.mock.calls[0][0];
+  renderWithTimers();
+  await waitFor(() => expect(mockBinanceWSClient.addListener).toHaveBeenCalled());
+  const binanceListener = mockBinanceWSClient.addListener.mock.calls[0]?.[0];
+  expect(binanceListener).toBeDefined();
     
     // Simulate receiving kline data
     const klineData = {
@@ -130,7 +191,9 @@ describe('MarketPanel - Ticker and OrderBook Integration', () => {
       }
     };
     
-    binanceListener(klineData);
+    act(() => {
+      binanceListener(klineData);
+    });
     
     // Verify chart update was called
     expect(mockChart.updateCandlestick).toHaveBeenCalledWith({

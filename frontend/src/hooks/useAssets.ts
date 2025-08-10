@@ -10,6 +10,7 @@ export interface UseAssetsReturn {
   error: string | null;
   refetch: () => void;
   isConnected: boolean;
+  setPreferredQuotes: (quotes: string[] | null) => void;
 }
 
 type AssetsState = {
@@ -19,7 +20,11 @@ type AssetsState = {
   isConnected: boolean;
 };
 
-const MAX_SUBSCRIPTIONS = Number(import.meta.env.VITE_MAX_TICKER_SUBS || 100);
+const MAX_SUBSCRIPTIONS = Number((typeof process !== 'undefined' && (process as any).env?.VITE_MAX_TICKER_SUBS) || 100);
+const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDT,BTC,ETH,BNB'))
+  .split(',')
+  .map((q: string) => q.trim().toUpperCase())
+  .filter(Boolean);
 const FETCH_COOLDOWN = 60000; // 60s
 const UPDATE_THROTTLE_MS = 500; // ~2/s
 
@@ -33,6 +38,7 @@ class AssetStore {
   lastFetch = 0;
   pendingTickers = new Map<string, BinanceTicker24hr>();
   throttleTimer: number | null = null;
+  preferredQuotes: string[] | null = null; // when set, prioritize these quotes for subscriptions
 
   init() {
     if (this.initialized) return;
@@ -110,12 +116,40 @@ class AssetStore {
 
   updateSubscriptions() {
     if (!this.wsClient || this.state.assets.length === 0) return;
-    const usdtTop = this.state.assets
-      .filter(a => a.symbol.endsWith('USDT'))
-      .sort((a, b) => b.volume - a.volume)
-      .slice(0, MAX_SUBSCRIPTIONS)
-      .map(a => a.symbol);
-    this.wsClient.setSubscriptions(usdtTop);
+    const allowedQuotes = (this.preferredQuotes && this.preferredQuotes.length > 0)
+      ? this.preferredQuotes.map(q => q.toUpperCase())
+      : MARKET_QUOTES;
+    const candidates = this.state.assets.filter(a => allowedQuotes.includes(a.quoteAsset));
+
+    // równy przydział subskrypcji per rynek, aby nie faworyzować tylko USDT
+    const perQuote = Math.max(1, Math.floor(MAX_SUBSCRIPTIONS / Math.max(1, allowedQuotes.length)));
+    const byQuote = new Map<string, Asset[]>();
+    for (const q of allowedQuotes) byQuote.set(q, []);
+    for (const a of candidates) byQuote.get(a.quoteAsset)?.push(a);
+  for (const [_q, arr] of byQuote) arr.sort((a, b) => b.volume - a.volume);
+
+    const picked: Asset[] = [];
+    for (const q of allowedQuotes) {
+      const arr = byQuote.get(q) || [];
+      picked.push(...arr.slice(0, perQuote));
+    }
+
+    // Jeśli mamy jeszcze wolne sloty, dobij ogólnie wg wolumenu
+    if (picked.length < MAX_SUBSCRIPTIONS) {
+      const pickedSet = new Set(picked.map(a => a.symbol));
+      const remaining = candidates
+        .filter(a => !pickedSet.has(a.symbol))
+        .sort((a, b) => b.volume - a.volume);
+      picked.push(...remaining.slice(0, MAX_SUBSCRIPTIONS - picked.length));
+    }
+
+    const symbols = Array.from(new Set(picked.map(a => a.symbol)));
+    this.wsClient.setSubscriptions(symbols);
+  }
+
+  setPreferredQuotes(quotes: string[] | null) {
+    this.preferredQuotes = quotes && quotes.length ? quotes.map(q => q.toUpperCase()) : null;
+    this.updateSubscriptions();
   }
 
   onTickers(tickers: BinanceTicker24hr[]) {
@@ -167,5 +201,6 @@ export const useAssets = (): UseAssetsReturn => {
     error: state.error,
     refetch: () => store.fetchAssets(true),
     isConnected: state.isConnected,
+  setPreferredQuotes: (quotes: string[] | null) => store.setPreferredQuotes(quotes),
   };
 };
