@@ -1,4 +1,5 @@
 // Enhanced WebSocket Client z exponential backoff, connection states i heartbeat
+import { createLogger } from './logger';
 
 export const ConnectionState = {
   DISCONNECTED: 'DISCONNECTED',
@@ -33,6 +34,7 @@ export interface WSClientOptions {
 }
 
 export class EnhancedWSClient {
+  private logger = createLogger('ws');
   private url: string;
   private ws: WebSocket | null = null;
   private listeners: WSListener[] = [];
@@ -55,6 +57,10 @@ export class EnhancedWSClient {
   // Debouncing for React Strict Mode
   private connectDebounceTimeout: number | null = null;
   private isDestroyed = false;
+  
+  // Message queue for sends attempted before OPEN
+  private pendingMessages: string[] = [];
+  private waiters: { resolve: () => void; reject: (e: Error) => void; timeoutId: number }[] = [];
 
   constructor(url: string, options: WSClientOptions = {}) {
     this.url = url;
@@ -64,33 +70,21 @@ export class EnhancedWSClient {
       maxReconnectAttempts: 10,
       heartbeatInterval: 30000,
       heartbeatTimeout: 5000,
-      debug: true,
+      debug: false, // Changed default to false for production performance
       ...options
     };
     
-    this.log(`[WSClient] Creating instance for ${url}`);
+  this.log('creating', url);
     this.debouncedConnect();
   }
 
-  private log(message: string, ...args: any[]) {
-    if (this.options.debug) {
-      console.log(message, ...args);
-    }
-  }
-
-  private warn(message: string, ...args: any[]) {
-    if (this.options.debug) {
-      console.warn(message, ...args);
-    }
-  }
-
-  private error(message: string, ...args: any[]) {
-    console.error(message, ...args);
-  }
+  private log(message: string, ...args: any[]) { this.logger.trace(message, ...args); }
+  private warn(message: string, ...args: any[]) { this.logger.warn(message, ...args); }
+  private error(message: string, ...args: any[]) { this.logger.error(message, ...args); }
 
   private setState(newState: ConnectionState, error?: string) {
     if (this.state !== newState) {
-      this.log(`[WSClient] State change: ${this.state} -> ${newState}${error ? ` (${error})` : ''}`);
+  this.log(`state ${this.state} -> ${newState}${error ? ` (${error})` : ''}`);
       this.state = newState;
       this.notifyStateListeners(newState, error);
     }
@@ -122,7 +116,7 @@ export class EnhancedWSClient {
     if (this.isDestroyed) return;
     
     if (this.state === ConnectionState.CONNECTING || this.state === ConnectionState.CONNECTED) {
-      this.log('[WSClient] Already connecting/connected, skipping');
+  this.log('already-connecting');
       return;
     }
 
@@ -139,11 +133,22 @@ export class EnhancedWSClient {
       this.ws.onopen = () => {
         if (this.isDestroyed) return;
         
-        this.log(`[WSClient] Connected to ${this.url}`);
+  this.log('connected', this.url);
         this.reconnectAttempts = 0;
         this.lastPongTime = Date.now();
         this.setState(ConnectionState.CONNECTED);
         this.startHeartbeat();
+        // Flush queued messages
+        if (this.pendingMessages.length) {
+          this.log('flush-queue', this.pendingMessages.length);
+          for (const msg of this.pendingMessages) {
+            try { this.ws!.send(msg); } catch (e) { this.warn('queued-send-failed', e); }
+          }
+          this.pendingMessages = [];
+        }
+        // Resolve waiters
+        this.waiters.forEach(w => { clearTimeout(w.timeoutId); w.resolve(); });
+        this.waiters = [];
       };
 
       this.ws.onmessage = (event) => {
@@ -155,7 +160,7 @@ export class EnhancedWSClient {
           // Handle heartbeat
           if (data.type === 'pong') {
             this.lastPongTime = Date.now();
-            this.log('[WSClient] Received pong');
+            this.log('pong');
             return;
           }
           
@@ -164,33 +169,49 @@ export class EnhancedWSClient {
             return;
           }
 
-          this.log(`[WSClient] Received message:`, data);
+          this.log('message', data.type);
           this.notifyListeners(data);
         } catch (e) {
-          this.warn('[WSClient] Failed to parse message:', event.data, e);
+          this.warn('parse-failed', event.data, e);
         }
       };
 
       this.ws.onerror = (event) => {
         if (this.isDestroyed) return;
         
-        this.error(`[WSClient] WebSocket error:`, event);
+  this.error('ws-error', event);
         this.setState(ConnectionState.ERROR, 'WebSocket connection error');
       };
 
       this.ws.onclose = (event) => {
         if (this.isDestroyed) return;
         
-        this.log(`[WSClient] Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+  this.warn('closed', event.code, event.reason);
         this.stopHeartbeat();
+  // Reject waiters
+  this.waiters.forEach(w => { clearTimeout(w.timeoutId); w.reject(new Error('WebSocket closed before open')); });
+  this.waiters = [];
         
         if (event.code === 1000) {
-          // Normal closure
           this.setState(ConnectionState.DISCONNECTED);
-        } else {
-          this.setState(ConnectionState.ERROR, `Connection closed unexpectedly (${event.code})`);
-          this.scheduleReconnect();
+          return;
         }
+
+        // Specjalne traktowanie code 1005 (no status) – często oznacza przerwane połączenie/proxy problem
+        if (event.code === 1005) {
+          // Heurystyka: jeśli URL wskazuje na dev server (5173) a nie backend port, spróbuj jednorazowo podmienić host
+          try {
+            const u = new URL(this.url);
+            if (/5173$/.test(u.port)) {
+              const alt = this.url.replace(/5173/, '8001');
+              this.warn('code1005-dev-port', this.url, '->', alt);
+              this.url = alt;
+            }
+          } catch (_) {}
+        }
+
+        this.setState(ConnectionState.ERROR, `Connection closed unexpectedly (${event.code})`);
+        this.scheduleReconnect();
       };
       
     } catch (e) {
@@ -208,7 +229,7 @@ export class EnhancedWSClient {
       this.options.maxReconnectInterval
     );
     
-    this.log(`[WSClient] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);
+  this.log('schedule-reconnect', { delay, attempt: this.reconnectAttempts + 1 });
     
     this.reconnectTimeout = window.setTimeout(() => {
       if (!this.isDestroyed) {
@@ -227,14 +248,13 @@ export class EnhancedWSClient {
       const timeSinceLastPong = Date.now() - this.lastPongTime;
       
       if (timeSinceLastPong > this.options.heartbeatTimeout + this.options.heartbeatInterval) {
-        this.warn('[WSClient] Heartbeat timeout, closing connection');
+  this.warn('heartbeat-timeout');
         this.ws?.close();
         return;
       }
       
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send({ type: 'ping' });
-        this.log('[WSClient] Sent ping');
+  this.send({ type: 'ping' }); this.log('ping');
       }
     }, this.options.heartbeatInterval);
   }
@@ -252,12 +272,15 @@ export class EnhancedWSClient {
   }
 
   private notifyListeners(data: WSMessage) {
-    this.listeners.forEach(listener => {
-      try {
-        listener(data);
-      } catch (e) {
-        this.error('[WSClient] Error in message listener:', e);
-      }
+    // Process listeners asynchronously to avoid blocking main thread
+    requestAnimationFrame(() => {
+      this.listeners.forEach(listener => {
+        try {
+          listener(data);
+        } catch (e) {
+    this.error('listener-error', e);
+        }
+      });
     });
   }
 
@@ -275,9 +298,23 @@ export class EnhancedWSClient {
       this.ws.send(JSON.stringify(data));
       return true;
     }
-    
-    this.warn('[WSClient] Cannot send, WebSocket not open:', this.state);
-    return false;
+    // Queue message for later
+    const payload = JSON.stringify(data);
+    this.pendingMessages.push(payload);
+  this.log('queue', this.state);
+    return false; // not yet sent
+  }
+
+  /** Returns promise resolved when socket is OPEN (or rejects after timeout). */
+  public waitUntilOpen(timeoutMs = 5000): Promise<void> {
+    if (this.ws?.readyState === WebSocket.OPEN) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        this.waiters = this.waiters.filter(w => w.timeoutId !== timeoutId);
+        reject(new Error('waitUntilOpen timeout'));
+      }, timeoutMs);
+      this.waiters.push({ resolve, reject, timeoutId });
+    });
   }
 
   public addListener(listener: WSListener) {
@@ -297,14 +334,14 @@ export class EnhancedWSClient {
   }
 
   public reconnect() {
-    this.log('[WSClient] Manual reconnect requested');
+  this.log('manual-reconnect');
     this.reconnectAttempts = 0;
     this.close();
     setTimeout(() => this.connect(), 100);
   }
 
   public close() {
-    this.log('[WSClient] Closing connection');
+  this.log('closing');
     this.shouldReconnect = false;
     this.setState(ConnectionState.CLOSING);
     
@@ -325,7 +362,7 @@ export class EnhancedWSClient {
   }
 
   public destroy() {
-    this.log('[WSClient] Destroying instance');
+  this.log('destroy');
     this.isDestroyed = true;
     this.close();
     this.listeners = [];

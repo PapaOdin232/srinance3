@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import {
   Text,
   Table,
@@ -14,6 +14,8 @@ import {
   Progress,
   Select,
   TextInput,
+  Tabs,
+  Tooltip,
 } from '@mantine/core';
 import { 
   getCoreRowModel, 
@@ -56,18 +58,57 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
 
   // Debounced search dla lepszej wydajności
   const debouncedGlobalFilter = useDebounced(globalFilter, 300);
+
+  // Zakładki kategorii: ALL | CRYPTO | STABLE | FIAT
+  type View = 'ALL' | 'CRYPTO' | 'STABLE' | 'FIAT';
+  const [view, setView] = useState<View>('ALL');
+
+  // Zbiory klasyfikacji
+  const STABLECOINS = useMemo(() => new Set([
+    'USDT','USDC','BUSD','TUSD','USDP','DAI','FDUSD','EURT','PYUSD','USDD','GUSD'
+  ]), []);
+  // Rozszerzona lista fiat (kody ISO + spotykane na Binance w saldach)
+  const FIAT_ASSETS = useMemo(() => new Set([
+    'USD','EUR','GBP','PLN','JPY','CNY','TRY','BRL','ARS','MXN','ZAR','UAH','RON','KZT','NGN',
+    'CZK','CHF','SEK','NOK','DKK','HUF','AUD','NZD','CAD','HKD','SGD','COP','CLP','PEN','PHP',
+    'IDR','INR','THB','VND','ILS','AED','SAR','QAR','KRW','MYR'
+  ]), []);
+
+  // Klasyfikacja balansów (dodajemy pole category)
+  const classifiedBalances = useMemo(() => {
+    if (!Array.isArray(balances)) return [] as (PortfolioBalance & { category: View })[];
+    return balances.map(b => {
+      const asset = (b.asset || '').toUpperCase();
+      let category: View = 'CRYPTO';
+      if (STABLECOINS.has(asset)) category = 'STABLE';
+      else if (FIAT_ASSETS.has(asset)) category = 'FIAT';
+      else {
+        // Heurystyka: brak ceny + 3 litery + valueUSD 0 => prawdopodobnie fiat
+        const noPrice = !b.currentPrice || b.currentPrice === 0;
+        if (noPrice && asset.length === 3 && (b.valueUSD === 0 || b.valueUSD === undefined)) {
+          category = 'FIAT';
+        }
+      }
+      return { ...b, category };
+    });
+  }, [balances, STABLECOINS, FIAT_ASSETS]);
   
   // Hook do animacji zmian cen
   const priceChanges = usePriceChangeAnimation(
-    Array.isArray(balances) ? balances.map(b => ({ symbol: b.asset, price: b.currentPrice || 0 })) : []
+    Array.isArray(classifiedBalances) ? classifiedBalances.map(b => ({ symbol: b.asset, price: b.currentPrice || 0 })) : []
   );
 
   // Filter balances based on hideZeroBalances setting
   const filteredBalances = useMemo(() => {
-    if (!Array.isArray(balances)) return [];
-    if (!hideZeroBalances) return balances;
-    return balances.filter(balance => balance.total > 0.00000001);
-  }, [balances, hideZeroBalances]);
+    let list = classifiedBalances;
+    if (hideZeroBalances) {
+      list = list.filter(balance => balance.total > 0.00000001);
+    }
+    if (view !== 'ALL') {
+      list = list.filter(b => b.category === view);
+    }
+    return list;
+  }, [classifiedBalances, hideZeroBalances, view]);
 
   // Calculate total portfolio value for percentage calculations
   const totalPortfolioValue = useMemo(() => {
@@ -79,18 +120,74 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     () => [
       columnHelper.accessor('asset', {
         header: 'Aktywo',
-        cell: (info) => (
-          <Group gap="xs">
-            <Text fw={600} c="blue" size="sm">
-              {info.getValue()}
+        cell: (info) => {
+          const asset = info.getValue();
+          const category = (info.row.original as any).category as View;
+          const isFiat = category === 'FIAT';
+          const isStable = category === 'STABLE';
+          return (
+            <Group gap="xs">
+              <Text data-testid={`asset-${asset}`} fw={600} c={isFiat ? 'orange' : isStable ? 'teal' : 'blue'} size="sm">
+                {asset}
+              </Text>
+              {isFiat && (
+                <Tooltip label="Fiat – brak live wyceny" withArrow>
+                  <Badge size="xs" color="gray" variant="light">FIAT</Badge>
+                </Tooltip>
+              )}
+              {isStable && (
+                <Tooltip label="Stablecoin" withArrow>
+                  <Badge size="xs" color="teal" variant="light">STB</Badge>
+                </Tooltip>
+              )}
+            </Group>
+          );
+        },
+      }),
+      columnHelper.accessor('free', {
+        header: () => (
+          <Tooltip label="Dostępne środki do handlu (nie zawiera zablokowanych w zleceniach)" withArrow>
+            <Text component="span" style={{ textDecoration: 'underline dotted' }}>
+              Dostępne
             </Text>
-          </Group>
+          </Tooltip>
+        ),
+        cell: (info) => (
+          <Text ta="right" ff="monospace" size="sm" c="teal">
+            {formatCrypto(info.getValue(), 8)}
+          </Text>
         ),
       }),
+      columnHelper.accessor('locked', {
+        header: () => (
+          <Tooltip label="Środki zablokowane w aktywnych zleceniach" withArrow>
+            <Text component="span" style={{ textDecoration: 'underline dotted' }}>
+              Zablokowane
+            </Text>
+          </Tooltip>
+        ),
+        cell: (info) => {
+          const value = info.getValue();
+          if (value === 0) {
+            return <Text ta="right" ff="monospace" size="sm" c="dimmed">-</Text>;
+          }
+          return (
+            <Text ta="right" ff="monospace" size="sm" c="orange">
+              {formatCrypto(value, 8)}
+            </Text>
+          );
+        },
+      }),
       columnHelper.accessor('total', {
-        header: 'Ilość',
+        header: () => (
+          <Tooltip label="Łączne saldo (dostępne + zablokowane)" withArrow>
+            <Text component="span" style={{ textDecoration: 'underline dotted' }}>
+              Łącznie
+            </Text>
+          </Tooltip>
+        ),
         cell: (info) => (
-          <Text ta="right" ff="monospace" size="sm">
+          <Text ta="right" ff="monospace" size="sm" fw={600}>
             {formatCrypto(info.getValue(), 8)}
           </Text>
         ),
@@ -103,7 +200,12 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
           const price = info.getValue();
           
           if (!price || price === 0) {
-            return <Text c="dimmed" size="sm">-</Text>;
+            const cat = (info.row.original as any).category as View;
+            return (
+              <Tooltip label={cat === 'FIAT' ? 'Fiat – wycena niedostępna' : 'Brak danych ceny'} withArrow>
+                <Text c="dimmed" size="sm">-</Text>
+              </Tooltip>
+            );
           }
           
           return (
@@ -114,25 +216,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
             />
           );
         },
-      }),
-      columnHelper.accessor('priceChange24h', {
-        header: '24h %',
-        cell: (info) => {
-          const value = info.getValue();
-          if (value === undefined || value === 0) {
-            return <Text c="dimmed" size="sm">-</Text>;
-          }
-          const isPositive = value >= 0;
-          return (
-            <Badge
-              color={isPositive ? 'teal' : 'red'}
-              variant="light"
-              size="sm"
-            >
-              {isPositive ? '+' : ''}{value.toFixed(2)}%
-            </Badge>
-          );
-        },
+  sortingFn: 'basic',
       }),
       columnHelper.accessor('valueUSD', {
         header: 'Wartość USD',
@@ -147,53 +231,44 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
             </Text>
           );
         },
+  sortingFn: 'basic',
       }),
-      columnHelper.display({
-        id: 'allocation',
-        header: '%',
-        cell: (info) => {
-          const value = info.row.original.valueUSD || 0;
-          const percentage = totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0;
-          return (
-            <Box style={{ minWidth: 60 }}>
-              <Text size="xs" c="dimmed" mb={2}>
-                {percentage.toFixed(1)}%
-              </Text>
-              <Progress 
-                value={percentage} 
-                size="xs" 
-                color={percentage > 10 ? 'blue' : percentage > 5 ? 'teal' : 'gray'}
-              />
-            </Box>
-          );
+      // Kolumna udziału procentowego w portfelu – teraz sortowalna
+      columnHelper.accessor(
+        row => {
+          const value = row.valueUSD || 0;
+          if (totalPortfolioValue === 0) return 0;
+            return (value / totalPortfolioValue) * 100;
         },
-      }),
-      columnHelper.accessor('valueChange24h', {
-        header: 'Zmiana 24h',
-        cell: (info) => {
-          const value = info.getValue();
-          if (value === undefined || Math.abs(value) < 0.01) {
-            return <Text c="dimmed" size="sm">$0.00</Text>;
-          }
-          const isPositive = value >= 0;
-          return (
-            <Text 
-              ta="right" 
-              ff="monospace" 
-              c={isPositive ? 'teal' : 'red'}
-              fw={500}
-              size="sm"
-            >
-              {isPositive ? '+' : ''}{formatCurrency(value, 'USD')}
-            </Text>
-          );
-        },
-      }),
+        {
+          id: 'allocation',
+          header: '%',
+          enableSorting: true,
+          // Funkcja sortująca – proste porównanie numeryczne
+          sortingFn: 'basic',
+          cell: (info) => {
+            const percentage = info.getValue<number>() || 0;
+            return (
+              <Box style={{ minWidth: 60 }}>
+                <Text size="xs" c="dimmed" mb={2}>
+                  {percentage.toFixed(1)}%
+                </Text>
+                <Progress
+                  value={percentage}
+                  size="xs"
+                  color={percentage > 10 ? 'blue' : percentage > 5 ? 'teal' : 'gray'}
+                />
+              </Box>
+            );
+          },
+        }
+      ),
     ],
     [priceChanges, totalPortfolioValue]
   );
 
   // Konfiguracja tabeli TanStack
+  const baseGetSortedRowModel = getSortedRowModel();
   const table = useReactTable({
     data: filteredBalances,
     columns,
@@ -205,14 +280,69 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
+    onGlobalFilterChange: (value) => {
+      setGlobalFilter(value as string);
+      // Po zmianie wyszukiwarki przejdź na pierwszą stronę, żeby uniknąć pustego widoku
+      setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getSortedRowModel: ((table: any) => {
+      const sortedModel = baseGetSortedRowModel(table) as any;
+      const sortingState = table.getState().sorting as any[];
+      if (!sortingState.length) return sortedModel;
+      const colId = sortingState[sortingState.length - 1].id;
+  if (!['currentPrice','valueUSD','allocation','priceChange24h','valueChange24h'].includes(colId)) return sortedModel;
+      const rows: any[] = sortedModel.rows || [];
+      if (!rows.length) return sortedModel;
+      const nonZero: any[] = [];
+      const zeros: any[] = [];
+      for (const r of rows) {
+        const raw = r.getValue(colId);
+        const v = typeof raw === 'number' ? raw : parseFloat(raw);
+        if (!v) zeros.push(r); else nonZero.push(r);
+      }
+      sortedModel.rows = [...nonZero, ...zeros];
+      return sortedModel;
+    }) as any,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    // Zapobiegnij skakaniu na pierwszą stronę przy każdej aktualizacji cen
+    autoResetPageIndex: false,
+    // Stabilne ID wiersza – aktywo jest unikalne
+    getRowId: (row) => row.asset,
   debugTable: (typeof process !== 'undefined' && (process as any).env && (process as any).env.NODE_ENV === 'development') || false,
   });
+
+  // Post-processing: przenieś wiersze z zerową wartością/ceną/udziałem na dół niezależnie od kierunku
+  const displayRows = useMemo(() => {
+    const sortingState = table.getState().sorting;
+    if (!sortingState.length) return table.getRowModel().rows;
+    const colId = sortingState[sortingState.length - 1].id;
+    if (!['currentPrice','valueUSD','allocation','priceChange24h','valueChange24h'].includes(colId)) {
+      return table.getRowModel().rows;
+    }
+    const rows = table.getRowModel().rows;
+    const nonZero: typeof rows = [];
+    const zeros: typeof rows = [];
+    for (const r of rows) {
+      const raw = r.getValue(colId) as any;
+      const v = typeof raw === 'number' ? raw : parseFloat(raw);
+      if (!v) zeros.push(r); else nonZero.push(r);
+    }
+    return [...nonZero, ...zeros];
+  }, [table, table.getState().sorting, table.getRowModel()]);
+
+  // Korekta pageIndex jeśli po zmianie liczby elementów wskazuje poza zakresem
+  useEffect(() => {
+    const pageCount = table.getPageCount();
+    setPagination(prev => {
+      if (prev.pageIndex > 0 && prev.pageIndex >= pageCount) {
+        return { ...prev, pageIndex: Math.max(0, pageCount - 1) };
+      }
+      return prev;
+    });
+  }, [filteredBalances.length, pagination.pageSize, table]);
 
   if (loading) {
     return (
@@ -240,6 +370,9 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     );
   }
 
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  const totalCount = classifiedBalances.length;
+
   return (
     <Stack gap="md">
       {/* Kontrolki i statystyki */}
@@ -251,7 +384,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
             </Text>
             <Group gap="xs">
               <Text size="sm" c="dimmed">
-                {filteredBalances.length} aktywów
+                {filteredCount} aktywów{(view !== 'ALL' || globalFilter) && ` (z ${totalCount})`}
               </Text>
               <Text size="sm" fw={500}>
                 {formatCurrency(totalPortfolioValue)}
@@ -259,12 +392,28 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
             </Group>
           </Group>
 
+          <Tabs value={view} onChange={(v) => setView((v as View) || 'ALL')} keepMounted={false} variant="outline" radius="sm">
+            <Tabs.List>
+              <Tabs.Tab value="ALL">Wszystko</Tabs.Tab>
+              <Tabs.Tab value="CRYPTO">Krypto</Tabs.Tab>
+              <Tabs.Tab value="STABLE">Stablecoiny</Tabs.Tab>
+              <Tabs.Tab value="FIAT">Fiat</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+
           <Group justify="space-between">
-            <TextInput
+      <TextInput
               placeholder="Szukaj aktywów (np. BTC, ETH...)"
               leftSection={<IconSearch size={16} />}
               value={globalFilter ?? ''}
-              onChange={(event) => setGlobalFilter(event.currentTarget.value)}
+              onChange={(event) => {
+                const val = event.currentTarget.value;
+                setGlobalFilter(val);
+                // natychmiast przejdź na pierwszą stronę po zmianie frazy
+                setPagination(prev => ({ ...prev, pageIndex: 0 }));
+        // Przy wyszukiwaniu przechodzimy na ALL aby pokazać wszystkie dopasowania
+        if (val && view !== 'ALL') setView('ALL');
+              }}
               style={{ flexGrow: 1, maxWidth: 300 }}
             />
             
@@ -357,7 +506,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
                 </Table.Td>
               </Table.Tr>
             ) : (
-              table.getRowModel().rows.map((row) => (
+              displayRows.map((row) => (
                 <Table.Tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <Table.Td key={cell.id}>
@@ -401,4 +550,4 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
   );
 };
 
-export default PortfolioTable;
+export default memo(PortfolioTable);

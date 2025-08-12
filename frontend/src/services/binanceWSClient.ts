@@ -68,7 +68,6 @@ export class BinanceWSClient {
         try {
           const data: BinanceKlineData = JSON.parse(event.data);
           if (data.e === 'kline') {
-            console.log(`[BinanceWSClient] Received kline for ${data.s}:`, data.k);
             this.notifyListeners(data);
           }
         } catch (error) {

@@ -19,6 +19,8 @@ import { fetchLightweightChartsKlines } from '../services/binanceAPI';
 import BinanceWSClient from '../services/binanceWSClient';
 import type { BinanceKlineData } from '../services/binanceWSClient';
 import useLightweightChart from '../hooks/useLightweightChart';
+import { useThrottledState } from '../hooks/useThrottledState';
+import { useThrottledCallback } from '../hooks/useThrottledCallback';
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
 import PriceDisplay from './PriceDisplay';
@@ -41,7 +43,7 @@ interface OrderBookData {
 }
 
 const MarketPanel: React.FC = () => {
-  const [ticker, setTicker] = useState<TickerData | null>(null);
+  const [ticker, setTicker] = useThrottledState<TickerData | null>(null, 150); // Throttle ticker updates
   const [orderBook, setOrderBook] = useState<OrderBookData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('1m');
@@ -59,6 +61,11 @@ const MarketPanel: React.FC = () => {
   
   const wsClientRef = useRef<EnhancedWSClient | null>(null);
   const selectedSymbolRef = useRef<string>(selectedSymbol);
+
+  // Throttled orderbook updates to prevent excessive re-renders
+  const setOrderBookThrottled = useThrottledCallback((newOrderBook: OrderBookData | null) => {
+    setOrderBook(newOrderBook);
+  }, 100); // Limit to ~10 updates per second
 
   // Keep selectedSymbolRef in sync with selectedSymbol
   useEffect(() => {
@@ -124,26 +131,41 @@ const MarketPanel: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const [tickerData, orderBookData] = await Promise.all([
-        getCurrentTicker(symbol),
-        getOrderBook(symbol)
-      ]);
-      
-      if (tickerData) {
+      // Prefer ticker data from assets hook (WebSocket) to reduce REST calls
+      let localTicker: any = null;
+      const asset = assets.find(a => a.symbol === symbol);
+      if (asset) {
+        localTicker = {
+            symbol: asset.symbol,
+            price: asset.price?.toString() || '0',
+            change: asset.priceChange?.toString() || '0',
+            changePercent: `${asset.priceChangePercent?.toFixed(2) || '0'}%`
+        };
+      }
+
+      if (!localTicker) {
+        try {
+          localTicker = await getCurrentTicker(symbol);
+        } catch (e) {
+          console.warn('[MarketPanel] REST ticker fallback failed:', e);
+        }
+      }
+
+      if (localTicker) {
         setTicker({
-          symbol: tickerData.symbol,
-          price: tickerData.price,
-          change: tickerData.change || '0',
-          changePercent: tickerData.changePercent || '0%'
+          symbol: localTicker.symbol,
+          price: localTicker.price,
+          change: localTicker.change || '0',
+          changePercent: localTicker.changePercent || '0%'
         });
       }
-      
+
+      const orderBookData = await getOrderBook(symbol);
       if (orderBookData) {
         setOrderBook({
           symbol: symbol,
-          bids: orderBookData.bids,
-          asks: orderBookData.asks
+          bids: Array.isArray(orderBookData.bids) ? orderBookData.bids : [],
+          asks: Array.isArray(orderBookData.asks) ? orderBookData.asks : []
         });
       }
       
@@ -170,14 +192,11 @@ const MarketPanel: React.FC = () => {
     let mounted = true;
     
     // Check if Binance streams are enabled
-  const binanceStreamsEnabled = ((typeof process !== 'undefined' && (process as any).env?.VITE_ENABLE_BINANCE_STREAMS) === 'true');
+    const binanceStreamsEnabled = ((typeof process !== 'undefined' && (process as any).env?.VITE_ENABLE_BINANCE_STREAMS) === 'true');
     
     if (!binanceStreamsEnabled) {
-      console.log(`[MarketPanel] Binance streams disabled via VITE_ENABLE_BINANCE_STREAMS`);
       return;
     }
-    
-    console.log(`[MarketPanel] Setting up Binance WebSocket for ${selectedSymbol} klines (${selectedInterval})`);
     
     // Create new Binance WebSocket client for kline data
     const binanceClient = new BinanceWSClient(selectedSymbol, selectedInterval);
@@ -185,15 +204,6 @@ const MarketPanel: React.FC = () => {
     
     binanceClient.addListener((data: BinanceKlineData) => {
       if (!mounted) return;
-      
-      console.log(`[MarketPanel] Received kline data for ${data.s}:`, {
-        time: new Date(data.k.t).toISOString(),
-        open: data.k.o,
-        high: data.k.h,
-        low: data.k.l,
-        close: data.k.c,
-        isClosed: data.k.x
-      });
       
       // Convert to lightweight-charts format and update chart
       const candlestick: CandlestickData = {
@@ -254,32 +264,27 @@ const MarketPanel: React.FC = () => {
       wsClient.addListener((msg) => {
         if (!mounted) return;
         const currentSelectedSymbol = selectedSymbolRef.current;
-        console.log('[MarketPanel] Received WebSocket message:', msg); // Debug log
+        
         switch (msg.type) {
           case 'ticker':
             // Filter: only process ticker for currently selected symbol
             if (msg.symbol === currentSelectedSymbol) {
-              console.log('[MarketPanel] Processing ticker update:', msg);
               setTicker({
                 symbol: msg.symbol as string,
                 price: msg.price as string,
                 change: msg.change as string,
                 changePercent: msg.changePercent as string
               });
-            } else {
-              console.log(`[MarketPanel] Filtered out ticker for ${msg.symbol} (selected: ${currentSelectedSymbol})`);
             }
             break;
           case 'orderbook':
             // Filter: only process orderbook for currently selected symbol
             if (msg.symbol === currentSelectedSymbol) {
-              setOrderBook({
+              setOrderBookThrottled({
                 symbol: msg.symbol as string,
-                bids: msg.bids as [string, string][],
-                asks: msg.asks as [string, string][]
+                bids: Array.isArray(msg.bids) ? (msg.bids as [string, string][]) : [],
+                asks: Array.isArray(msg.asks) ? (msg.asks as [string, string][]) : []
               });
-            } else {
-              console.log(`[MarketPanel] Filtered out orderbook for ${msg.symbol} (selected: ${currentSelectedSymbol})`);
             }
             break;
         }
@@ -476,7 +481,7 @@ const MarketPanel: React.FC = () => {
                 <Stack gap="xs">
                   <Text fw={600} c="red">Asks (Sprzedaż)</Text>
                   <Stack gap={2}>
-                    {orderBook.asks.slice(0, 10).map((ask, i) => (
+                    {(orderBook.asks || []).slice(0, 10).map((ask, i) => (
                       <Group key={i} justify="space-between">
                         <Text size="sm" ff="monospace" c="red" fw={600}>
                           {parseFloat(ask[0]).toFixed(2)}
@@ -493,7 +498,7 @@ const MarketPanel: React.FC = () => {
                 <Stack gap="xs">
                   <Text fw={600} c="teal">Bids (Kupno)</Text>
                   <Stack gap={2}>
-                    {orderBook.bids.slice(0, 10).map((bid, i) => (
+                    {(orderBook.bids || []).slice(0, 10).map((bid, i) => (
                       <Group key={i} justify="space-between">
                         <Text size="sm" ff="monospace" c="teal" fw={600}>
                           {parseFloat(bid[0]).toFixed(2)}

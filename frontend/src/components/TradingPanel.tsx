@@ -12,6 +12,7 @@ import {
   Badge,
   Divider,
   Grid,
+  Tooltip,
 } from '@mantine/core';
 import { 
   IconTrendingUp, 
@@ -19,10 +20,14 @@ import {
   IconFlask,
   IconAlertCircle,
   IconCheck,
+  IconWallet,
 } from '@tabler/icons-react';
 import { placeOrder, testOrder, type PlaceOrderRequest } from '../services/restClient';
 import { getCurrentTicker } from '../services/restClient';
 import { useAssets } from '../hooks/useAssets';
+import { useUserStream } from '../store/userStream';
+import { usePortfolio } from '../hooks/usePortfolio';
+import { formatCrypto } from '../types/portfolio';
 
 interface TickerData {
   symbol: string;
@@ -49,6 +54,12 @@ const TradingPanel: React.FC = () => {
 
   // Assets hook for symbol selection and real-time ticker data
   const { assets } = useAssets();
+  
+  // Portfolio hook for balance information
+  const { balances } = usePortfolio();
+  
+  // User stream for optimistic updates
+  const { addPendingOrder } = useUserStream();
 
   // Get ticker data from assets instead of polling
   const currentAsset = assets.find(asset => asset.symbol === symbol);
@@ -134,6 +145,26 @@ const TradingPanel: React.FC = () => {
         timeInForce
       };
 
+      // Optymistyczne dodanie zlecenia ze statusem PENDING
+      const optimisticOrder = {
+        orderId: Math.floor(Math.random() * 1000000), // Tymczasowe ID
+        clientOrderId: `optimistic_${Date.now()}`,
+        symbol,
+        side,
+        type: orderType,
+        timeInForce,
+        price: orderType === 'LIMIT' ? price.toString() : ticker?.price || '0',
+        origQty: quantity.toString(),
+        executedQty: '0',
+        cummulativeQuoteQty: '0',
+        avgPrice: '0',
+        status: 'PENDING',
+        updateTime: Date.now(),
+        fills: []
+      };
+      
+      addPendingOrder(optimisticOrder, 5000); // 5s timeout
+
       const response = await placeOrder(orderData);
       
       if (response.success) {
@@ -147,9 +178,11 @@ const TradingPanel: React.FC = () => {
         setPrice('');
       } else {
         setError(response.error || 'Failed to place order');
+        // Note: Optymistyczne zlecenie zostanie automatycznie usunięte po timeout
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to place order');
+      // Note: Optymistyczne zlecenie zostanie automatycznie usunięte po timeout
     } finally {
       setLoading(false);
     }
@@ -202,6 +235,48 @@ const TradingPanel: React.FC = () => {
           </Group>
         </Paper>
       )}
+      
+      {/* Available Balance Display */}
+      <Paper p="md" withBorder>
+        <Group justify="space-between" align="center">
+          <Group gap="md">
+            <IconWallet size={20} />
+            <Text size="md" fw={600}>
+              Dostępne saldo
+            </Text>
+          </Group>
+          <Group gap="lg">
+            {/* Show USDT balance for all pairs */}
+            <Group gap="xs">
+              <Text size="sm" c="dimmed">USDT:</Text>
+              <Tooltip label="Dostępne środki do handlu (nie zawiera zablokowanych w zleceniach)" withArrow>
+                <Text size="sm" ff="monospace" fw={600} c="teal" style={{ textDecoration: 'underline dotted' }}>
+                  {(() => {
+                    const usdtBalance = balances.find(b => b.asset === 'USDT');
+                    return usdtBalance ? formatCrypto(usdtBalance.free, 2) : '0.00';
+                  })()}
+                </Text>
+              </Tooltip>
+            </Group>
+            
+            {/* Show base asset balance if not USDT */}
+            {symbol && !symbol.endsWith('USDT') && (() => {
+              const baseAsset = symbol.replace('USDT', '');
+              const baseBalance = balances.find(b => b.asset === baseAsset);
+              return baseBalance && baseBalance.free > 0 ? (
+                <Group gap="xs">
+                  <Text size="sm" c="dimmed">{baseAsset}:</Text>
+                  <Tooltip label="Dostępne środki do sprzedaży" withArrow>
+                    <Text size="sm" ff="monospace" fw={600} c="blue" style={{ textDecoration: 'underline dotted' }}>
+                      {formatCrypto(baseBalance.free, 8)}
+                    </Text>
+                  </Tooltip>
+                </Group>
+              ) : null;
+            })()}
+          </Group>
+        </Group>
+      </Paper>
       
       <Grid>
         <Grid.Col span={8}>

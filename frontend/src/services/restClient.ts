@@ -167,7 +167,21 @@ export async function getOrderbook(symbol: string) {
 export async function getOpenOrders(symbol?: string) {
   try {
     const url = symbol ? `/orders/open?symbol=${encodeURIComponent(symbol)}` : '/orders/open';
+    // Prosty cache w pamięci (TTL 4s) aby uniknąć spamowania gdy komponent się rerenderuje
+    const cacheKey = `open:${symbol || 'ALL'}`;
+    type CacheEntry = { time: number; data: OpenOrdersResponse };
+    const g = (globalThis as any);
+    g.__OPEN_ORDERS_CACHE = g.__OPEN_ORDERS_CACHE || new Map<string, CacheEntry>();
+    const cache: Map<string, CacheEntry> = g.__OPEN_ORDERS_CACHE;
+    const entry = cache.get(cacheKey);
+    const now = Date.now();
+    if (entry && now - entry.time < 4000) {
+      return entry.data;
+    }
     const res = await api.get<OpenOrdersResponse>(url);
+    if (res.data) {
+      cache.set(cacheKey, { time: now, data: res.data });
+    }
     return res.data;
   } catch (err) {
     handleError(err);
@@ -339,6 +353,36 @@ export async function cancelOrder(orderId: number, symbol: string, origClientOrd
     }
     
     const res = await api.delete<CancelOrderResponse>(`/orders/${orderId}?${params}`);
+    return res.data;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+// ===== METRICS FUNCTIONS =====
+
+export interface MetricsResponse {
+  batchesSent: number;
+  watchdogFallbacks: number;
+  userStreamReconnects: number;
+  keepaliveErrors: number;
+  wsListenerErrors: number;
+  openOrders: number;
+  ordersTotal: number;
+  historySize: number;
+  balancesCount: number;
+  userConnections: number;
+  lastEventAgeMs: number | null;
+  lastKeepAliveAgeMs: number | null;
+  connectionErrors: number;
+  userStreamRestarts: number;
+  listenKeyActive: boolean;
+  avgEventLatencyMs: number | null;
+}
+
+export async function getMetrics() {
+  try {
+    const res = await api.get<MetricsResponse>('/metrics/basic');
     return res.data;
   } catch (err) {
     handleError(err);

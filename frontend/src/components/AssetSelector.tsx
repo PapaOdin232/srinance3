@@ -136,11 +136,22 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
       }),
       columnHelper.accessor('volume', {
         header: 'Wolumen 24h',
-        cell: (info) => (
-          <Text ta="right" ff="monospace" size="sm">
-            {(info.getValue() / 1000000).toFixed(1)}M
-          </Text>
-        ),
+        cell: (info) => {
+          const v = info.getValue();
+          let display: string;
+          if (v === 0) display = '0';
+          else if (v >= 1_000_000_000) display = (v / 1_000_000_000).toFixed(2) + 'B';
+          else if (v >= 1_000_000) display = (v / 1_000_000).toFixed(2) + 'M';
+          else if (v >= 10_000) display = (v / 1_000).toFixed(2) + 'K';
+          else if (v >= 1) display = v.toFixed(2);
+          else if (v >= 0.01) display = v.toFixed(4); // małe ale czytelne
+          else display = v.toExponential(2);
+          return (
+            <Text ta="right" ff="monospace" size="sm">
+              {display}
+            </Text>
+          );
+        },
       }),
       columnHelper.display({
         id: 'actions',

@@ -2,6 +2,7 @@
 // This bypasses the backend and connects directly to Binance public API
 
 import axios from 'axios';
+import { createLogger } from './logger';
 import type { Asset } from '../types/asset';
 
 // Binance API base URL (public, no authentication required for market data)
@@ -57,8 +58,9 @@ export async function fetchBinanceKlines(
   interval: string = '1m', 
   limit: number = 100
 ): Promise<BinanceKlineData[]> {
+  const logger = createLogger('binance:api');
   try {
-    console.log(`[BinanceAPI] Fetching ${limit} klines for ${symbol} (${interval})`);
+    logger.debug('fetch-klines', { symbol, interval, limit });
     
     const response = await axios.get<BinanceKlineRaw[]>(`${BINANCE_API_BASE}/klines`, {
       params: {
@@ -83,11 +85,11 @@ export async function fetchBinanceKlines(
       takerBuyQuoteAssetVolume: raw[10]
     }));
 
-    console.log(`[BinanceAPI] Successfully fetched ${klines.length} klines`);
+  logger.trace('klines-fetched', klines.length);
     return klines;
 
   } catch (error) {
-    console.error('[BinanceAPI] Failed to fetch klines:', error);
+  logger.error('klines-error', error as any);
     throw new Error(`Failed to fetch klines for ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -136,25 +138,41 @@ export default {
  * @returns Promise with array of Asset objects
  */
 export async function fetchAllTradingPairs(): Promise<Asset[]> {
+  const logger = createLogger('binance:api');
   try {
-    console.log('[BinanceAPI] Fetching trading pairs from local backend...');
+    logger.debug('fetch-trading-pairs');
     
     const [exchangeInfo, ticker24hr] = await Promise.all([
       axios.get('/api/exchangeInfo', { timeout: 10000 }),
       axios.get('/api/24hr', { timeout: 10000 })
     ]);
 
-    // Dozwolone rynki (quote) — domyślnie USDT,BTC,ETH,BNB; można nadpisać VITE_MARKET_QUOTES
-  const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDT,BTC,ETH,BNB'))
+    // Dozwolone rynki (quote) — priorytet dla USDC (MiCA-compliant), backup USDT
+    const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDC,USDT,BTC,ETH,BNB'))
       .split(',')
       .map((q: string) => q.trim().toUpperCase())
       .filter(Boolean);
 
-    // Filtruj tylko aktywne pary dla wybranych rynków
+    // Lista walut fiat dla par USDC{FIAT} i USDT{FIAT}
+    const FIAT_CURRENCIES = new Set([
+      'EUR', 'GBP', 'PLN', 'JPY', 'CNY', 'TRY', 'BRL', 'ARS', 'MXN', 'ZAR', 'UAH', 'RON',
+      'KZT', 'NGN', 'CZK', 'CHF', 'SEK', 'NOK', 'DKK', 'HUF', 'AUD', 'NZD', 'CAD',
+      'HKD', 'SGD', 'COP', 'CLP', 'PEN', 'PHP', 'IDR', 'INR', 'THB', 'VND', 'ILS',
+      'AED', 'SAR', 'QAR', 'KRW', 'MYR'
+    ]);
+
+    // Filtruj aktywne pary: standardowe (quote w MARKET_QUOTES) + pary fiat (USDC{FIAT} i USDT{FIAT})
     const filteredPairs = (exchangeInfo.data as any).symbols.filter((symbol: any) => 
-      MARKET_QUOTES.includes(symbol.quoteAsset) &&
       symbol.status === 'TRADING' &&
-      symbol.isSpotTradingAllowed
+      symbol.isSpotTradingAllowed &&
+      (
+        // Standardowe pary: quote asset w dozwolonych rynkach
+        MARKET_QUOTES.includes(symbol.quoteAsset) ||
+        // Pary fiat: USDC{FIAT} (MiCA-compliant, preferowane)
+        (symbol.baseAsset === 'USDC' && FIAT_CURRENCIES.has(symbol.quoteAsset)) ||
+        // Pary fiat: USDT{FIAT} (backup, będą usunięte w EU)
+        (symbol.baseAsset === 'USDT' && FIAT_CURRENCIES.has(symbol.quoteAsset))
+      )
     );
 
     // Mapowanie danych na format Asset
@@ -201,11 +219,11 @@ export async function fetchAllTradingPairs(): Promise<Asset[]> {
     // Sortowanie po wolumenie (największe najpierw)
     const sortedAssets = assets.sort((a, b) => b.volume - a.volume);
 
-  console.log(`[BinanceAPI] Successfully fetched ${sortedAssets.length} trading pairs across markets: ${MARKET_QUOTES.join(',')}`);
+  logger.debug('trading-pairs-fetched', { count: sortedAssets.length });
     return sortedAssets;
 
   } catch (error) {
-    console.error('[BinanceAPI] Failed to fetch trading pairs:', error);
+  logger.error('trading-pairs-error', error as any);
     throw new Error(`Failed to fetch trading pairs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

@@ -11,6 +11,21 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      // Proxy dla kanałów WebSocket backendu
+      '/ws': {
+        target: 'ws://localhost:8001',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
     },
   },
 })

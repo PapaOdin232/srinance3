@@ -24,8 +24,12 @@ class BinanceRESTClient:
         self._ticker24_all_cache = None
         self._ticker24_all_cache_time = None
         self._ticker24_all_cache_ttl = 5  # 5 seconds TTL
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", self.api_key)
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", self.api_secret)
+        def _mask(s: str, show: int = 4):
+            if not s:
+                return "(empty)"
+            return s[:show] + "***" + s[-show:]
+        print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", _mask(self.api_key))
+        print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", _mask(self.api_secret))
 
     def get_orderbook(self, symbol, limit=10):
         endpoint = "/v3/depth"
@@ -34,6 +38,33 @@ class BinanceRESTClient:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
+
+    # --- User Data Stream (listenKey) management ---
+    def start_user_data_stream(self):
+        """Start a new user data stream and return listenKey"""
+        endpoint = "/v3/userDataStream"
+        url = f"{self.base_url}{endpoint}"
+        resp = requests.post(url, headers=self._headers(), timeout=10)
+        resp.raise_for_status()
+        return resp.json()  # {"listenKey": "..."}
+
+    def keepalive_user_data_stream(self, listen_key: str):
+        """Ping/keepalive existing user data stream"""
+        endpoint = "/v3/userDataStream"
+        params = {"listenKey": listen_key}
+        url = f"{self.base_url}{endpoint}?{urlencode(params)}"
+        resp = requests.put(url, headers=self._headers(), timeout=10)
+        resp.raise_for_status()
+        return True
+
+    def close_user_data_stream(self, listen_key: str):
+        """Close user data stream"""
+        endpoint = "/v3/userDataStream"
+        params = {"listenKey": listen_key}
+        url = f"{self.base_url}{endpoint}?{urlencode(params)}"
+        resp = requests.delete(url, headers=self._headers(), timeout=10)
+        resp.raise_for_status()
+        return True
 
     def _sign(self, params):
         query_string = urlencode(params)
@@ -233,7 +264,16 @@ class BinanceRESTClient:
         print(f"[DEBUG] place_order url: {url}")
         print(f"[DEBUG] place_order params: {params}")
         resp = requests.post(url, data=params, headers=self._headers(), timeout=10)
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            # Spróbuj sparsować ciało błędu aby mieć code/msg od Binance
+            err_payload = None
+            try:
+                err_payload = resp.json()
+            except Exception:
+                err_payload = {'raw': resp.text[:500]}
+            print(f"[ERROR] place_order HTTP {resp.status_code} body={err_payload}")
+            # Podnieś wyjątek aby warstwa async mogła go przetworzyć
+            resp.raise_for_status()
         return resp.json()
 
     def test_order(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
@@ -490,8 +530,24 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().place_order, symbol, side, order_type, quantity, price, time_in_force)
             return result
         except Exception as e:
-            print(f"[ERROR] place_order failed for {symbol}: {e}")
-            return None
+            # Spróbuj wyciągnąć szczegóły HTTPError (code/msg Binance)
+            detail = {'error': str(e)}
+            try:
+                import requests
+                if isinstance(e, requests.HTTPError) and e.response is not None:
+                    try:
+                        j = e.response.json()
+                        if isinstance(j, dict):
+                            # Rozszerz szczegóły błędu
+                            detail['binanceCode'] = str(j.get('code')) if 'code' in j else None  # type: ignore
+                            detail['binanceMsg'] = str(j.get('msg')) if 'msg' in j else None  # type: ignore
+                            detail['httpStatus'] = str(e.response.status_code)  # type: ignore
+                    except Exception:
+                        detail['responseText'] = e.response.text[:500]
+            except Exception:
+                pass
+            print(f"[ERROR] place_order failed for {symbol}: {detail}")
+            return detail
 
     async def test_order_async(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
         """Async wrapper for test_order"""
@@ -512,3 +568,31 @@ class BinanceClient(BinanceRESTClient):
         except Exception as e:
             print(f"[ERROR] cancel_order failed for {symbol}, orderId: {order_id}: {e}")
             return None
+
+    # --- Async wrappers for user data stream ---
+    async def start_user_data_stream_async(self):
+        import asyncio
+        try:
+            result = await asyncio.to_thread(super().start_user_data_stream)
+            return result
+        except Exception as e:
+            print(f"[ERROR] start_user_data_stream failed: {e}")
+            return None
+
+    async def keepalive_user_data_stream_async(self, listen_key: str):
+        import asyncio
+        try:
+            await asyncio.to_thread(super().keepalive_user_data_stream, listen_key)
+            return True
+        except Exception as e:
+            print(f"[ERROR] keepalive_user_data_stream failed: {e}")
+            return False
+
+    async def close_user_data_stream_async(self, listen_key: str):
+        import asyncio
+        try:
+            await asyncio.to_thread(super().close_user_data_stream, listen_key)
+            return True
+        except Exception as e:
+            print(f"[ERROR] close_user_data_stream failed: {e}")
+            return False

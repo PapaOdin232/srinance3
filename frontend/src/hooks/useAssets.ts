@@ -26,7 +26,7 @@ const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as
   .map((q: string) => q.trim().toUpperCase())
   .filter(Boolean);
 const FETCH_COOLDOWN = 60000; // 60s
-const UPDATE_THROTTLE_MS = 500; // ~2/s
+const UPDATE_THROTTLE_MS = 750; // Increased from 500ms to 750ms for better performance
 
 class AssetStore {
   state: AssetsState = { assets: [], loading: true, error: null, isConnected: false };
@@ -158,18 +158,34 @@ class AssetStore {
       this.throttleTimer = window.setTimeout(() => {
         this.throttleTimer = null;
         if (this.pendingTickers.size === 0) return;
+        
         const updates = new Map(this.pendingTickers);
         this.pendingTickers.clear();
+        
+        // Optimized: update only changed assets, preserve references for unchanged ones
         const next = this.state.assets.map(a => {
           const t = updates.get(a.symbol);
-          if (!t) return a;
+          if (!t) return a; // Preserve reference for unchanged assets
+          
+          const newPrice = parseFloat(t.c);
+          const newChangePercent = parseFloat(t.P);
+          const newVolume = parseFloat(t.q);
+          const newHighPrice = parseFloat(t.h);
+          const newLowPrice = parseFloat(t.l);
+          
+          // Check if values actually changed to avoid unnecessary object creation
+          if (a.price === newPrice && a.priceChangePercent === newChangePercent && 
+              a.volume === newVolume && a.highPrice === newHighPrice && a.lowPrice === newLowPrice) {
+            return a; // No change, preserve reference
+          }
+          
           return {
             ...a,
-            price: parseFloat(t.c),
-            priceChangePercent: parseFloat(t.P),
-            volume: parseFloat(t.q),
-            highPrice: parseFloat(t.h),
-            lowPrice: parseFloat(t.l),
+            price: newPrice,
+            priceChangePercent: newChangePercent,
+            volume: newVolume,
+            highPrice: newHighPrice,
+            lowPrice: newLowPrice,
           } as Asset;
         });
         this.state = { ...this.state, assets: next };

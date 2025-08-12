@@ -62,7 +62,9 @@ describe('AccountPanel', () => {
       </MantineProvider>
     );
     expect(await screen.findByText('BTC')).toBeInTheDocument();
-    expect(await screen.findByText('0.5')).toBeInTheDocument();
+    // Sprawdzamy że wartość 0.5 pojawia się co najmniej raz (może być w kolumnie Dostępne i Total)
+    const values = await screen.findAllByText('0.5');
+    expect(values.length).toBeGreaterThan(0);
   // AccountPanel nie renderuje bezpośrednio symbolu pary (BTCUSDT) ani ceny 40000 w tabeli portfolio
   // Sprawdzamy kluczowe elementy: aktywo BTC, ilość oraz że komponent portfolio value się pojawia
   expect(screen.queryByText('BTCUSDT')).toBeNull();

@@ -30,6 +30,8 @@ export interface BinanceTicker24hr {
 
 export type BinanceTickerListener = (tickers: BinanceTicker24hr[]) => void;
 
+import { createLogger } from './logger';
+
 export class BinanceTickerWSClient {
   private ws: WebSocket | null = null;
   private listeners: BinanceTickerListener[] = [];
@@ -41,15 +43,19 @@ export class BinanceTickerWSClient {
   private readonly baseUrl: string;
   private subscribedSymbols = new Set<string>();
 
+  private logger = createLogger('binance:ticker');
+
   constructor() {
     // Use environment variable for Binance WebSocket URL, with fallback
   // Prefer env var in tests; Vite will inline in builds
   // @ts-ignore
   const fromEnv = (typeof process !== 'undefined' && (process as any).env?.VITE_BINANCE_WS_URL) as string | undefined;
   this.baseUrl = fromEnv || 'wss://data-stream.binance.vision/ws';
-    console.log(`[BinanceTickerWSClient] Initialized with base URL: ${this.baseUrl}`);
+  this.logger.debug('init', { baseUrl: this.baseUrl });
     // Don't auto-connect, wait for subscriptions
   }
+
+  // debug flag handled by central logger now
 
   // Subscribe to specific symbols for ticker updates
   subscribe(symbols: string[]) {
@@ -57,7 +63,7 @@ export class BinanceTickerWSClient {
       const symbolLower = symbol.toLowerCase();
       if (!this.subscribedSymbols.has(symbolLower)) {
         this.subscribedSymbols.add(symbolLower);
-        console.log(`[BinanceTickerWSClient] Added subscription for ${symbol}`);
+  this.logger.trace('subscribe', { symbol });
       }
     });
     
@@ -71,11 +77,11 @@ export class BinanceTickerWSClient {
     symbols.forEach(symbol => {
       const symbolLower = symbol.toLowerCase();
       this.subscribedSymbols.delete(symbolLower);
-      console.log(`[BinanceTickerWSClient] Removed subscription for ${symbol}`);
+  this.logger.trace('unsubscribe', { symbol });
     });
     
     if (this.subscribedSymbols.size === 0 && this.ws) {
-      console.log(`[BinanceTickerWSClient] No more subscriptions, closing connection`);
+  this.logger.debug('no-subscriptions-close');
       this.ws.close();
     }
   }
@@ -103,23 +109,23 @@ export class BinanceTickerWSClient {
 
   private connect() {
     if (this.isDestroyed) {
-      console.log('[BinanceTickerWSClient] Client is destroyed, skipping connect');
+  this.logger.debug('skip-connect-destroyed');
       return;
     }
 
     if (this.subscribedSymbols.size === 0) {
-      console.log('[BinanceTickerWSClient] No symbols subscribed, skipping connect');
+  this.logger.trace('skip-connect-empty');
       return;
     }
 
   const url = this.buildStreamUrl();
-    console.log(`[BinanceTickerWSClient] Connecting to ${url}`);
+    this.logger.debug('connecting', { url });
 
     try {
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-        console.log(`[BinanceTickerWSClient] Connected to ${this.subscribedSymbols.size} ticker streams`);
+  this.logger.info('connected', { streams: this.subscribedSymbols.size });
         this.reconnectAttempts = 0;
       };
 
@@ -144,37 +150,36 @@ export class BinanceTickerWSClient {
             }
           }
         } catch (error) {
-          console.error('[BinanceTickerWSClient] Failed to parse message:', error);
+          this.logger.warn('parse-failed', error);
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('[BinanceTickerWSClient] WebSocket error:', error);
-        console.error('[BinanceTickerWSClient] Connection URL:', url);
-        console.error('[BinanceTickerWSClient] WebSocket readyState:', this.ws?.readyState);
+  this.logger.error('ws-error', error);
+  this.logger.debug('ws-error-meta', { url, state: this.ws?.readyState });
       };
 
       this.ws.onclose = (event) => {
-        console.log(`[BinanceTickerWSClient] Connection closed: ${event.code} ${event.reason}`);
+  this.logger.warn('closed', { code: event.code, reason: event.reason });
         this.ws = null;
         
         // Don't attempt reconnection if the close was due to an invalid endpoint
         if (event.code === 1006) {
-          console.warn('[BinanceTickerWSClient] Connection failed - possibly invalid endpoint. Check VITE_BINANCE_WS_URL configuration.');
+          this.logger.error('invalid-endpoint?');
           this.shouldReconnect = false;
           return;
         }
         
         if (this.shouldReconnect && !this.isDestroyed && this.reconnectAttempts < this.maxReconnectAttempts && this.subscribedSymbols.size > 0) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-          console.log(`[BinanceTickerWSClient] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+          this.logger.debug('reconnect-schedule', { delay, attempt: this.reconnectAttempts + 1 });
           
           this.reconnectTimeout = window.setTimeout(() => {
             this.reconnectAttempts++;
             this.connect();
           }, delay);
         } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.error('[BinanceTickerWSClient] Max reconnection attempts reached. Giving up.');
+          this.logger.error('reconnect-max');
         }
       };
 
@@ -194,7 +199,7 @@ export class BinanceTickerWSClient {
       return;
     }
 
-    console.log(`[BinanceTickerWSClient] Updating subscriptions to ${next.size} symbols`);
+  this.logger.debug('set-subscriptions', { count: next.size });
     this.subscribedSymbols = next;
 
     // Reconnect with new streams
@@ -211,26 +216,26 @@ export class BinanceTickerWSClient {
       try {
         listener(tickers);
       } catch (error) {
-        console.error('[BinanceTickerWSClient] Error in listener:', error);
+  this.logger.error('listener-error', error);
       }
     });
   }
 
   addListener(listener: BinanceTickerListener) {
     this.listeners.push(listener);
-    console.log(`[BinanceTickerWSClient] Added listener, total: ${this.listeners.length}`);
+  this.logger.trace('add-listener', { total: this.listeners.length });
   }
 
   removeListener(listener: BinanceTickerListener) {
     const index = this.listeners.indexOf(listener);
     if (index !== -1) {
       this.listeners.splice(index, 1);
-      console.log(`[BinanceTickerWSClient] Removed listener, total: ${this.listeners.length}`);
+  this.logger.trace('remove-listener', { total: this.listeners.length });
     }
   }
 
   destroy() {
-    console.log('[BinanceTickerWSClient] Destroying client');
+  this.logger.info('destroy');
     this.isDestroyed = true;
     this.shouldReconnect = false;
     

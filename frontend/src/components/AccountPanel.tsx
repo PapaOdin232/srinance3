@@ -22,8 +22,9 @@ const AccountPanel: React.FC = () => {
     error, 
     accountData, 
     refetch, 
-    totalValue, 
-    totalChange24h 
+    totalValue,
+    isConnected,
+    lastSyncTime
   } = usePortfolio();
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
 
@@ -38,18 +39,25 @@ const AccountPanel: React.FC = () => {
           <Text size="xl" fw={700}>
             Dashboard
           </Text>
-          <Group gap="xs">
-            <Box
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                backgroundColor: !error ? '#4CAF50' : '#f44336',
-              }}
-            />
-            <Text size="sm" c="dimmed">
-              {!error ? 'Połączony' : 'Rozłączony'}
-            </Text>
+          <Group gap="md">
+            <Group gap="xs">
+              <Box
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  backgroundColor: isConnected ? '#4CAF50' : '#f44336',
+                }}
+              />
+              <Text size="sm" c="dimmed">
+                {isConnected ? 'Połączony' : 'Rozłączony'}
+              </Text>
+            </Group>
+            {lastSyncTime && (
+              <Text size="xs" c="dimmed">
+                Ostatnia synchronizacja: {new Date(lastSyncTime).toLocaleTimeString('pl-PL')}
+              </Text>
+            )}
           </Group>
         </Group>
       </Paper>
@@ -60,17 +68,10 @@ const AccountPanel: React.FC = () => {
           <Text size="lg" fw={600}>
             Podsumowanie Portfolio
           </Text>
-          <Badge 
-            color={totalChange24h >= 0 ? 'teal' : 'red'} 
-            variant="light"
-            size="lg"
-          >
-            {totalChange24h >= 0 ? '+' : ''}{totalChange24h.toFixed(2)}%
-          </Badge>
         </Group>
         
         <Grid>
-          <Grid.Col span={4}>
+          <Grid.Col span={6}>
             <Text size="sm" c="dimmed">
               Całkowita wartość
             </Text>
@@ -78,24 +79,12 @@ const AccountPanel: React.FC = () => {
               {formatCurrency(totalValue)}
             </Text>
           </Grid.Col>
-          <Grid.Col span={4}>
+          <Grid.Col span={6}>
             <Text size="sm" c="dimmed">
               Aktywne aktywa
             </Text>
             <Text size="xl" fw={700}>
               {activeAssets}
-            </Text>
-          </Grid.Col>
-          <Grid.Col span={4}>
-            <Text size="sm" c="dimmed">
-              Zmiana 24h
-            </Text>
-            <Text 
-              size="xl" 
-              fw={700}
-              c={totalChange24h >= 0 ? 'teal' : 'red'}
-            >
-              {formatCurrency(totalValue * (totalChange24h / 100))}
             </Text>
           </Grid.Col>
         </Grid>

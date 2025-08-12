@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import axios from 'axios';
 jest.mock('axios');
@@ -38,6 +38,17 @@ const mockAssets: Asset[] = [
     priceChangePercent: 2.77,
     volume: 45678901,
     count: 234567,
+    status: 'TRADING',
+  },
+  {
+    symbol: 'WBTCTAO',
+    baseAsset: 'WBTC',
+    quoteAsset: 'TAO',
+    price: 0.9991,
+    priceChange: 0.0001,
+    priceChangePercent: 0.01,
+    volume: 0.0048,
+    count: 10,
     status: 'TRADING',
   },
 ];
@@ -104,5 +115,32 @@ describe('AssetSelector', () => {
     
     expect(screen.getByText('Wybór aktywa')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Szukaj par (np. BTC, ETH...)')).toBeInTheDocument();
+  });
+
+  test('formats small non-USDT market volume without forcing M suffix', () => {
+    (axios.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/exchangeInfo')) return Promise.resolve({ data: { symbols: [] } });
+      if (url.includes('/api/24hr')) return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: {} });
+    });
+
+    render(
+      <MantineProvider defaultColorScheme="dark">
+        <AssetSelector
+          selectedAsset={null}
+          onAssetSelect={mockOnAssetSelect}
+          assets={mockAssets}
+        />
+      </MantineProvider>
+    );
+
+  // Zmień rynek na ALL aby pokazać aktywa spoza listy preferowanych quote (np. TAO)
+  const marketSelect = screen.getByPlaceholderText('Rynek');
+  fireEvent.mouseDown(marketSelect); // otwórz dropdown
+  const allOption = screen.getByText('Wszystkie rynki');
+  fireEvent.click(allOption);
+
+    // Szukamy sformatowanej wartości 0.0048 lub w notacji naukowej (0.00e) zależnie od reguły
+    expect(screen.getByText(/0\.0048|4\.80e-3/)).toBeInTheDocument();
   });
 });
