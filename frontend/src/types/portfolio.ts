@@ -1,5 +1,13 @@
 // Typy dla Portfolio/Balance table component
 
+export type MiCAComplianceStatus = 'COMPLIANT' | 'DELISTING' | 'UNKNOWN';
+
+export interface MiCAComplianceInfo {
+  status: MiCAComplianceStatus;
+  delistingDate?: string;
+  recommendation?: string;
+}
+
 export interface PortfolioBalance {
   asset: string;
   free: number;
@@ -9,6 +17,7 @@ export interface PortfolioBalance {
   priceChange24h?: number; // zmiana % 24h
   valueUSD?: number;      // wartość USD
   valueChange24h?: number; // zmiana wartości USD 24h
+  micaCompliance?: MiCAComplianceInfo; // status compliance MiCA
 }
 
 export interface PortfolioTableProps {

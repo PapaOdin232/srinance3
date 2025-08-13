@@ -122,9 +122,12 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
         header: 'Aktywo',
         cell: (info) => {
           const asset = info.getValue();
-          const category = (info.row.original as any).category as View;
+          const balance = info.row.original;
+          const category = (balance as any).category as View;
           const isFiat = category === 'FIAT';
           const isStable = category === 'STABLE';
+          const micaCompliance = balance.micaCompliance;
+          
           return (
             <Group gap="xs">
               <Text data-testid={`asset-${asset}`} fw={600} c={isFiat ? 'orange' : isStable ? 'teal' : 'blue'} size="sm">
@@ -138,6 +141,22 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
               {isStable && (
                 <Tooltip label="Stablecoin" withArrow>
                   <Badge size="xs" color="teal" variant="light">STB</Badge>
+                </Tooltip>
+              )}
+              {micaCompliance && micaCompliance.status !== 'UNKNOWN' && (
+                <Tooltip 
+                  label={`${micaCompliance.recommendation}${micaCompliance.delistingDate ? ` (${micaCompliance.delistingDate})` : ''}`} 
+                  withArrow
+                  multiline
+                  w={300}
+                >
+                  <Badge 
+                    size="xs" 
+                    color={micaCompliance.status === 'COMPLIANT' ? 'green' : 'red'} 
+                    variant="light"
+                  >
+                    {micaCompliance.status === 'COMPLIANT' ? 'MiCA ✓' : 'EU ⚠'}
+                  </Badge>
                 </Tooltip>
               )}
             </Group>

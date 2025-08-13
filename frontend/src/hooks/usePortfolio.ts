@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAccount } from '../services/restClient';
 import type { AccountResponse, Balance } from '../services/restClient';
-import type { PortfolioBalance } from '../types/portfolio';
+import type { PortfolioBalance, MiCAComplianceInfo, MiCAComplianceStatus } from '../types/portfolio';
 import { useAssets } from './useAssets';
 import { useThrottledState } from './useThrottledState';
 
@@ -29,6 +29,35 @@ export const usePortfolio = (): UsePortfolioReturn => {
   
   // Use the existing assets hook for market data
   const { assets: marketData, isConnected } = useAssets();
+
+  // MiCA compliance mapping for EU regulations
+  const getMiCAComplianceStatus = useCallback((asset: string): MiCAComplianceInfo => {
+    // MiCA-compliant stablecoins (remain available in EU)
+    const MICA_COMPLIANT = new Set(['USDC']);
+    
+    // Non-compliant stablecoins (delisted from EU by March 31, 2025)
+    const EU_DELISTING = new Set(['USDT', 'FDUSD', 'TUSD', 'USDP', 'DAI', 'AEUR', 'XUSD', 'PAXG']);
+
+    if (MICA_COMPLIANT.has(asset)) {
+      return {
+        status: 'COMPLIANT',
+        recommendation: 'MiCA-compliant, pozostanie dostępny w EU'
+      };
+    }
+
+    if (EU_DELISTING.has(asset)) {
+      return {
+        status: 'DELISTING',
+        delistingDate: '31 marca 2025',
+        recommendation: 'Zostanie usunięty z Binance EU. Rozważ konwersję do USDC'
+      };
+    }
+
+    return {
+      status: 'UNKNOWN',
+      recommendation: 'Status MiCA nieznany'
+    };
+  }, []);
 
   const fetchAccountData = useCallback(async () => {
     try {
@@ -61,6 +90,13 @@ export const usePortfolio = (): UsePortfolioReturn => {
   const findMarketPrice = useCallback((asset: string) => {
     // USDC is our new base currency (MiCA-compliant)
     if (asset === 'USDC') {
+      return { price: 1, priceChangePercent: 0 };
+    }
+
+    // Major stablecoins - assume ~$1.00 for portfolio tracking
+    // (exact spreads are not critical for portfolio valuation)
+    const MAJOR_STABLECOINS = new Set(['USDT', 'DAI', 'TUSD', 'USDP', 'FDUSD']);
+    if (MAJOR_STABLECOINS.has(asset)) {
       return { price: 1, priceChangePercent: 0 };
     }
 
@@ -149,9 +185,10 @@ export const usePortfolio = (): UsePortfolioReturn => {
         priceChange24h,
         valueUSD,
         valueChange24h,
+        micaCompliance: getMiCAComplianceStatus(asset),
       };
     });
-  }, [accountData?.balances, marketData]);
+  }, [accountData?.balances, marketData, getMiCAComplianceStatus]);
 
   // Calculate portfolio metrics with throttling
   const totalValue = useMemo(() => {
