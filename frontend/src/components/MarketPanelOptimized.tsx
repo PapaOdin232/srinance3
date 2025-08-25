@@ -8,7 +8,7 @@
  * - Reduced complexity and improved performance
  */
 
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import {
   Paper,
   Stack,
@@ -36,17 +36,17 @@ import IndicatorPanel from './IndicatorPanel';
 import { useAssets } from '../hooks/useAssets';
 import type { Asset } from '../types/asset';
 
-// UI types for display
-interface TickerData {
+// UI-specific (display) data shapes (stringified for formatting ease)
+interface UITickerData {
   symbol: string;
   price: string;
   change: string;
-  changePercent: string;
+  changePercent: string; // already with % sign
 }
 
-interface OrderBookData {
+interface UIOrderBookData {
   symbol: string;
-  bids: [string, string][];
+  bids: [string, string][]; // [price, qty] as strings for easy formatting
   asks: [string, string][];
 }
 
@@ -58,8 +58,8 @@ interface ConnectionStatus {
 }
 
 const MarketPanel: React.FC = () => {
-  const [ticker, setTicker] = useThrottledState<TickerData | null>(null, 150);
-  const [orderBook, setOrderBook] = useState<OrderBookData | null>(null);
+  const [ticker, setTicker] = useThrottledState<UITickerData | null>(null, 150);
+  const [orderBook, setOrderBook] = useState<UIOrderBookData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('1m');
   const [isLoading, setIsLoading] = useState(false);
@@ -78,10 +78,9 @@ const MarketPanel: React.FC = () => {
   const marketDataSubscriptionRef = useRef<string | null>(null);
   const chartDataSubscriptionRef = useRef<string | null>(null);
   const selectedSymbolRef = useRef<string>(selectedSymbol);
-  const chartDataSubscriberRef = useRef<ChartDataSubscriber | null>(null);
 
   // Throttled orderbook updates to prevent excessive re-renders
-  const setOrderBookThrottled = useThrottledCallback((newOrderBook: OrderBookData | null) => {
+  const setOrderBookThrottled = useThrottledCallback((newOrderBook: UIOrderBookData | null) => {
     setOrderBook(newOrderBook);
   }, 100);
 
@@ -93,40 +92,39 @@ const MarketPanel: React.FC = () => {
   // Use lightweight charts hook
   const { chartContainerRef, chartInstance, setHistoricalData, updateCandlestick, fitContent } = useLightweightChart();
 
-  // Initialize chart data subscriber once
-  useEffect(() => {
-    if (!chartDataSubscriberRef.current) {
-      chartDataSubscriberRef.current = {
-        id: `market-panel-chart-${Date.now()}`,
-        onHistoricalData: (data: CandlestickData[]) => {
-          console.log(`[MarketPanel] Received ${data.length} historical data points`);
-          setHistoricalData(data);
-          setCandlestickData(data);
-          fitContent();
-          setConnectionStatus(prev => ({ ...prev, chart: true }));
-        },
-        onUpdate: (data: CandlestickData) => {
-          console.log(`[MarketPanel] Chart update - Price: ${data.close}`);
-          updateCandlestick(data);
-          setCandlestickData(prev => {
-            const updated = [...prev];
-            const existingIndex = updated.findIndex(item => item.time === data.time);
-            if (existingIndex >= 0) {
-              updated[existingIndex] = data;
-            } else {
-              updated.push(data);
-            }
-            return updated.slice(-1000);
-          });
-        },
-        onError: (error: Error) => {
-          console.error(`[MarketPanel] Chart error:`, error);
-          setError(`Błąd wykresu: ${error.message}`);
-          setConnectionStatus(prev => ({ ...prev, chart: false }));
+  // Chart data subscriber implementation (memoized to avoid identity changes each render)
+  const chartDataSubscriber: ChartDataSubscriber = useMemo(() => ({
+    // Ensure id is unique and valid even if symbol/interval are temporarily empty
+    id: `market-panel-chart-${selectedSymbol || 'none'}-${selectedInterval || 'none'}`,
+    onHistoricalData: (data: CandlestickData[]) => {
+      const currentSymbol = selectedSymbolRef.current;
+      console.log(`[MarketPanel] Received ${data.length} historical data points for ${currentSymbol} ${selectedInterval}`);
+      setHistoricalData(data);
+      setCandlestickData(data);
+      fitContent();
+      setConnectionStatus(prev => ({ ...prev, chart: true }));
+    },
+    onUpdate: (data: CandlestickData) => {
+      const currentSymbol = selectedSymbolRef.current;
+      console.log(`[MarketPanel] Chart update: ${currentSymbol} ${selectedInterval} - Price: ${data.close}`);
+      updateCandlestick(data);
+      setCandlestickData(prev => {
+        const updated = [...prev];
+        const existingIndex = updated.findIndex(item => item.time === data.time);
+        if (existingIndex >= 0) {
+          updated[existingIndex] = data;
+        } else {
+          updated.push(data);
         }
-      };
+        return updated.slice(-1000);
+      });
+    },
+    onError: (error: Error) => {
+      console.error(`[MarketPanel] Chart error:`, error);
+      setError(`Błąd wykresu: ${error.message}`);
+      setConnectionStatus(prev => ({ ...prev, chart: false }));
     }
-  }, [setHistoricalData, fitContent, updateCandlestick]);
+  }), [selectedSymbol, selectedInterval, setHistoricalData, fitContent, updateCandlestick]);
 
   // Market data event handler
   const handleMarketDataEvent = useCallback((event: MarketDataEvent) => {
@@ -173,12 +171,15 @@ const MarketPanel: React.FC = () => {
       console.warn('[MarketPanel] Skipping market data subscription: empty symbol');
       return;
     }
+    // Avoid duplicate subscribe for same symbol
     if (marketDataSubscriptionRef.current && selectedSymbolRef.current === symbol) {
-      return; // already subscribed
+      // Already have a subscription for this symbol
+      return;
     }
     try {
       setIsLoading(true);
       setError(null);
+  // Reset ticker/orderbook flags until fresh data arrives
   setConnectionStatus(prev => ({ ...prev, ticker: false, orderbook: false }));
       
       console.log(`[MarketPanel] Setting up market data subscription for ${symbol}`);
@@ -214,11 +215,11 @@ const MarketPanel: React.FC = () => {
       if (tickerData) {
         setTicker({
           symbol: tickerData.symbol,
-          price: tickerData.price.toString(),
-          change: tickerData.change.toString(),
-          changePercent: `${tickerData.changePercent.toFixed(2)}%`
+            price: tickerData.price.toString(),
+            change: tickerData.change.toString(),
+            changePercent: `${tickerData.changePercent.toFixed(2)}%`
         });
-  setConnectionStatus(prev => ({ ...prev, ticker: true }));
+  setConnectionStatus(prev => ({ ...prev, ticker: true })); // mark snapshot as connected
       }
       
       if (orderbookData) {
@@ -241,23 +242,29 @@ const MarketPanel: React.FC = () => {
   // Setup chart data subscription  
   const setupChartDataSubscription = useCallback(async (symbol: string, interval: TimeInterval) => {
     if (!symbol) {
-      console.warn('[MarketPanel] Skipping chart subscription: empty symbol');
+      console.warn('[MarketPanel] Skipping chart subscription: empty symbol.');
+      // Ensure chart is marked as disconnected if there's no symbol
+      setConnectionStatus(prev => ({ ...prev, chart: false }));
       return;
     }
-    const existingId = chartDataSubscriptionRef.current;
-    if (existingId && chartDataSubscriberRef.current && chartDataSubscriberRef.current.id === existingId) {
-      // Already subscribed with current subscriber
+
+    const expectedId = `market-panel-chart-${symbol}-${interval}`;
+    if (chartDataSubscriptionRef.current === expectedId) {
+      console.log(`[MarketPanel] Skipping chart subscription: already subscribed with id ${expectedId}`);
       return;
     }
+
     try {
       console.log(`[MarketPanel] Setting up chart subscription for ${symbol} ${interval}`);
       
       // Clean up previous subscription
       if (chartDataSubscriptionRef.current) {
         chartDataService.unsubscribe(chartDataSubscriptionRef.current);
+        console.log(`[MarketPanel] Unsubscribed from ${chartDataSubscriptionRef.current}`);
       }
       
-      // Clear existing chart data
+      // Reset chart state before new subscription
+      setConnectionStatus(prev => ({ ...prev, chart: false }));
       setHistoricalData([]);
       setCandlestickData([]);
       
@@ -270,24 +277,38 @@ const MarketPanel: React.FC = () => {
           enableRealTime: true,
           preloadIntervals: ['1m', '5m', '15m', '1h'] // Preload common intervals
         },
-        chartDataSubscriberRef.current!
+        chartDataSubscriber
       );
       
-      chartDataSubscriptionRef.current = chartDataSubscriberRef.current!.id;
+      chartDataSubscriptionRef.current = chartDataSubscriber.id;
+      console.log(`[MarketPanel] Subscribed to chart with id ${chartDataSubscriptionRef.current}`);
       
     } catch (error) {
       console.error(`[MarketPanel] Failed to setup chart data for ${symbol} ${interval}:`, error);
       setError(`Nie udało się załadować wykresu dla ${symbol}`);
+      setConnectionStatus(prev => ({ ...prev, chart: false }));
     }
-  }, [setHistoricalData]); // Remove chartDataSubscriber dependency
+  }, [chartDataSubscriber, setHistoricalData]);
 
   // Handle symbol changes
   useEffect(() => {
+    console.log(`[MarketPanel SYMBOL useEffect] Triggered. Symbol: "${selectedSymbol}"`);
+    if (!selectedSymbol || !selectedSymbol.trim()) {
+      console.warn('[MarketPanel SYMBOL useEffect] Skipping market data subscription: symbol is empty or whitespace');
+      return;
+    }
     setupMarketDataSubscription(selectedSymbol);
   }, [selectedSymbol, setupMarketDataSubscription]);
 
   // Handle interval changes
   useEffect(() => {
+    console.log(`[MarketPanel INTERVAL useEffect] Triggered. Symbol: "${selectedSymbol}", Interval: "${selectedInterval}"`);
+    if (!selectedSymbol || !selectedSymbol.trim()) {
+      console.warn('[MarketPanel INTERVAL useEffect] Skipping chart subscription: symbol is empty or whitespace');
+      // If we have no symbol, we should ensure the chart is seen as disconnected.
+      setConnectionStatus(prev => ({ ...prev, chart: false }));
+      return;
+    }
     setupChartDataSubscription(selectedSymbol, selectedInterval);
   }, [selectedSymbol, selectedInterval, setupChartDataSubscription]);
 
@@ -304,23 +325,30 @@ const MarketPanel: React.FC = () => {
     };
   }, [selectedSymbol]);
 
-  const handleSymbolChange = useCallback((newSymbol: string) => {
+  const handleSymbolChange = useCallback((newSymbol: string | undefined) => {
+    if (!newSymbol) {
+      console.warn('[MarketPanel] handleSymbolChange called with an empty symbol. Ignoring.');
+      return;
+    }
     console.log(`[MarketPanel] Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
-    setSelectedSymbol(newSymbol);
-    setTicker(null);
-    setOrderBook(null);
-    setError(null);
-    setConnectionStatus({ ticker: false, orderbook: false, chart: false });
-  }, [setTicker]); // Remove selectedSymbol dependency to prevent cycle
+    // Prevent re-subscribing if the symbol is the same
+    if (newSymbol && newSymbol !== selectedSymbolRef.current) {
+      setSelectedSymbol(newSymbol);
+      setTicker(null);
+      setOrderBook(null);
+      setError(null);
+      setConnectionStatus({ ticker: false, orderbook: false, chart: false });
+    }
+  }, [setTicker]); // setTicker from useThrottledState should be stable
 
   const handleIntervalChange = useCallback((newInterval: TimeInterval) => {
-    console.log(`[MarketPanel] Interval changed: ${selectedSymbolRef.current} -> ${newInterval}`);
+    console.log(`[MarketPanel] Interval changed to: ${newInterval}`);
+    // Only change the interval state. The useEffect will handle the subscription.
     setSelectedInterval(newInterval);
-    setConnectionStatus(prev => ({ ...prev, chart: false }));
-  }, []); // Remove selectedInterval dependency to prevent cycle
+  }, []); // State setters are stable
 
-  const handleAssetSelect = useCallback((asset: Asset) => {
-    handleSymbolChange(asset.symbol);
+  const handleAssetSelect = useCallback((asset: Asset | undefined) => {
+    handleSymbolChange(asset?.symbol);
   }, [handleSymbolChange]);
 
   const handleRetryConnection = useCallback(async () => {

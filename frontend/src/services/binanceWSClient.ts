@@ -38,7 +38,7 @@ export class BinanceWSClient {
   private maxReconnectAttempts = 5;
   private isDestroyed = false;
 
-  constructor(symbol: string, interval: string = '1m') {
+  constructor(symbol: string, interval: string = '1m', _useTradeStream: boolean = false) {
     this.symbol = symbol.toLowerCase();
     this.interval = interval;
     this.connect();
@@ -50,8 +50,8 @@ export class BinanceWSClient {
       return;
     }
 
-  // Use environment variable for Binance WebSocket URL (tests use process.env)
-  const baseUrl = (typeof process !== 'undefined' && (process as any).env?.VITE_BINANCE_WS_URL) || 'wss://data-stream.binance.vision/ws';
+  // Use environment variable for Binance WebSocket URL
+  const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
     const url = `${baseUrl}/${this.symbol}@kline_${this.interval}`;
     console.log(`[BinanceWSClient] Connecting to ${url}`);
     console.log(`[BinanceWSClient] Using ${baseUrl.includes('data-stream') ? 'data-stream.binance.vision (optimized for market data)' : 'stream.binance.com (full API)'}`);
@@ -60,7 +60,7 @@ export class BinanceWSClient {
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-        console.log(`[BinanceWSClient] Connected to ${url}`);
+        console.log(`[BinanceWSClient] Successfully connected to ${url}`);
         this.reconnectAttempts = 0;
       };
 
@@ -68,7 +68,12 @@ export class BinanceWSClient {
         try {
           const data: BinanceKlineData = JSON.parse(event.data);
           if (data.e === 'kline') {
-            this.notifyListeners(data);
+            // Validate kline data before passing to listeners
+            if (data.k && typeof data.k.t === 'number' && typeof data.k.o === 'string') {
+              this.notifyListeners(data);
+            } else {
+              console.warn('[BinanceWSClient] Invalid kline data format:', data);
+            }
           }
         } catch (error) {
           console.error('[BinanceWSClient] Failed to parse message:', error);
@@ -78,13 +83,20 @@ export class BinanceWSClient {
       this.ws.onerror = (error) => {
         console.error('[BinanceWSClient] WebSocket error:', error);
         console.error('[BinanceWSClient] Connection URL:', url);
-        console.error('[BinanceWSClient] WebSocket readyState:', this.ws?.readyState);
+        console.error('[BinanceWSClient] WebSocket readyState:', this.ws?.readyState || 'WebSocket null');
+        console.error('[BinanceWSClient] Symbol/Interval:', `${this.symbol}@kline_${this.interval}`);
         
         // Additional error information
-        if (this.ws?.readyState === WebSocket.CLOSING) {
-          console.warn('[BinanceWSClient] WebSocket is closing');
-        } else if (this.ws?.readyState === WebSocket.CLOSED) {
-          console.warn('[BinanceWSClient] WebSocket is closed');
+        if (this.ws) {
+          if (this.ws.readyState === WebSocket.CLOSING) {
+            console.warn('[BinanceWSClient] WebSocket is closing');
+          } else if (this.ws.readyState === WebSocket.CLOSED) {
+            console.warn('[BinanceWSClient] WebSocket is closed');
+          } else if (this.ws.readyState === WebSocket.CONNECTING) {
+            console.warn('[BinanceWSClient] WebSocket is still connecting');
+          }
+        } else {
+          console.warn('[BinanceWSClient] WebSocket instance is null');
         }
       };
 
@@ -152,11 +164,13 @@ export class BinanceWSClient {
     }
     
     if (this.ws) {
-      this.ws.close();
+      console.log(`[BinanceWSClient] Closing WebSocket (readyState: ${this.ws.readyState})`);
+      this.ws.close(1000, 'Client destroyed');
       this.ws = null;
     }
     
     this.listeners = [];
+    console.log('[BinanceWSClient] Client destroyed successfully');
   }
 
   // Get current connection state
@@ -173,13 +187,29 @@ export class BinanceWSClient {
     
     console.log(`[BinanceWSClient] Changing to ${this.symbol}@kline_${this.interval}`);
     
-    // Close current connection and create new one
+    // Force close current connection and wait for it to close
     if (this.ws) {
-      this.ws.close();
+      console.log(`[BinanceWSClient] Force closing existing connection (readyState: ${this.ws.readyState})`);
+      this.shouldReconnect = false; // Prevent reconnection during change
+      this.ws.close(1000, 'Changing symbol/interval'); // Use proper close code
+      this.ws = null;
+    }
+    
+    // Clear any pending reconnection
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
     }
     
     this.reconnectAttempts = 0;
-    this.connect();
+    this.shouldReconnect = true; // Re-enable reconnection
+    
+    // Delay to ensure previous connection is fully closed
+    setTimeout(() => {
+      if (!this.isDestroyed) {
+        this.connect();
+      }
+    }, 200); // Increased delay for more reliable connection
   }
 }
 

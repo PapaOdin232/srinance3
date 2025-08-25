@@ -1,4 +1,3 @@
-import os
 from backend.database.log import log_info, log_error
 
 def test_log_info_and_error(tmp_path):

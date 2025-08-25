@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 import uvicorn
 import os
-import queue
 import json
 import websockets
 
@@ -67,11 +66,13 @@ trading_bot: TradingBot | None = None
 binance_ws_api_client: BinanceWSApiClient | None = None
 market_data_queue = None
 
+
 def _inc(metric: str, value: int = 1):
     try:
         METRICS_COUNTERS[metric] += value
     except KeyError:
         METRICS_COUNTERS[metric] = value
+
 
 def build_metrics_snapshot():
     # dynamic gauges
@@ -81,12 +82,12 @@ def build_metrics_snapshot():
     avg_latency = None
     if _EVENT_LATENCIES:
         avg_latency = sum(_EVENT_LATENCIES)/len(_EVENT_LATENCIES)
-    
+
     # keepalive age
     last_keepalive_age_ms = None
     if _user_stream_last_keepalive is not None:
         last_keepalive_age_ms = (asyncio.get_event_loop().time() - _user_stream_last_keepalive) * 1000.0
-    
+
     return {
         **METRICS_COUNTERS,
         'openOrders': len(order_store.open_orders),
@@ -104,6 +105,8 @@ def build_metrics_snapshot():
     }
 
 # ===== ORDER STORE (Phase 3) =====
+
+
 class OrderStore:
     def __init__(self):
         self.orders: Dict[int, dict] = {}
@@ -133,6 +136,7 @@ class OrderStore:
         }
         return mapping.get(raw_status, raw_status)
 
+
     async def apply_execution_report(self, rep: dict):
         async with self._lock:
             oid = rep.get('orderId') or rep.get('orderId'.lower()) or rep.get('i')
@@ -142,6 +146,7 @@ class OrderStore:
             status_raw = rep.get('status') or rep.get('X')
             status = self._map_status(status_raw)
             # numeric conversions
+
             def _to_decimal(val):
                 try:
                     return float(val)
@@ -175,7 +180,6 @@ class OrderStore:
 
             # Detect fill event
             exec_type = rep.get('execType') or rep.get('x')
-            fills_changed = False
             if exec_type == 'TRADE' and last_qty > 0:
                 # compute quote amount for this fill
                 fill_quote = last_qty * last_price
@@ -189,7 +193,6 @@ class OrderStore:
                     'time': rep.get('T') or rep.get('E')
                 }
                 existing['fills'].append(fill_entry)
-                fills_changed = True
             # Update cumulative quantities
             if cum_qty:
                 existing['executedQty'] = f"{cum_qty:.8f}"
@@ -200,8 +203,9 @@ class OrderStore:
                 executed = float(existing['executedQty'])
                 if executed > 0:
                     existing['avgPrice'] = f"{float(existing['cummulativeQuoteQty']) / executed:.8f}"
-            except Exception:
-                pass
+            except (ZeroDivisionError, ValueError, TypeError) as e:
+                logger.warning(f"Failed to calculate average price for order {oid}: {e}")
+                existing['avgPrice'] = "0.00000000"  # fallback value
             existing['status'] = status
             existing['updateTime'] = rep.get('E') or rep.get('eventTime') or existing.get('updateTime')
             # Save
@@ -215,8 +219,8 @@ class OrderStore:
                 if status in self._final_statuses:
                     try:
                         self._history.append({**existing})
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("Ignored non-fatal error while appending history item: %s", e, exc_info=True)
                     # Persist final snapshot to DB (best-effort)
                     try:
                         from backend.database.crud import upsert_final_order
@@ -254,8 +258,8 @@ class OrderStore:
                 try:
                     bal_free = float(bal['free']) + float(delta)
                     bal['free'] = f"{bal_free:.8f}"
-                except Exception:
-                    pass
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Failed to update balance for asset {asset}: {e}")
                 self.balances[asset.upper()] = bal
                 await _order_store_broadcast_queue.put({
                     'type': 'balance_delta',
@@ -354,6 +358,7 @@ class OrderStore:
 
 order_store = OrderStore()
 
+
 class ConnectionManager:
     """Enhanced connection manager with heartbeat support and per-client subscriptions"""
 
@@ -415,14 +420,14 @@ class ConnectionManager:
             logger.info(
                 f"WS_MARKET: disconnected. Remaining connections: {len(self.market_connections)}"
             )
-        
+
         # Unsubscribe from all symbols when disconnecting
         if websocket in self.client_subscriptions:
             if market_data_manager:
                 client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else id(websocket)
                 market_data_manager.unsubscribe_client_from_all(str(client_id))
             del self.client_subscriptions[websocket]
-        
+
         self._cleanup_heartbeat(websocket)
 
     def disconnect_bot(self, websocket: WebSocket):
@@ -445,12 +450,12 @@ class ConnectionManager:
         if websocket not in self.client_subscriptions:
             self.client_subscriptions[websocket] = set()
         self.client_subscriptions[websocket].add(symbol)
-        
+
         # Integrate with MarketDataManager for dynamic subscriptions
         if market_data_manager:
             client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else id(websocket)
             market_data_manager.subscribe_client_to_symbol(str(client_id), symbol)
-        
+
         logger.info(
             f"Client subscribed to {symbol}. Total subscriptions: {len(self.client_subscriptions[websocket])}"
         )
@@ -458,12 +463,12 @@ class ConnectionManager:
     def unsubscribe_client(self, websocket: WebSocket, symbol: str):
         if websocket in self.client_subscriptions:
             self.client_subscriptions[websocket].discard(symbol)
-            
+
             # Integrate with MarketDataManager for dynamic unsubscriptions
             if market_data_manager:
                 client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else id(websocket)
                 market_data_manager.unsubscribe_client_from_symbol(str(client_id), symbol)
-            
+
             logger.info(
                 f"WS_MARKET: client unsubscribed from {symbol}. Remaining subscriptions: {len(self.client_subscriptions[websocket])}"
             )
@@ -611,8 +616,9 @@ _last_open_orders_error: Optional[str] = None
 
 # ===== USER DATA STREAM MANAGEMENT (Faza 1) =====
 
+
 async def _user_stream_keepalive_loop():
-    global _user_stream_listen_key, _user_stream_last_keepalive
+    global _user_stream_last_keepalive
     global _user_stream_keepalive_errors, _user_stream_restarts
     logger.info("USER_STREAM: keepalive loop started")
     try:
@@ -621,8 +627,10 @@ async def _user_stream_keepalive_loop():
             if not _user_stream_listen_key or not binance_client:
                 continue
             now = asyncio.get_event_loop().time()
-            if (_user_stream_last_keepalive is None or
-                now - _user_stream_last_keepalive > _USER_STREAM_KEEPALIVE_INTERVAL):
+            if (
+                _user_stream_last_keepalive is None
+                or now - _user_stream_last_keepalive > _USER_STREAM_KEEPALIVE_INTERVAL
+            ):
                 try:
                     ok = await binance_client.keepalive_user_data_stream_async(_user_stream_listen_key)
                     if ok:
@@ -651,11 +659,11 @@ async def _start_user_stream(force: bool = False):
     if _user_stream_listen_key and not force:
         logger.info("USER_STREAM: already active")
         return _user_stream_listen_key
-    
+
     if force and _user_stream_listen_key:
         _user_stream_restarts += 1
         logger.info("USER_STREAM: forcing restart")
-    
+
     result = await binance_client.start_user_data_stream_async()
     if not result or 'listenKey' not in result:
         raise RuntimeError("Failed to obtain listenKey")
@@ -684,10 +692,9 @@ async def lifespan(app: FastAPI):
     global binance_client, trading_bot, binance_ws_api_client, market_data_manager
     global _user_heartbeat_task, _user_watchdog_task
     global _user_stream_listener_task, _user_stream_processor_task
-    global _user_stream_keepalive_task
-    
+
     logger.info("🚀 SERVER: starting SRInance3 application...")
-    
+
     try:
         # Initialize database
         logger.info("📊 DATABASE: initializing...")
@@ -695,7 +702,6 @@ async def lifespan(app: FastAPI):
 
         # Initialize Binance client
         logger.info("🔗 BINANCE: initializing client...")
-        global binance_client, binance_ws_client
         binance_client = BinanceClient()
         await binance_client.initialize()
 
@@ -727,14 +733,14 @@ async def lifespan(app: FastAPI):
             env=BINANCE_ENV,
             main_loop=asyncio.get_event_loop()
         )
-        
+
         # Add message handler for processing market data
         async def handle_market_data(message):
             """Handle market data from MarketDataManager"""
             try:
                 symbol = message.get("symbol")
                 data = message.get("data")
-                
+
                 if symbol and data:
                     # Convert to the format expected by the broadcaster
                     enhanced_data = {
@@ -746,11 +752,11 @@ async def lifespan(app: FastAPI):
                     if market_data_queue is not None:
                         try:
                             market_data_queue.put_nowait(json.dumps(enhanced_data))
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.warning("Failed to enqueue enhanced market data: %s", e, exc_info=True)
             except Exception as e:
                 logger.error(f"Error handling market data: {e}")
-        
+
         market_data_manager.add_message_handler(handle_market_data)
         logger.info("✅ MARKET_DATA_MANAGER: initialized successfully")
 
@@ -788,7 +794,7 @@ async def lifespan(app: FastAPI):
     finally:
         # Cleanup
         logger.info("🔄 SERVER: shutting down...")
-        
+
         if trading_bot and trading_bot.running:
             logger.info("🛑 BOT: stopping...")
             if hasattr(trading_bot.stop, '__call__'):
@@ -796,11 +802,11 @@ async def lifespan(app: FastAPI):
                     await trading_bot.stop()
                 else:
                     trading_bot.stop()
-        
+
         if binance_client:
             logger.info("🔌 BINANCE: closing client...")
             await binance_client.close()
-        
+
         if binance_ws_client:
             logger.info("🔌 Closing Binance WebSocket client...")
             binance_ws_client.close()
@@ -824,12 +830,12 @@ async def lifespan(app: FastAPI):
             _user_heartbeat_task.cancel()
         if _user_watchdog_task and not _user_watchdog_task.done():
             _user_watchdog_task.cancel()
-        
+
         # Cancel all heartbeat tasks
         for task in manager.heartbeat_tasks.values():
             if not task.done():
                 task.cancel()
-        
+
         logger.info("✅ Application shutdown completed!")
 
 # Create FastAPI app with lifespan
@@ -947,8 +953,8 @@ async def user_data_event_processor():
             try:
                 global _user_stream_last_event_time
                 _user_stream_last_event_time = asyncio.get_event_loop().time()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Error while updating user stream event timestamp: %s", e, exc_info=True)
             etype = evt.get('e')
             # compute processing latency if eventTime present
             try:
@@ -958,8 +964,8 @@ async def user_data_event_processor():
                     latency = now_ms - int(evt_time_ms)
                     if 0 <= latency < 60000:  # filter out absurd values
                         _EVENT_LATENCIES.append(latency)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Error while computing event latency: %s", e, exc_info=True)
             if etype == 'executionReport':
                 norm = {
                     'type': 'execution_report',
@@ -1096,14 +1102,14 @@ async def order_store_broadcaster(debounce_ms: int = 50):
 async def market_data_broadcaster():
     """Background task to broadcast market data (ticker and orderbook) using MarketDataManager"""
     logger.info("📡 MARKET_BROADCASTER: starting...")
-    
+
     while True:
         try:
             # Check if we have connections and client to broadcast to
             if not manager.market_connections or not binance_client:
                 await asyncio.sleep(2)
                 continue
-            
+
             # Use MarketDataManager for dynamic symbol subscriptions
             if market_data_manager:
                 # Get active symbols from MarketDataManager (only symbols with subscribers)
@@ -1113,11 +1119,11 @@ async def market_data_broadcaster():
                 subscribed_symbols = set()
                 for client_subs in manager.client_subscriptions.values():
                     subscribed_symbols.update(client_subs)
-            
+
             if not subscribed_symbols:
                 await asyncio.sleep(2)
                 continue
-                
+
             for symbol in subscribed_symbols:
                 try:
                     # Get 24hr ticker data with price change percent
@@ -1132,7 +1138,7 @@ async def market_data_broadcaster():
                         }
                         logger.debug(f"Broadcasting ticker data for {symbol}: {ticker_data}")
                         await manager.broadcast_to_market(ticker_data)
-                    
+
                     # Get order book data
                     orderbook = await binance_client.get_order_book(symbol, limit=20)
                     if orderbook:
@@ -1144,14 +1150,16 @@ async def market_data_broadcaster():
                         }
                         logger.debug(f"Broadcasting orderbook data for {symbol}")
                         await manager.broadcast_to_market(orderbook_data)
-                        
+
+                    # Note: Kline data removed - frontend uses Binance WebSocket directly for faster updates
+
                 except Exception as e:
                     logger.warning(f"Failed to get market data for {symbol}: {e}")
                     continue
-                    
-            # Wait between updates (ticker updates every 5 seconds)
-            await asyncio.sleep(5)
-            
+
+            # Wait between updates (faster updates for better user experience)
+            await asyncio.sleep(2)  # 2 seconds instead of 5
+
         except Exception as e:
             logger.error(f"MARKET_BROADCASTER: error: {e}")
             await asyncio.sleep(10)  # Wait longer on error
@@ -1159,7 +1167,7 @@ async def market_data_broadcaster():
 async def bot_log_broadcaster():
     """Background task to broadcast bot logs and status"""
     logger.info("📝 BOT_BROADCASTER: starting...")
-    
+
     while True:
         try:
             if trading_bot and manager.bot_connections:
@@ -1178,11 +1186,11 @@ async def bot_log_broadcaster():
                         "timestamp": temp_update.isoformat() if temp_update is not None else None
                     }
                 }
-                
+
                 await manager.broadcast_to_bot(status_data)
-            
+
             await asyncio.sleep(10)  # Update every 10 seconds
-            
+
         except Exception as e:
             logger.error(f"BOT_BROADCASTER: error: {e}")
             await asyncio.sleep(10)
@@ -1298,42 +1306,42 @@ async def websocket_market_endpoint(websocket: WebSocket):
     """Enhanced market WebSocket endpoint with heartbeat support"""
     client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
     logger.info(f"Market WebSocket connection attempt from {client_id}")
-    
+
     try:
         connection_count = await manager.connect_market(websocket)
-        
+
         # Send welcome message
         await websocket.send_json({
             "type": "welcome",
             "message": f"Connected to market stream (connection #{connection_count})",
             "timestamp": asyncio.get_event_loop().time()
         })
-        
+
         while True:
             try:
                 # Wait for messages from client
                 data = await websocket.receive_json()
                 logger.debug(f"Market WebSocket received: {data}")
-                
+
                 # Handle different message types
                 message_type = data.get('type')
-                
+
                 if message_type == 'pong':
                     logger.debug("Received pong from market client")
                     continue
-                    
+
                 elif message_type == 'subscribe':
                     symbol = data.get('symbol', 'BTCUSDT')
-                    
+
                     # Unsubscribe from previous symbols (single subscription per client)
                     current_subscriptions = manager.get_client_subscriptions(websocket)
                     for old_symbol in current_subscriptions.copy():
                         manager.unsubscribe_client(websocket, old_symbol)
-                    
+
                     # Subscribe to new symbol
                     manager.subscribe_client(websocket, symbol)
                     logger.info(f"Market client {client_id} subscribed to {symbol}")
-                    
+
                     # Send immediate data for subscribed symbol
                     if binance_client:
                         try:
@@ -1347,7 +1355,7 @@ async def websocket_market_endpoint(websocket: WebSocket):
                                     "change": ticker_24hr.get('priceChange', '0'),
                                     "changePercent": ticker_24hr.get('priceChangePercent', '0')
                                 })
-                            
+
                             # Also send orderbook data
                             orderbook = await binance_client.get_order_book(symbol, limit=20)
                             if orderbook:
@@ -1357,25 +1365,43 @@ async def websocket_market_endpoint(websocket: WebSocket):
                                     "bids": orderbook.get('bids', [])[:10],
                                     "asks": orderbook.get('asks', [])[:10]
                                 })
+
+                            # Send initial kline data for chart
+                            try:
+                                klines = binance_client.get_klines(symbol, "1m", 1)  # Get latest kline
+                                if klines and len(klines) > 0:
+                                    latest_kline = klines[0]
+                                    await websocket.send_json({
+                                        "type": "kline",
+                                        "symbol": symbol,
+                                        "time": int(latest_kline[0] / 1000),  # Convert to seconds
+                                        "open": float(latest_kline[1]),
+                                        "high": float(latest_kline[2]),
+                                        "low": float(latest_kline[3]),
+                                        "close": float(latest_kline[4]),
+                                        "volume": float(latest_kline[5])
+                                    })
+                            except Exception as kline_error:
+                                logger.warning(f"Failed to get kline data for {symbol}: {kline_error}")
                         except Exception as e:
                             logger.warning(f"Failed to get immediate data for {symbol}: {e}")
-                
+
                 elif message_type == 'unsubscribe':
                     symbol = data.get('symbol')
                     if symbol:
                         manager.unsubscribe_client(websocket, symbol)
                         logger.info(f"Market client {client_id} unsubscribed from {symbol}")
-                
+
                 elif message_type == 'ping':
                     await websocket.send_json({"type": "pong"})
-                    
+
                 else:
                     logger.warning(f"Unknown message type from market client: {message_type}")
-                    
+
             except asyncio.TimeoutError:
                 logger.debug("Market WebSocket timeout, sending ping")
                 await websocket.send_json({"type": "ping"})
-                
+
     except WebSocketDisconnect:
         logger.info(f"Market WebSocket client {client_id} disconnected normally")
     except Exception as e:
@@ -1389,17 +1415,17 @@ async def websocket_bot_endpoint(websocket: WebSocket):
     """Enhanced bot WebSocket endpoint with command handling"""
     client_id = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "unknown"
     logger.info(f"Bot WebSocket connection attempt from {client_id}")
-    
+
     try:
         connection_count = await manager.connect_bot(websocket)
-        
+
         # Send welcome message with current bot status
         await websocket.send_json({
             "type": "welcome",
             "message": f"Connected to bot stream (connection #{connection_count})",
             "timestamp": asyncio.get_event_loop().time()
         })
-        
+
         # Send current bot status
         if trading_bot:
             await websocket.send_json({
@@ -1412,23 +1438,23 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                     "balance": getattr(trading_bot, 'balance', 0),
                 }
             })
-        
+
         while True:
             try:
                 # Wait for messages from client
                 data = await websocket.receive_json()
                 logger.info(f"Bot WebSocket received command: {data}")
-                
+
                 message_type = data.get('type')
-                
+
                 if message_type == 'pong':
                     logger.debug("Received pong from bot client")
                     continue
-                    
+
                 elif message_type == 'ping':
                     await websocket.send_json({"type": "pong"})
                     continue
-                
+
                 elif message_type == 'get_status':
                     # Send current status
                     if trading_bot:
@@ -1448,29 +1474,29 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                             "type": "bot_logs",
                             "logs": trading_bot.get_logs()
                         })
-                
+
                 elif message_type == 'start_bot':
                     symbol = data.get('symbol', 'BTCUSDT')
                     strategy = data.get('strategy', 'simple_momentum')
-                    
+
                     logger.info(f"Starting bot with symbol={symbol}, strategy={strategy}")
-                    
+
                     if trading_bot and not trading_bot.running:
                         try:
                             # Używamy setattr aby bezpiecznie ustawić atrybuty
                             setattr(trading_bot, 'symbol', symbol)
                             setattr(trading_bot, 'strategy', strategy)
-                            
+
                             if asyncio.iscoroutinefunction(trading_bot.start):
                                 await trading_bot.start()
                             else:
                                 trading_bot.start()
-                            
+
                             await websocket.send_json({
                                 "type": "log",
                                 "message": f"✅ Bot started successfully for {symbol} with {strategy} strategy"
                             })
-                            
+
                             await websocket.send_json({
                                 "type": "bot_status",
                                 "running": True,
@@ -1481,7 +1507,7 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                                     "balance": getattr(trading_bot, 'balance', 0),
                                 }
                             })
-                            
+
                         except Exception as e:
                             logger.error(f"Failed to start bot: {e}")
                             await websocket.send_json({
@@ -1493,10 +1519,10 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                             "type": "error",
                             "message": "⚠️ Bot is already running or not available"
                         })
-                
+
                 elif message_type == 'stop_bot':
                     logger.info("Stopping bot")
-                    
+
                     if trading_bot and trading_bot.running:
                         try:
                             if hasattr(trading_bot.stop, '__call__'):
@@ -1504,12 +1530,12 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                                     await trading_bot.stop()
                                 else:
                                     trading_bot.stop()
-                            
+
                             await websocket.send_json({
                                 "type": "log",
                                 "message": "✅ Bot stopped successfully"
                             })
-                            
+
                             await websocket.send_json({
                                 "type": "bot_status",
                                 "running": False,
@@ -1517,7 +1543,7 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                                     "running": False
                                 }
                             })
-                            
+
                         except Exception as e:
                             logger.error(f"Failed to stop bot: {e}")
                             await websocket.send_json({
@@ -1529,18 +1555,18 @@ async def websocket_bot_endpoint(websocket: WebSocket):
                             "type": "error",
                             "message": "⚠️ Bot is not running"
                         })
-                
+
                 else:
                     logger.warning(f"Unknown command from bot client: {message_type}")
                     await websocket.send_json({
                         "type": "error",
                         "message": f"❓ Unknown command: {message_type}"
                     })
-                    
+
             except asyncio.TimeoutError:
                 logger.debug("Bot WebSocket timeout, sending ping")
                 await websocket.send_json({"type": "ping"})
-                
+
     except WebSocketDisconnect:
         logger.info(f"Bot WebSocket client {client_id} disconnected normally")
     except Exception as e:
@@ -1670,8 +1696,8 @@ async def env_info():
                 bal_count = len(acct.get('balances', []))
                 if bal_count > 100:
                     info['warning'] = f'Unusually high balances count ({bal_count}) on testnet – check if prod keys used.'
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Error computing diagnostic info: %s", e, exc_info=True)
     return info
 
 # REST API Endpoints
@@ -1682,20 +1708,21 @@ async def get_account():
         try:
             from backend import config as _cfg
             if hasattr(_cfg, 'BINANCE_API_KEY'):
-                ak=_cfg.BINANCE_API_KEY
+                ak = _cfg.BINANCE_API_KEY
                 if ak:
-                    logger.debug(f"[DIAG]/account keyFP={ak[:4]}...{ak[-4:]} env={getattr(_cfg,'BINANCE_ENV','?')}")
-        except Exception:
-            pass
+                    logger.debug(
+                        f"[DIAG]/account keyFP={ak[:4]}...{ak[-4:]} env={getattr(_cfg, 'BINANCE_ENV', '?')}"
+                    )
+        except Exception as e:
+            logger.warning("Diagnostic /account logging helper failed: %s", e, exc_info=True)
         if binance_client:
             account_info = binance_client.get_account_info()
             # Wzbogacenie: dodaj total (free+locked) dla każdej pozycji + sumaryczne agregaty
             balances = account_info.get('balances', [])
-            total_usd_like = 0.0
             for bal in balances:
                 try:
-                    free_f = float(bal.get('free','0'))
-                    locked_f = float(bal.get('locked','0'))
+                    free_f = float(bal.get('free', '0'))
+                    locked_f = float(bal.get('locked', '0'))
                     bal['total'] = f"{free_f+locked_f:.8f}"
                 except Exception:
                     bal['total'] = bal.get('free')
@@ -1798,7 +1825,7 @@ async def get_exchange_info():
     try:
         if not binance_client:
             raise HTTPException(status_code=503, detail="Binance client not available")
-        
+
         exchange_info = await binance_client.get_exchange_info_async()
         return exchange_info
     except Exception as e:
@@ -1811,7 +1838,7 @@ async def get_24hr_ticker():
     try:
         if not binance_client:
             raise HTTPException(status_code=503, detail="Binance client not available")
-        
+
         ticker_data = await binance_client.get_ticker_24hr_all_async()
         return ticker_data
     except Exception as e:
@@ -1848,7 +1875,7 @@ async def get_account_balance(asset: str):
 async def get_open_orders(symbol: Optional[str] = None):
     """Get current open orders for a symbol or all symbols with simple caching & throttling"""
     import time
-    global _open_orders_cache, _last_open_orders_error
+    global _last_open_orders_error
     cache_key = symbol or '__ALL__'
     now = time.time()
 
@@ -2043,7 +2070,7 @@ async def get_bot_config():
 @app.post("/orders")
 async def place_order(order_data: dict, prefer: str = "auto"):
     """Place a new order on Binance
-    
+
     Expected body:
     {
         "symbol": "BTCUSDT",
@@ -2053,7 +2080,7 @@ async def place_order(order_data: dict, prefer: str = "auto"):
         "price": "50000.00",  // Optional for MARKET orders
         "timeInForce": "GTC"  // Optional, default GTC
     }
-    
+
     Query parameters:
     - prefer: "ws", "rest", or "auto" (default) - preferred execution method
     """
@@ -2063,36 +2090,38 @@ async def place_order(order_data: dict, prefer: str = "auto"):
         # Log key fingerprint
         try:
             from backend import config as _cfg
-            ak=_cfg.BINANCE_API_KEY
+            ak = _cfg.BINANCE_API_KEY
             if ak:
-                logger.debug(f"[DIAG]/orders keyFP={ak[:4]}...{ak[-4:]} env={getattr(_cfg,'BINANCE_ENV','?')}")
-        except Exception:
-            pass
-            
+                logger.debug(
+                    f"[DIAG]/orders keyFP={ak[:4]}...{ak[-4:]} env={getattr(_cfg, 'BINANCE_ENV', '?')}"
+                )
+        except Exception as e:
+            logger.warning("Diagnostic /orders logging helper failed: %s", e, exc_info=True)
+
         # Validate required fields
         required_fields = ["symbol", "side", "type", "quantity"]
         for field in required_fields:
             if field not in order_data:
                 return {"error": f"Missing required field: {field}"}
-        
+
         symbol = order_data["symbol"]
         side = order_data["side"]
         order_type = order_data["type"]
         quantity = order_data["quantity"]
         price = order_data.get("price")
         time_in_force = order_data.get("timeInForce", "GTC")
-        
+
         # Determine execution method
         execution_source = "rest"  # Default fallback
         use_ws_api = False
-        
+
         from backend.config import ENABLE_WS_API, WS_API_PRIMARY
-        
+
         if prefer == "ws" and ENABLE_WS_API and binance_ws_api_client:
             use_ws_api = True
         elif prefer == "auto" and ENABLE_WS_API and WS_API_PRIMARY and binance_ws_api_client:
             use_ws_api = True
-        
+
         # Try WebSocket API first if preferred
         if use_ws_api and binance_ws_api_client:
             try:
@@ -2108,15 +2137,15 @@ async def place_order(order_data: dict, prefer: str = "auto"):
                 execution_source = "ws"
                 logger.info(f"Order placed successfully via WebSocket API: {result}")
                 return {
-                    "success": True, 
-                    "order": result, 
+                    "success": True,
+                    "order": result,
                     "executionSource": execution_source,
                     "method": "WebSocket API"
                 }
             except Exception as ws_error:
                 logger.warning(f"WebSocket API order failed, falling back to REST: {ws_error}")
                 # Continue to REST API fallback
-        
+
         # Pre-check (opcjonalny) – jeśli LIMIT/BUY i mamy price + quantity -> sprawdź saldo USDT
         try:
             if side.upper() == 'BUY' and order_type.upper() == 'LIMIT' and price and quantity:
@@ -2145,7 +2174,7 @@ async def place_order(order_data: dict, prefer: str = "auto"):
             price=price,
             time_in_force=time_in_force
         )
-        
+
         # Jeśli przyszła struktura z kluczem error / binanceMsg traktuj jako błąd
         if isinstance(result, dict) and (result.get('error') or result.get('binanceMsg')):
             logger.warning(f"Order placement failed (REST) details={result}")
@@ -2179,7 +2208,7 @@ async def place_order(order_data: dict, prefer: str = "auto"):
                 "method": "REST API"
             }
         return {"error": "Failed to place order"}
-            
+
     except Exception as e:
         logger.error(f"Place order endpoint error: {e}")
         return {"error": str(e)}
@@ -2187,26 +2216,26 @@ async def place_order(order_data: dict, prefer: str = "auto"):
 @app.post("/orders/test")
 async def test_order(order_data: dict):
     """Test a new order (validation without execution)
-    
+
     Expected body: Same as place_order
     """
     try:
         if not binance_client:
             return {"error": "Binance client not available"}
-            
+
         # Validate required fields
         required_fields = ["symbol", "side", "type", "quantity"]
         for field in required_fields:
             if field not in order_data:
                 return {"error": f"Missing required field: {field}"}
-        
+
         symbol = order_data["symbol"]
         side = order_data["side"]
         order_type = order_data["type"]
         quantity = order_data["quantity"]
         price = order_data.get("price")
         time_in_force = order_data.get("timeInForce", "GTC")
-        
+
         result = await binance_client.test_order_async(
             symbol=symbol,
             side=side,
@@ -2215,13 +2244,13 @@ async def test_order(order_data: dict):
             price=price,
             time_in_force=time_in_force
         )
-        
+
         if result is not None:  # Test order returns empty dict on success
             logger.info(f"Order test successful: {result}")
             return {"success": True, "message": "Order validation passed", "test_result": result}
         else:
             return {"error": "Order test failed"}
-            
+
     except Exception as e:
         logger.error(f"Test order endpoint error: {e}")
         return {"error": str(e)}
@@ -2229,7 +2258,7 @@ async def test_order(order_data: dict):
 @app.delete("/orders/{order_id}")
 async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[str] = None, prefer: str = "auto"):
     """Cancel an active order
-    
+
     Query parameters:
     - symbol: Trading pair (required)
     - origClientOrderId: Client order ID (optional, alternative to orderId)
@@ -2238,18 +2267,18 @@ async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[s
     try:
         if not binance_client:
             return {"error": "Binance client not available"}
-        
+
         # Determine execution method
         execution_source = "rest"  # Default fallback
         use_ws_api = False
-        
+
         from backend.config import ENABLE_WS_API, WS_API_PRIMARY
-        
+
         if prefer == "ws" and ENABLE_WS_API and binance_ws_api_client:
             use_ws_api = True
         elif prefer == "auto" and ENABLE_WS_API and WS_API_PRIMARY and binance_ws_api_client:
             use_ws_api = True
-        
+
         # Try WebSocket API first if preferred
         if use_ws_api and binance_ws_api_client:
             try:
@@ -2262,33 +2291,33 @@ async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[s
                 execution_source = "ws"
                 logger.info(f"Order cancelled successfully via WebSocket API: {result}")
                 return {
-                    "success": True, 
-                    "cancelled_order": result, 
+                    "success": True,
+                    "cancelled_order": result,
                     "executionSource": execution_source,
                     "method": "WebSocket API"
                 }
             except Exception as ws_error:
                 logger.warning(f"WebSocket API cancellation failed, falling back to REST: {ws_error}")
                 # Continue to REST API fallback
-        
+
         # REST API execution (fallback or primary)
         result = await binance_client.cancel_order_async(
             symbol=symbol,
             order_id=order_id if order_id != 0 else None,
             orig_client_order_id=origClientOrderId
         )
-        
+
         if result:
             logger.info(f"Order cancelled successfully via REST API: {result}")
             return {
-                "success": True, 
-                "cancelled_order": result, 
+                "success": True,
+                "cancelled_order": result,
                 "executionSource": execution_source,
                 "method": "REST API"
             }
         else:
             return {"error": "Failed to cancel order"}
-            
+
     except Exception as e:
         logger.error(f"Cancel order endpoint error: {e}")
         return {"error": str(e)}
@@ -2299,7 +2328,7 @@ async def get_ws_api_stats():
     try:
         if not binance_ws_api_client:
             return {"error": "WebSocket API client not available"}
-        
+
         stats = binance_ws_api_client.get_stats()
         return {
             "websocket_api": {
@@ -2325,7 +2354,7 @@ async def ws_api_health_check():
                     "message": "WebSocket API is disabled in configuration"
                 }
             }
-        
+
         if not binance_ws_api_client:
             return {
                 "websocket_api": {
@@ -2334,11 +2363,11 @@ async def ws_api_health_check():
                     "message": "WebSocket API client is not initialized"
                 }
             }
-        
+
         # Simple health check by trying to get stats
         is_connected = binance_ws_api_client.is_connected
         stats = binance_ws_api_client.get_stats()
-        
+
         return {
             "websocket_api": {
                 "enabled": True,
@@ -2372,7 +2401,7 @@ async def get_market_data_stats():
                 "status": "disabled",
                 "message": "MarketDataManager is not initialized"
             }
-        
+
         stats = market_data_manager.get_stats()
         return {
             "status": "active",
@@ -2394,7 +2423,7 @@ async def get_active_symbols():
                 "status": "disabled",
                 "symbols": []
             }
-        
+
         symbols = market_data_manager.get_active_symbols()
         return {
             "status": "active",
@@ -2422,10 +2451,10 @@ async def subscribe_to_symbol(request: MarketSubscriptionRequest):
                 "success": False,
                 "message": "MarketDataManager is not initialized"
             }
-        
+
         client_id = request.client_id or "manual_client"
         success = market_data_manager.subscribe_client_to_symbol(client_id, request.symbol)
-        
+
         if success:
             return {
                 "success": True,
@@ -2454,10 +2483,10 @@ async def unsubscribe_from_symbol(request: MarketSubscriptionRequest):
                 "success": False,
                 "message": "MarketDataManager is not initialized"
             }
-        
+
         client_id = request.client_id or "manual_client"
         success = market_data_manager.unsubscribe_client_from_symbol(client_id, request.symbol)
-        
+
         if success:
             return {
                 "success": True,
@@ -2479,7 +2508,7 @@ async def unsubscribe_from_symbol(request: MarketSubscriptionRequest):
 
 if __name__ == "__main__":
     logger.info("🚀 Starting SRInance3 server...")
-    
+
     # Make host configurable for security
     host = os.getenv("SERVER_HOST", "127.0.0.1")  # Default to localhost for security
     # Domyślnie 8001 (frontend klient też używa 8001)

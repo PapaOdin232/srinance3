@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Tabs, Paper, Group, Select, Title, Loader, Table, ScrollArea, Alert, Badge, Stack, Text, ActionIcon, Tooltip } from '@mantine/core';
+import { Tabs, Paper, Group, Select, Title, Loader, Table, Alert, Badge, Stack, Text, ActionIcon, Tooltip } from '@mantine/core';
 import { getOrdersHistory, type OrderResponse, cancelOrder } from '../services/restClient';
 import { useUserStream } from '../store/userStream';
 import { FreshnessBadge } from './FreshnessBadge';
 import { useAssets } from '../hooks/useAssets';
 import { IconReload, IconX } from '@tabler/icons-react';
+import { OptimizedScrollArea } from './common/OptimizedScrollArea';
 
 // No props needed - component now uses only WebSocket for real-time updates
 interface OrdersPanelProps {}
@@ -269,7 +270,11 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
                  />
                )}
             </Group>
-            <ScrollArea h={360} type="auto">
+            <OptimizedScrollArea 
+              h={360} 
+              type="auto"
+              optimizeForFrequentUpdates={true}
+            >
               <Table striped highlightOnHover withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
@@ -291,7 +296,7 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
                   )}
                 </Table.Tbody>
               </Table>
-            </ScrollArea>
+            </OptimizedScrollArea>
           </Paper>
         </Tabs.Panel>
 
@@ -304,7 +309,11 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
               </Group>
               {lastRefresh && historyItems.length > 0 && <Text size="xs" c="dimmed">Odświeżono: {lastRefresh.toLocaleTimeString()}</Text>}
             </Group>
-            <ScrollArea h={360} type="auto">
+            <OptimizedScrollArea 
+              h={360} 
+              type="auto"
+              optimizeForLongLists={true}
+            >
               <Table striped highlightOnHover withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
@@ -328,7 +337,7 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
                   )}
                 </Table.Tbody>
               </Table>
-            </ScrollArea>
+            </OptimizedScrollArea>
             {/* Przycisk "Załaduj więcej" */}
             {filterSymbol && filterSymbol !== 'ALL' && historyItems.length > 0 && hasMore && (
               <Group justify="center" mt="md">

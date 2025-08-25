@@ -3,7 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { MantineProvider, createTheme } from '@mantine/core'
 import '@mantine/core/styles.css'
 import './index.css'
+import './optimizations.css'
 import App from './App.tsx'
+import { setupGlobalPassiveListeners } from './utils/passiveListeners'
+import './utils/scrollPerformanceMonitor'
+
+// Setup passive event listeners for better scroll performance
+setupGlobalPassiveListeners();
 
 // Konfiguracja dark theme dopasowana do obecnego stylu (#242424)
 const theme = createTheme({

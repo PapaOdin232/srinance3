@@ -1,0 +1,71 @@
+/* ScrollArea optymalizacje dla lepszej wydajności przewijania */
+
+/* Globalne ustawienia dla elementów scroll */
+*,
+*::before,
+*::after {
+  /* Ustaw scroll-behavior na smooth tylko dla non-wheel events */
+  scroll-behavior: auto;
+}
+
+/* Specyficzne optymalizacje dla Mantine ScrollArea */
+[data-mantine-scrollarea] {
+  /* Włącz hardware acceleration dla scroll */
+  transform: translateZ(0);
+  will-change: scroll-position;
+  
+  /* Optymalizuj repainting podczas scroll */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+[data-mantine-scrollarea-viewport] {
+  /* Zapewnij płynny scroll */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Ograniczenie repaintingu */
+  will-change: auto;
+}
+
+/* Optymalizacje dla tabeli w ScrollArea */
+.mantine-ScrollArea-root table {
+  /* Optymalizacja renderowania tabeli */
+  contain: layout style paint;
+  table-layout: fixed;
+}
+
+.mantine-ScrollArea-root tbody {
+  /* Ograniczenie przepaintowania wierszy */
+  contain: layout style;
+}
+
+/* Optymalizacje dla elementów często aktualizowanych */
+.price-change-animation {
+  /* Używaj transform zamiast zmiany kolorów dla animacji */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Optymalizacje dla wykresów Lightweight Charts */
+.tv-lightweight-charts {
+  /* Hardware acceleration dla wykresów */
+  transform: translateZ(0);
+  contain: layout style paint;
+  
+  /* Optymalizuj scroll na wykresach */
+  touch-action: pan-x pan-y;
+}
+
+/* Optymalizacje dla długich list */
+.virtualized-list {
+  /* Containment API dla lepszej wydajności */
+  contain: layout style paint;
+  will-change: transform;
+}
+
+/* Optymalizacje dla elementów z hover states */
+.mantine-Table-tr:hover {
+  /* Szybsze hover transitions */
+  transition: background-color 0.1s ease;
+}

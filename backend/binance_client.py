@@ -1,6 +1,7 @@
 import time
 import hmac
 import hashlib
+import logging
 import requests
 import threading
 import websocket
@@ -8,7 +9,11 @@ import json
 from datetime import datetime, timedelta
 
 from urllib.parse import urlencode
-from backend.config import BINANCE_API_URL, BINANCE_WS_URL
+from backend.config import BINANCE_API_URL
+
+# Module logger
+logger = logging.getLogger(__name__)
+
 
 class BinanceRESTClient:
     def __init__(self):
@@ -24,12 +29,18 @@ class BinanceRESTClient:
         self._ticker24_all_cache = None
         self._ticker24_all_cache_time = None
         self._ticker24_all_cache_ttl = 5  # 5 seconds TTL
+
         def _mask(s: str, show: int = 4):
             if not s:
                 return "(empty)"
+            if len(s) <= show * 2:
+                return s[0] + "***" + s[-1]
             return s[:show] + "***" + s[-show:]
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_KEY:", _mask(self.api_key))
-        print("[DEBUG][BinanceRESTClient] BINANCE_API_SECRET:", _mask(self.api_secret))
+
+        # Use module logger instead of print
+        logger = logging.getLogger(__name__)
+        logger.debug("[BinanceRESTClient] BINANCE_API_KEY: %s", _mask(self.api_key))
+        logger.debug("[BinanceRESTClient] BINANCE_API_SECRET: %s", _mask(self.api_secret))
 
     def get_orderbook(self, symbol, limit=10):
         endpoint = "/v3/depth"
@@ -68,9 +79,15 @@ class BinanceRESTClient:
 
     def _sign(self, params):
         query_string = urlencode(params)
+        # Generate signature but do NOT log full query_string or signature to avoid leaking secrets
         signature = hmac.new(self.api_secret.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
-        print(f"[DEBUG] query_string: {query_string}")
-        print(f"[DEBUG] signature: {signature}")
+        logger = logging.getLogger(__name__)
+        # Log only the parameter keys and length of signature (no sensitive values)
+        try:
+            logger.debug("Signing params keys: %s", list(params.keys()))
+        except Exception:
+            # Avoid any logging failure impacting signing
+            pass
         params['signature'] = signature
         return params
 
@@ -93,7 +110,7 @@ class BinanceRESTClient:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
-    
+
     def get_ticker_24hr(self, symbol):
         """Get 24hr ticker price change statistics including changePercent"""
         endpoint = "/v3/ticker/24hr"
@@ -106,25 +123,27 @@ class BinanceRESTClient:
     def get_exchange_info(self):
         """Get exchange info with caching to reduce API calls"""
         now = datetime.now()
-        
+
         # Check if cache is valid
-        if (self._exchange_info_cache and 
-            self._exchange_info_cache_time and 
-            now - self._exchange_info_cache_time < timedelta(seconds=self._exchange_info_cache_ttl)):
-            print("[DEBUG] Using cached exchange info")
+        if (
+            self._exchange_info_cache
+            and self._exchange_info_cache_time
+            and now - self._exchange_info_cache_time < timedelta(seconds=self._exchange_info_cache_ttl)
+        ):
+            logger.debug("Using cached exchange info")
             return self._exchange_info_cache
-        
+
         # Fetch new data
         endpoint = "/v3/exchangeInfo"
         url = f"{self.base_url}{endpoint}"
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
-        
+
         # Update cache
         self._exchange_info_cache = resp.json()
         self._exchange_info_cache_time = now
-        print("[DEBUG] Fetched and cached new exchange info")
-        
+        logger.debug("Fetched and cached new exchange info")
+
         return self._exchange_info_cache
 
     def get_ticker_24hr_all(self):
@@ -164,8 +183,9 @@ class BinanceRESTClient:
         params = {"symbol": symbol.upper(), "timestamp": int(time.time() * 1000)}
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        print(f"[DEBUG] url: {url}")
-        print(f"[DEBUG] headers: {self._headers()}")
+        logger = logging.getLogger(__name__)
+        logger.debug("get_account_trades url: %s", url)
+        # Do not log headers content (may contain api key)
         resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -185,7 +205,8 @@ class BinanceRESTClient:
             params["symbol"] = symbol.upper()
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        print(f"[DEBUG] get_open_orders url: {url}")
+        logger = logging.getLogger(__name__)
+        logger.debug("get_open_orders url constructed")
         resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -206,7 +227,8 @@ class BinanceRESTClient:
             params["endTime"] = end_time
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        print(f"[DEBUG] get_all_orders url: {url}")
+        logger = logging.getLogger(__name__)
+        logger.debug("get_all_orders url constructed for symbol=%s limit=%s", symbol, limit)
         resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -224,17 +246,18 @@ class BinanceRESTClient:
             params["origClientOrderId"] = orig_client_order_id
         else:
             raise ValueError("Either orderId or origClientOrderId must be provided")
-        
+
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}?{urlencode(params)}"
-        print(f"[DEBUG] get_order_status url: {url}")
+        logger = logging.getLogger(__name__)
+        logger.debug("get_order_status request for symbol=%s", symbol)
         resp = requests.get(url, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
 
     def place_order(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
         """Place a new order on Binance
-        
+
         Args:
             symbol: Trading pair (e.g., 'BTCUSDT')
             side: 'BUY' or 'SELL'
@@ -251,34 +274,36 @@ class BinanceRESTClient:
             "quantity": str(quantity),
             "timestamp": int(time.time() * 1000)
         }
-        
+
         # Add price for LIMIT orders
         if order_type.upper() in ['LIMIT', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT']:
             if price is None:
                 raise ValueError(f"Price is required for {order_type} orders")
             params["price"] = str(price)
             params["timeInForce"] = time_in_force.upper()
-        
+
+        # Sign and send request for any order type
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}"
-        print(f"[DEBUG] place_order url: {url}")
-        print(f"[DEBUG] place_order params: {params}")
+        logger = logging.getLogger(__name__)
+        logger.debug("Placing order: symbol=%s side=%s type=%s", symbol, side, order_type)
+        # Do NOT log params (they contain signature and possibly sensitive info)
         resp = requests.post(url, data=params, headers=self._headers(), timeout=10)
         if resp.status_code >= 400:
-            # Spróbuj sparsować ciało błędu aby mieć code/msg od Binance
+            # Try to parse error body to include code/msg from Binance
             err_payload = None
             try:
                 err_payload = resp.json()
             except Exception:
                 err_payload = {'raw': resp.text[:500]}
-            print(f"[ERROR] place_order HTTP {resp.status_code} body={err_payload}")
-            # Podnieś wyjątek aby warstwa async mogła go przetworzyć
+            logger.error("place_order HTTP %s body=%s", resp.status_code, str(err_payload)[:500])
+            # Raise to let async layer handle the error
             resp.raise_for_status()
         return resp.json()
 
     def test_order(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
         """Test a new order (same as place_order but doesn't execute)
-        
+
         Args:
             symbol: Trading pair (e.g., 'BTCUSDT')
             side: 'BUY' or 'SELL'
@@ -295,25 +320,25 @@ class BinanceRESTClient:
             "quantity": str(quantity),
             "timestamp": int(time.time() * 1000)
         }
-        
+
         # Add price for LIMIT orders
         if order_type.upper() in ['LIMIT', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT']:
             if price is None:
                 raise ValueError(f"Price is required for {order_type} orders")
             params["price"] = str(price)
             params["timeInForce"] = time_in_force.upper()
-        
+
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}"
-        print(f"[DEBUG] test_order url: {url}")
-        print(f"[DEBUG] test_order params: {params}")
+        logger = logging.getLogger(__name__)
+        logger.debug("Testing order: symbol=%s side=%s type=%s", symbol, side, order_type)
         resp = requests.post(url, data=params, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
 
     def cancel_order(self, symbol, order_id=None, orig_client_order_id=None):
         """Cancel an active order
-        
+
         Args:
             symbol: Trading pair (e.g., 'BTCUSDT')
             order_id: Order ID to cancel (either this or orig_client_order_id is required)
@@ -324,18 +349,19 @@ class BinanceRESTClient:
             "symbol": symbol.upper(),
             "timestamp": int(time.time() * 1000)
         }
-        
+
         if order_id:
             params["orderId"] = order_id
         elif orig_client_order_id:
             params["origClientOrderId"] = orig_client_order_id
         else:
             raise ValueError("Either orderId or origClientOrderId must be provided")
-        
+
         params = self._sign(params)
         url = f"{self.base_url}{endpoint}"
-        print(f"[DEBUG] cancel_order url: {url}")
-        print(f"[DEBUG] cancel_order params: {params}")
+        logger = logging.getLogger(__name__)
+        logger.debug("Cancel order requested for symbol=%s", symbol)
+        # Do not log params which include signature
         resp = requests.delete(url, data=params, headers=self._headers(), timeout=10)
         resp.raise_for_status()
         return resp.json()
@@ -360,19 +386,19 @@ class BinanceWebSocketClient:
                     self.main_loop.call_soon_threadsafe(queue.put_nowait, message)
         else:
             data = json.loads(message)
-            print("WS MESSAGE:", data)
+            logger.debug("WS MESSAGE: %s", data)
 
     def on_error(self, ws, error):
-        print("WS ERROR:", error)
+        logger.error("WS ERROR: %s", error)
 
     def on_close(self, ws, close_status_code, close_msg):
-        print("WS CLOSED")
+        logger.info("WS CLOSED: code=%s msg=%s", close_status_code, close_msg)
         if self.should_reconnect:
-            print("Reconnecting...")
+            logger.info("Reconnecting websocket")
             self.connect()
 
     def on_open(self, ws):
-        print("WS OPENED")
+        logger.info("WS OPENED")
 
     def connect(self):
         self.threads = []
@@ -381,7 +407,7 @@ class BinanceWebSocketClient:
             # Testnet: osobne połączenie dla każdego streamu
             for stream in self.streams:
                 url = f"{self.ws_url}/ws/{stream}"
-                print(f"[BinanceWebSocketClient] Testnet: connecting to {url}")
+                logger.debug("[BinanceWebSocketClient] Testnet: connecting to %s", url)
                 ws_app = websocket.WebSocketApp(
                     url,
                     on_message=self.on_message,
@@ -397,7 +423,7 @@ class BinanceWebSocketClient:
         else:
             # Produkcja: jedno połączenie multi-stream
             url = f"{self.ws_url}/stream?streams={'/'.join(self.streams)}"
-            print(f"[BinanceWebSocketClient] Prod: connecting to {url}")
+            logger.debug("[BinanceWebSocketClient] Prod: connecting to %s", url)
             ws_app = websocket.WebSocketApp(
                 url,
                 on_message=self.on_message,
@@ -419,20 +445,26 @@ class BinanceWebSocketClient:
 
 class BinanceClient(BinanceRESTClient):
     """Enhanced Binance client with both REST and WebSocket support."""
-    
+
     def __init__(self):
         super().__init__()
         self.ws_client = None
-    
+
     async def initialize(self):
         """Initialize the client (placeholder for async initialization)"""
-        print("[DEBUG] BinanceClient initialized")
-    
+        # Placeholder for any async init work (e.g., connect WS client)
+        try:
+            logger.debug("[DEBUG] BinanceClient initialized")
+        except Exception:
+            # Logging should not break initialization
+            pass
+        return True
+
     async def close(self):
         """Close the client and clean up resources"""
         if self.ws_client:
             self.ws_client.close()
-    
+
     async def get_ticker(self, symbol):
         """Async wrapper for get_ticker using thread executor"""
         import asyncio
@@ -440,9 +472,9 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_ticker, symbol)
             return result
         except Exception as e:
-            print(f"[ERROR] get_ticker failed for {symbol}: {e}")
+            logger.error("[ERROR] get_ticker failed for %s: %s", symbol, e)
             return None
-    
+
     async def get_ticker_24hr(self, symbol):
         """Async wrapper for get_ticker_24hr with changePercent data"""
         import asyncio
@@ -450,7 +482,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_ticker_24hr, symbol)
             return result
         except Exception as e:
-            print(f"[ERROR] get_ticker_24hr failed for {symbol}: {e}")
+            logger.error("[ERROR] get_ticker_24hr failed for %s: %s", symbol, e)
             return None
 
     async def get_exchange_info_async(self):
@@ -460,7 +492,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_exchange_info)
             return result
         except Exception as e:
-            print(f"[ERROR] get_exchange_info failed: {e}")
+            logger.error("[ERROR] get_exchange_info failed: %s", e)
             return None
 
     async def get_ticker_24hr_all_async(self):
@@ -470,7 +502,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_ticker_24hr_all)
             return result
         except Exception as e:
-            print(f"[ERROR] get_ticker_24hr_all failed: {e}")
+            logger.error("[ERROR] get_ticker_24hr_all failed: %s", e)
             return None
 
     async def get_order_book(self, symbol, limit=20):
@@ -480,7 +512,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_orderbook, symbol, limit)
             return result
         except Exception as e:
-            print(f"[ERROR] get_order_book failed for {symbol}: {e}")
+            logger.error("[ERROR] get_order_book failed for %s: %s", symbol, e)
             return None
 
     async def get_account_info_async(self):
@@ -490,7 +522,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_account_info)
             return result
         except Exception as e:
-            print(f"[ERROR] get_account_info failed: {e}")
+            logger.error("[ERROR] get_account_info failed: %s", e)
             return None
 
     async def get_open_orders_async(self, symbol=None):
@@ -500,7 +532,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_open_orders, symbol)
             return result
         except Exception as e:
-            print(f"[ERROR] get_open_orders failed for {symbol}: {e}")
+            logger.error("[ERROR] get_open_orders failed for %s: %s", symbol, e)
             return None
 
     async def get_all_orders_async(self, symbol, limit=500, order_id=None, start_time=None, end_time=None):
@@ -510,7 +542,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_all_orders, symbol, limit, order_id, start_time, end_time)
             return result
         except Exception as e:
-            print(f"[ERROR] get_all_orders failed for {symbol}: {e}")
+            logger.error("[ERROR] get_all_orders failed for %s: %s", symbol, e)
             return None
 
     async def get_order_status_async(self, symbol, order_id=None, orig_client_order_id=None):
@@ -520,7 +552,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().get_order_status, symbol, order_id, orig_client_order_id)
             return result
         except Exception as e:
-            print(f"[ERROR] get_order_status failed for {symbol}, orderId: {order_id}: {e}")
+            logger.error("[ERROR] get_order_status failed for %s, orderId: %s: %s", symbol, order_id, e)
             return None
 
     async def place_order_async(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
@@ -544,9 +576,9 @@ class BinanceClient(BinanceRESTClient):
                             detail['httpStatus'] = str(e.response.status_code)  # type: ignore
                     except Exception:
                         detail['responseText'] = e.response.text[:500]
-            except Exception:
-                pass
-            print(f"[ERROR] place_order failed for {symbol}: {detail}")
+            except Exception as ex:
+                logging.getLogger(__name__).warning(f"Failed to extract response details from order error: {ex}")
+            logger.error("[ERROR] place_order failed for %s: %s", symbol, detail)
             return detail
 
     async def test_order_async(self, symbol, side, order_type, quantity, price=None, time_in_force="GTC"):
@@ -556,7 +588,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().test_order, symbol, side, order_type, quantity, price, time_in_force)
             return result
         except Exception as e:
-            print(f"[ERROR] test_order failed for {symbol}: {e}")
+            logger.error("[ERROR] test_order failed for %s: %s", symbol, e)
             return None
 
     async def cancel_order_async(self, symbol, order_id=None, orig_client_order_id=None):
@@ -566,7 +598,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().cancel_order, symbol, order_id, orig_client_order_id)
             return result
         except Exception as e:
-            print(f"[ERROR] cancel_order failed for {symbol}, orderId: {order_id}: {e}")
+            logger.error("[ERROR] cancel_order failed for %s, orderId: %s: %s", symbol, order_id, e)
             return None
 
     # --- Async wrappers for user data stream ---
@@ -576,7 +608,7 @@ class BinanceClient(BinanceRESTClient):
             result = await asyncio.to_thread(super().start_user_data_stream)
             return result
         except Exception as e:
-            print(f"[ERROR] start_user_data_stream failed: {e}")
+            logger.error("[ERROR] start_user_data_stream failed: %s", e)
             return None
 
     async def keepalive_user_data_stream_async(self, listen_key: str):
@@ -585,7 +617,7 @@ class BinanceClient(BinanceRESTClient):
             await asyncio.to_thread(super().keepalive_user_data_stream, listen_key)
             return True
         except Exception as e:
-            print(f"[ERROR] keepalive_user_data_stream failed: {e}")
+            logger.error("[ERROR] keepalive_user_data_stream failed: %s", e)
             return False
 
     async def close_user_data_stream_async(self, listen_key: str):
@@ -594,5 +626,5 @@ class BinanceClient(BinanceRESTClient):
             await asyncio.to_thread(super().close_user_data_stream, listen_key)
             return True
         except Exception as e:
-            print(f"[ERROR] close_user_data_stream failed: {e}")
+            logger.error("[ERROR] close_user_data_stream failed: %s", e)
             return False

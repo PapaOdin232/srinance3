@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAccount } from '../services/restClient';
 import type { AccountResponse, Balance } from '../services/restClient';
-import type { PortfolioBalance, MiCAComplianceInfo, MiCAComplianceStatus } from '../types/portfolio';
+import type { PortfolioBalance, MiCAComplianceInfo } from '../types/portfolio';
 import { useAssets } from './useAssets';
 import { useThrottledState } from './useThrottledState';
 

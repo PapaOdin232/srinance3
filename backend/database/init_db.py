@@ -4,12 +4,33 @@ from backend.models.order import Base as OrderBase
 from backend.models.log import Base as LogBase
 from backend.models.history import Base as HistoryBase
 from backend.models.orders_history import Base as OrdersHistoryBase
+import logging
 
 DB_URL = "sqlite:///database/bot.db"
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
+    """Initialize DB schema.
+
+    For test runs we perform a drop_all() first to ensure a clean database state.
+    In normal runs we only create missing tables to avoid accidental data loss.
+    """
+    import os
+    import sys
+
+    running_tests = False
+    # Common indicators that we're running under pytest
+    if os.environ.get('PYTEST_CURRENT_TEST') or any('py.test' in a or 'pytest' in a for a in sys.argv):
+        running_tests = True
+
+    if running_tests:
+        # Drop and recreate for deterministic tests
+        OrderBase.metadata.drop_all(bind=engine)
+        LogBase.metadata.drop_all(bind=engine)
+        HistoryBase.metadata.drop_all(bind=engine)
+        OrdersHistoryBase.metadata.drop_all(bind=engine)
+
     OrderBase.metadata.create_all(bind=engine)
     LogBase.metadata.create_all(bind=engine)
     HistoryBase.metadata.create_all(bind=engine)
@@ -17,4 +38,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    print("Baza danych zainicjalizowana.")
+    logging.getLogger(__name__).info("Baza danych zainicjalizowana.")

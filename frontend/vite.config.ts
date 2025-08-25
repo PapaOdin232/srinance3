@@ -27,5 +27,19 @@ export default defineConfig({
         drop_debugger: true,
       },
     },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Rozdziel ciężkie biblioteki dla lepszej wydajności
+          'mantine': ['@mantine/core', '@mantine/hooks', '@mantine/notifications'],
+          'charts': ['lightweight-charts', 'chart.js'],
+          'vendor': ['react', 'react-dom'],
+        },
+      },
+    },
+  },
+  define: {
+    // Optymalizacja dla produkcji
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
 })

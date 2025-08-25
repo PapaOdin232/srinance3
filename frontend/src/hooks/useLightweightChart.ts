@@ -10,6 +10,7 @@ import type { IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts'
  * - Candlestick series for financial data
  * - Real-time data updates
  * - Memory leak prevention
+ * - Optimized passive event listeners for scroll performance
  * 
  * @returns Object containing chartRef and chart management methods
  */
@@ -20,69 +21,37 @@ export function useLightweightChart() {
 
   // Initialize chart
   useEffect(() => {
-    if (!chartContainerRef.current) {
+    const chartContainer = chartContainerRef.current;
+    if (!chartContainer) {
       console.warn('[useLightweightChart] Container ref is not available');
       return;
     }
 
     console.log('[useLightweightChart] Creating new Lightweight Chart instance');
 
-    // Create chart with enhanced configuration
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: chartContainerRef.current.clientHeight,
+    // Create chart with optimized scroll performance settings
+    const chart = createChart(chartContainer, {
+      width: chartContainer.clientWidth,
+      height: 400,
       layout: {
-        background: { 
-          color: '#fafafa' 
-        },
-        textColor: '#2e2e2e',
-        fontSize: 12,
-        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        background: { color: '#1A1B1E' },
+        textColor: '#DDD',
       },
       grid: {
-        vertLines: { 
-          color: '#e9ecef',
-          style: 1, // dotted
-        },
-        horzLines: { 
-          color: '#e9ecef',
-          style: 1, // dotted
-        },
+        vertLines: { color: '#2B2B43' },
+        horzLines: { color: '#2B2B43' },
       },
       crosshair: {
-        mode: 1, // Normal crosshair mode
-        vertLine: {
-          color: '#6c757d',
-          width: 1,
-          style: 2, // dashed
-        },
-        horzLine: {
-          color: '#6c757d',
-          width: 1,
-          style: 2, // dashed
-        },
+        mode: 1,
       },
       rightPriceScale: {
-        borderColor: '#dee2e6',
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
-        autoScale: true,
-      },
-      leftPriceScale: {
-        visible: false,
+        borderColor: '#485158',
       },
       timeScale: {
-        borderColor: '#dee2e6',
-        timeVisible: true,
-        secondsVisible: false,
-        rightOffset: 5,
-        barSpacing: 8,
-        minBarSpacing: 0.5,
-        fixLeftEdge: false,
+        borderColor: '#485158',
         fixRightEdge: false,
       },
+      // Optimized scroll handling with reduced sensitivity for better performance
       handleScroll: {
         mouseWheel: true,
         pressedMouseMove: true,

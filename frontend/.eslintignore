@@ -1,0 +1,6 @@
+# Ignoruj artefakty builda i generowane pliki
+/dist/
+coverage/
+node_modules/
+# (opcjonalnie) snapshoty cypress jeśli nie chcemy ich lintować
+cypress/screenshots/

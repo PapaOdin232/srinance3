@@ -3,6 +3,10 @@ import asyncio
 import threading
 import time
 import json
+import logging
+
+# Module logger
+logger = logging.getLogger(__name__)
 
 
 class TradingBot:
@@ -18,7 +22,7 @@ class TradingBot:
         self.broadcast_callback = broadcast_callback  # Callback do wysyłania przez WebSocket
         self.market_data_queue = market_data_queue  # Queue z live market data
         self.main_loop = main_loop  # Główny event loop FastAPI
-        
+
         # ===== NOWE: Konfiguracja strategii handlowych =====
         self.strategy_config = {
             "type": "simple_ma",  # simple_ma, rsi, grid, dca
@@ -49,7 +53,7 @@ class TradingBot:
                 "max_daily_loss": 500,  # USDT
             }
         }
-        
+
         # Strategy state tracking
         self.strategy_state = {
             "position": {"size": 0, "entry_price": 0, "side": "none"},
@@ -82,14 +86,15 @@ class TradingBot:
     def _add_log(self, message):
         """Dodaj log i wyślij przez WebSocket jeśli dostępny"""
         self.logs.append(message)
-        print(f"[TradingBot] {message}")  # Debug: sprawdzenie czy bot działa
-        
+        logger = logging.getLogger(__name__)
+        logger.debug("[TradingBot] %s", message)
+
         if self.broadcast_callback and self.main_loop:
             try:
                 # Używamy asyncio.run_coroutine_threadsafe zamiast call_soon_threadsafe
                 import asyncio
-                print(f"[DEBUG] Broadcasting log via WebSocket: {message[:50]}...")  # Debug
-                broadcast_future = asyncio.run_coroutine_threadsafe(
+                logger.debug("Broadcasting log via WebSocket: %s...", message[:50])
+                _broadcast_future = asyncio.run_coroutine_threadsafe(
                     self.broadcast_callback({
                         "type": "log",
                         "message": message,
@@ -97,13 +102,13 @@ class TradingBot:
                     }),
                     self.main_loop
                 )
-                print("[DEBUG] Broadcast future created successfully")  # Debug
+                logger.debug("Broadcast future created successfully")
                 # Store future reference for monitoring if needed
-                self._last_broadcast_future = broadcast_future
-            except Exception as e:
-                print(f"Error broadcasting log: {e}")
+                self._last_broadcast_future = _broadcast_future
+            except Exception:
+                logger.exception("Error broadcasting log")
         else:
-            print("[DEBUG] No broadcast_callback or main_loop available")
+            logger.debug("No broadcast_callback or main_loop available")
 
     def _broadcast_status(self):
         """Wyślij status przez WebSocket jeśli dostępny"""
@@ -111,8 +116,8 @@ class TradingBot:
             try:
                 # Używamy asyncio.run_coroutine_threadsafe zamiast call_soon_threadsafe
                 import asyncio
-                print(f"[DEBUG] Broadcasting status via WebSocket")  # Debug
-                future = asyncio.run_coroutine_threadsafe(
+                logger.debug("Broadcasting status via WebSocket")
+                _future = asyncio.run_coroutine_threadsafe(
                     self.broadcast_callback({
                         "type": "bot_status",
                         "running": self.running,
@@ -123,12 +128,14 @@ class TradingBot:
                     }),
                     self.main_loop
                 )
-                print(f"[DEBUG] Status broadcast future created successfully")  # Debug
+                logger.debug("Status broadcast future created successfully")
+                # store ref for later inspection if needed
+                self._last_broadcast_future = _future
                 # Nie czekamy na future.result() żeby nie blokować
-            except Exception as e:
-                print(f"Error broadcasting status: {e}")
+            except Exception:
+                logger.exception("Error broadcasting status")
         else:
-            print(f"[DEBUG] No broadcast_callback or main_loop available for status")
+            logger.debug("No broadcast_callback or main_loop available for status")
 
     def _run_async_loop(self):
         self.loop = asyncio.new_event_loop()
@@ -153,16 +160,16 @@ class TradingBot:
     async def on_tick(self, market_data=None):
         # Logika ticka: analizuj market data i wywołaj strategię
         self.last_tick = time.ctime()
-        
+
         if market_data:
             try:
                 # Parse market data z JSON
                 data = json.loads(market_data) if isinstance(market_data, str) else market_data
-                
+
                 # Binance WebSocket format: { "e": "event_type", "s": "symbol", ... }
                 event_type = data.get('e', 'unknown')
                 symbol = data.get('s', 'unknown')
-                
+
                 self._add_log(f"Market data received: {event_type} for {symbol}")
                 await self.execute_strategy(data)
             except Exception as e:
@@ -178,55 +185,55 @@ class TradingBot:
         if market_data:
             # Analizuj prawdziwe market data - format Binance WebSocket
             event_type = market_data.get('e', 'unknown')
-            
+
             if event_type == '24hrTicker':
                 # Analiza ticker data (24h stats)
                 current_price = float(market_data.get('c', 0))
                 price_change_percent = float(market_data.get('P', 0))
                 volume = float(market_data.get('v', 0))
-                
+
                 # Log price change for analysis
                 self._add_log(f"Price change: {price_change_percent:.2f}%, Volume: {volume:.2f}")
-                
+
                 # Execute configured strategy
                 await self._execute_configured_strategy(current_price, market_data)
-                
+
             elif event_type == 'depthUpdate':
                 # Analiza order book
                 bids = market_data.get('b', [])
                 asks = market_data.get('a', [])
-                
+
                 if bids and asks:
                     best_bid = float(bids[0][0]) if bids[0] else 0
                     best_ask = float(asks[0][0]) if asks[0] else 0
                     spread = best_ask - best_bid
                     self._add_log(f"OrderBook - Spread: ${spread:.2f}, Bid: ${best_bid:.2f}, Ask: ${best_ask:.2f}")
-                
+
             elif event_type == 'kline':
                 # Analiza świec (candles)
                 kline_data = market_data.get('k', {})
                 close_price = float(kline_data.get('c', 0))
                 volume = float(kline_data.get('v', 0))
                 is_closed = kline_data.get('x', False)
-                
+
                 if is_closed:
                     # Execute strategy on closed candle
                     await self._execute_configured_strategy(close_price, market_data)
                     self._add_log(f"Kline closed - Price: ${close_price:.2f}, Volume: {volume:.2f}")
-                
+
             else:
                 self._add_log(f"Unknown event type: {event_type}")
         else:
             # Przykładowa strategia testowa (fallback)
             decision = "hold"
             self._add_log(f"Strategy {self.strategy_name}: decision={decision}")
-        
+
         # Tu można dodać obsługę zleceń, np. self.place_order(...)
 
     async def _execute_configured_strategy(self, current_price, market_data):
         """Execute the configured trading strategy"""
         strategy_type = self.strategy_config["type"]
-        
+
         try:
             if strategy_type == "simple_ma":
                 await self._simple_ma_strategy(current_price, market_data)
@@ -238,31 +245,31 @@ class TradingBot:
                 await self._dca_strategy(current_price, market_data)
             else:
                 self._add_log(f"Unknown strategy type: {strategy_type}")
-                
+
         except Exception as e:
             self._add_log(f"Strategy execution error: {str(e)}")
 
     async def _simple_ma_strategy(self, current_price, market_data):
         """Simple Moving Average strategy"""
         ma_period = self.strategy_config["parameters"]["ma_period"]
-        
+
         # Update price history (simplified - in production use proper data storage)
         if "price_history" not in self.strategy_state:
             self.strategy_state["price_history"] = []
-        
+
         self.strategy_state["price_history"].append(current_price)
         if len(self.strategy_state["price_history"]) > ma_period:
             self.strategy_state["price_history"].pop(0)
-        
+
         if len(self.strategy_state["price_history"]) >= ma_period:
             ma_value = sum(self.strategy_state["price_history"]) / ma_period
-            
+
             # Trading signals
             if current_price > ma_value * 1.001 and self.strategy_state["position"]["side"] != "long":
                 signal = "BUY"
                 self._add_log(f"MA Strategy: {signal} signal - Price: ${current_price:.2f} > MA: ${ma_value:.2f}")
                 await self._execute_trade_signal(signal, current_price)
-                
+
             elif current_price < ma_value * 0.999 and self.strategy_state["position"]["side"] != "short":
                 signal = "SELL"
                 self._add_log(f"MA Strategy: {signal} signal - Price: ${current_price:.2f} < MA: ${ma_value:.2f}")
@@ -273,11 +280,11 @@ class TradingBot:
         rsi_period = self.strategy_config["parameters"]["rsi_period"]
         rsi_overbought = self.strategy_config["parameters"]["rsi_overbought"]
         rsi_oversold = self.strategy_config["parameters"]["rsi_oversold"]
-        
+
         # Simplified RSI calculation (in production use proper TA library)
         if "rsi_data" not in self.strategy_state:
             self.strategy_state["rsi_data"] = {"gains": [], "losses": []}
-        
+
         # Calculate price change
         if "prev_price" in self.strategy_state:
             change = current_price - self.strategy_state["prev_price"]
@@ -287,27 +294,27 @@ class TradingBot:
             else:
                 self.strategy_state["rsi_data"]["gains"].append(0)
                 self.strategy_state["rsi_data"]["losses"].append(abs(change))
-        
+
         self.strategy_state["prev_price"] = current_price
-        
+
         # Keep only last N periods
         for key in ["gains", "losses"]:
             if len(self.strategy_state["rsi_data"][key]) > rsi_period:
                 self.strategy_state["rsi_data"][key].pop(0)
-        
+
         if len(self.strategy_state["rsi_data"]["gains"]) >= rsi_period:
             avg_gain = sum(self.strategy_state["rsi_data"]["gains"]) / rsi_period
             avg_loss = sum(self.strategy_state["rsi_data"]["losses"]) / rsi_period
-            
+
             if avg_loss != 0:
                 rs = avg_gain / avg_loss
                 rsi = 100 - (100 / (1 + rs))
-                
+
                 if rsi < rsi_oversold and self.strategy_state["position"]["side"] != "long":
                     signal = "BUY"
                     self._add_log(f"RSI Strategy: {signal} signal - RSI: {rsi:.2f} < {rsi_oversold}")
                     await self._execute_trade_signal(signal, current_price)
-                    
+
                 elif rsi > rsi_overbought and self.strategy_state["position"]["side"] != "short":
                     signal = "SELL"
                     self._add_log(f"RSI Strategy: {signal} signal - RSI: {rsi:.2f} > {rsi_overbought}")
@@ -318,19 +325,19 @@ class TradingBot:
         grid_levels = self.strategy_config["parameters"]["grid_levels"]
         grid_spacing = self.strategy_config["parameters"]["grid_spacing"]
         grid_amount = self.strategy_config["parameters"]["grid_amount"]
-        
+
         # Initialize grid if not exists
         if "grid_center" not in self.strategy_state:
             self.strategy_state["grid_center"] = current_price
             self.strategy_state["grid_orders"] = []
-            
+
             # Create initial grid orders (mock)
             for i in range(-grid_levels//2, grid_levels//2 + 1):
                 if i == 0:
                     continue
                 price_level = current_price * (1 + i * grid_spacing)
                 order_type = "BUY" if i < 0 else "SELL"
-                
+
                 grid_order = {
                     "level": i,
                     "price": price_level,
@@ -339,7 +346,7 @@ class TradingBot:
                     "status": "pending"
                 }
                 self.strategy_state["grid_orders"].append(grid_order)
-        
+
         # Check for grid order fills (simplified)
         self._add_log(f"Grid Strategy: Monitoring {len(self.strategy_state['grid_orders'])} grid levels around ${self.strategy_state['grid_center']:.2f}")
 
@@ -348,43 +355,43 @@ class TradingBot:
         dca_interval = self.strategy_config["parameters"]["dca_interval"]
         dca_amount = self.strategy_config["parameters"]["dca_amount"]
         dca_price_drop = self.strategy_config["parameters"]["dca_price_drop"]
-        
+
         current_time = time.time()
-        
+
         # Initialize DCA state
         if "dca_last_price" not in self.strategy_state:
             self.strategy_state["dca_last_price"] = current_price
             self.strategy_state["last_dca_time"] = current_time
-        
+
         time_since_last = current_time - self.strategy_state["last_dca_time"]
         price_drop = (self.strategy_state["dca_last_price"] - current_price) / self.strategy_state["dca_last_price"]
-        
+
         # Execute DCA buy on time interval or significant price drop
         if (time_since_last >= dca_interval) or (price_drop >= dca_price_drop):
             signal = "DCA_BUY"
             self._add_log(f"DCA Strategy: {signal} - Amount: ${dca_amount}, Price: ${current_price:.2f}")
             await self._execute_trade_signal(signal, current_price, dca_amount)
-            
+
             self.strategy_state["last_dca_time"] = current_time
             self.strategy_state["dca_last_price"] = current_price
 
     async def _execute_trade_signal(self, signal, price, amount=None):
         """Execute trading signal with risk management"""
         risk_config = self.strategy_config["risk_management"]
-        
+
         # Check daily limits
         if self.strategy_state["daily_trades"] >= risk_config["max_daily_trades"]:
             self._add_log(f"Daily trade limit reached: {risk_config['max_daily_trades']}")
             return
-        
+
         if abs(self.strategy_state["daily_pnl"]) >= risk_config["max_daily_loss"]:
             self._add_log(f"Daily loss limit reached: ${risk_config['max_daily_loss']}")
             return
-        
+
         # Calculate position size
         if amount is None:
             amount = min(risk_config["max_position_size"], 100)  # Default $100
-        
+
         # Mock order execution (in production, integrate with binance_client)
         order = {
             "signal": signal,
@@ -393,10 +400,10 @@ class TradingBot:
             "timestamp": time.time(),
             "status": "executed"
         }
-        
+
         self.orders.append(order)
         self.strategy_state["daily_trades"] += 1
-        
+
         # Update position
         if signal in ["BUY", "DCA_BUY"]:
             self.strategy_state["position"]["side"] = "long"
@@ -406,7 +413,7 @@ class TradingBot:
             self.strategy_state["position"]["side"] = "short"
             self.strategy_state["position"]["entry_price"] = price
             self.strategy_state["position"]["size"] -= amount
-        
+
         self._add_log(f"Order executed: {signal} ${amount} at ${price:.2f}")
         self._broadcast_status()
 
@@ -427,23 +434,23 @@ class TradingBot:
 
     def get_logs(self):
         return self.logs[-20:]  # ostatnie 20 logów
-    
+
     def update_strategy_config(self, new_config):
         """Update strategy configuration"""
         if self.running:
             self._add_log("Cannot update strategy config while bot is running")
             return False
-        
+
         try:
             # Validate config structure
             required_keys = ["type", "symbol", "timeframe", "parameters", "risk_management"]
             for key in required_keys:
                 if key not in new_config:
                     raise ValueError(f"Missing required config key: {key}")
-            
+
             self.strategy_config.update(new_config)
             self.strategy_name = f"{new_config['type']}_{new_config['symbol']}"
-            
+
             # Reset strategy state
             self.strategy_state = {
                 "position": {"size": 0, "entry_price": 0, "side": "none"},
@@ -454,14 +461,14 @@ class TradingBot:
                 "grid_orders": [],
                 "last_dca_time": 0,
             }
-            
+
             self._add_log(f"Strategy config updated: {self.strategy_name}")
             return True
-            
+
         except Exception as e:
             self._add_log(f"Failed to update strategy config: {str(e)}")
             return False
-    
+
     def get_available_strategies(self):
         """Get list of available strategy types"""
         return {
