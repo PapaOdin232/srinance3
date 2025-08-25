@@ -49,16 +49,7 @@ class ChartDataService implements MarketDataSubscriber {
   private debug = import.meta.env.VITE_DEBUG_WS === 'true';
 
   private constructor() {
-    // Register with MarketDataService
-    marketDataService.subscribe(
-      { 
-        symbol: '', // Will be updated per subscription
-        includeKlines: true,
-        includeTicker: false,
-        includeOrderbook: false
-      },
-      this
-    );
+    // Do not auto-subscribe with empty symbol to avoid opening WS connections prematurely
   }
 
   public static getInstance(): ChartDataService {

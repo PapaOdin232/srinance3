@@ -75,7 +75,7 @@ class MarketDataService {
   
   // URLs from environment
   private binanceWsUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
-  private backendWsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8001/ws/market';
+  private backendWsUrl = this.normalizeBackendUrl(import.meta.env.VITE_WS_URL || 'ws://localhost:8001/ws/market');
   private binanceApiUrl = 'https://api.binance.com/api/v3';
   
   private debug = import.meta.env.VITE_DEBUG_WS === 'true';
@@ -211,12 +211,14 @@ class MarketDataService {
   // (symbol not needed directly here; sub-methods receive full config)
     
     // Setup Binance WebSocket for real-time data if enabled
-    if (import.meta.env.VITE_ENABLE_BINANCE_STREAMS === 'true') {
+    if (import.meta.env.VITE_ENABLE_BINANCE_STREAMS === 'true' && config.includeKlines) {
       this.setupBinanceWebSocket(config);
     }
     
-    // Setup backend WebSocket for additional data
-    this.setupBackendWebSocket(config);
+    // Setup backend WebSocket only if needed (ticker/orderbook)
+    if (config.includeTicker || config.includeOrderbook) {
+      this.setupBackendWebSocket(config);
+    }
   }
 
   private setupBinanceWebSocket(config: SubscriptionConfig): void {
@@ -249,6 +251,11 @@ class MarketDataService {
 
   private setupBackendWebSocket(config: SubscriptionConfig): void {
     const { symbol } = config;
+    // Guard: symbol must be provided
+    if (!symbol || !symbol.trim()) {
+      this.log('Skipped backend WebSocket setup: empty symbol');
+      return;
+    }
     
     connectionManager.connect({
       url: this.backendWsUrl,
@@ -500,6 +507,32 @@ class MarketDataService {
     if (this.debug) {
       console.log(`[MarketDataService] ${message}`, ...args);
     }
+  }
+
+  /**
+   * Normalize backend WS base URL to always point to /ws/market
+   */
+  private normalizeBackendUrl(raw: string): string {
+    if (!raw) return 'ws://localhost:8001/ws/market';
+    let url = String(raw).trim();
+    // Drop trailing spaces and duplicate slashes (but keep ws://)
+    url = url.replace(/\s+/g, '');
+    // Remove trailing slashes
+    url = url.replace(/\/+$/g, '');
+    // If already specific channel, return as-is
+    if (/\/ws\/(market|bot|user)$/i.test(url)) {
+      return url;
+    }
+    // If ends with /ws -> append /market
+    if (/\/ws$/i.test(url)) {
+      return `${url}/market`;
+    }
+    // If ends with /ws/ -> append market
+    if (/\/ws$/i.test(url.replace(/\/+$/g, ''))) {
+      return `${url}/market`;
+    }
+    // Otherwise, ensure /ws/market
+    return `${url}/ws/market`;
   }
 }
 

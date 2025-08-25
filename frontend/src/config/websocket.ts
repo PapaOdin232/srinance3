@@ -16,8 +16,28 @@ export const WEBSOCKET_CONFIG = {
 
   // Backend WebSocket endpoints
   BACKEND: {
-    MARKET: import.meta.env.VITE_WS_URL || 'ws://localhost:8001/ws',
-    BOT: (import.meta.env.VITE_WS_URL || 'ws://localhost:8001/ws').replace('/ws', '/ws/bot'),
+    // Accept base like ws://host[:port]/ws or full channel; normalize to concrete channels
+    MARKET: (() => {
+      const raw = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:8001/ws/market';
+      const s = String(raw).trim().replace(/\/+$/g, '');
+      if (/\/ws\/(market|bot|user)$/i.test(s)) return s.replace(/\/ws\/bot$/i, '/ws/market').replace(/\/ws\/user$/i, '/ws/market');
+      if (/\/ws$/i.test(s)) return `${s}/market`;
+      return `${s}/ws/market`;
+    })(),
+    BOT: (() => {
+      const raw = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:8001/ws/bot';
+      const s = String(raw).trim().replace(/\/+$/g, '');
+      if (/\/ws\/(market|bot|user)$/i.test(s)) return s.replace(/\/ws\/market$/i, '/ws/bot').replace(/\/ws\/user$/i, '/ws/bot');
+      if (/\/ws$/i.test(s)) return `${s}/bot`;
+      return `${s}/ws/bot`;
+    })(),
+    USER: (() => {
+      const raw = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:8001/ws/user';
+      const s = String(raw).trim().replace(/\/+$/g, '');
+      if (/\/ws\/(market|bot|user)$/i.test(s)) return s.replace(/\/ws\/market$/i, '/ws/user').replace(/\/ws\/bot$/i, '/ws/user');
+      if (/\/ws$/i.test(s)) return `${s}/user`;
+      return `${s}/ws/user`;
+    })(),
   },
 
   // Connection settings
