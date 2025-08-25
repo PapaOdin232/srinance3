@@ -10,7 +10,7 @@ const MarketPanel = lazy(() => import('./components/MarketPanel'));
 const TradingPanel = lazy(() => import('./components/TradingPanel'));
 const BotPanel = lazy(() => import('./components/BotPanel'));
 const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
-const DiagnosticsPanel = lazy(() => import('./components/DiagnosticsPanel'));
+// Diagnostics panel removed
 
 // Loading component for lazy loaded components
 const LazyLoadingFallback = () => (
@@ -37,7 +37,7 @@ function App() {
           <Tabs.Tab value="trading">Trading</Tabs.Tab>
           <Tabs.Tab value="bot">Bot</Tabs.Tab>
           <Tabs.Tab value="orders">Zlecenia</Tabs.Tab>
-          <Tabs.Tab value="diagnostics">Diagnostyka</Tabs.Tab>
+          {/* Diagnostics tab removed */}
         </Tabs.List>
 
         <Tabs.Panel value="market" pt="xs">
@@ -72,13 +72,7 @@ function App() {
           </ErrorBoundary>
         </Tabs.Panel>
 
-        <Tabs.Panel value="diagnostics" pt="xs">
-          <ErrorBoundary>
-            <Suspense fallback={<LazyLoadingFallback />}>
-              <DiagnosticsPanel />
-            </Suspense>
-          </ErrorBoundary>
-        </Tabs.Panel>
+  {/* Diagnostics panel removed */}
       </Tabs>
     </AppShell>
     </UserStreamProvider>

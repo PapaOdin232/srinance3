@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections import deque
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -30,15 +29,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("srinance3")
-METRICS_COUNTERS = {
-    'batchesSent': 0,
-    'optimisticOrders': 0,
-    'watchdogFallbacks': 0,
-    'userStreamReconnects': 0,
-    'keepaliveErrors': 0,
-    'wsListenerErrors': 0
-}
-_EVENT_LATENCIES = deque(maxlen=200)
+ 
 
 # === User stream state variables (ensure defined before usage) ===
 _user_stream_event_queue: asyncio.Queue = asyncio.Queue(maxsize=1000)
@@ -65,44 +56,7 @@ market_data_manager: MarketDataManager | None = None
 trading_bot: TradingBot | None = None
 binance_ws_api_client: BinanceWSApiClient | None = None
 market_data_queue = None
-
-
-def _inc(metric: str, value: int = 1):
-    try:
-        METRICS_COUNTERS[metric] += value
-    except KeyError:
-        METRICS_COUNTERS[metric] = value
-
-
-def build_metrics_snapshot():
-    # dynamic gauges
-    last_age_ms = None
-    if _user_stream_last_event_time is not None:
-        last_age_ms = (asyncio.get_event_loop().time() - _user_stream_last_event_time) * 1000.0
-    avg_latency = None
-    if _EVENT_LATENCIES:
-        avg_latency = sum(_EVENT_LATENCIES)/len(_EVENT_LATENCIES)
-
-    # keepalive age
-    last_keepalive_age_ms = None
-    if _user_stream_last_keepalive is not None:
-        last_keepalive_age_ms = (asyncio.get_event_loop().time() - _user_stream_last_keepalive) * 1000.0
-
-    return {
-        **METRICS_COUNTERS,
-        'openOrders': len(order_store.open_orders),
-        'ordersTotal': len(order_store.orders),
-        'historySize': len(getattr(order_store, '_history', [])),
-        'balancesCount': len(order_store.balances),
-        'userConnections': len(manager.user_connections),
-        'lastEventAgeMs': last_age_ms,
-        'lastKeepAliveAgeMs': last_keepalive_age_ms,
-        'keepaliveErrors': _user_stream_keepalive_errors,
-        'userStreamRestarts': _user_stream_restarts,
-        'connectionErrors': _user_stream_connection_errors,
-        'listenKeyActive': _user_stream_listen_key is not None,
-        'avgEventLatencyMs': avg_latency
-    }
+ 
 
 # ===== ORDER STORE (Phase 3) =====
 
@@ -652,7 +606,6 @@ async def _user_stream_keepalive_loop():
                 except Exception as e:
                     _user_stream_keepalive_errors += 1
                     logger.error(f"USER_STREAM: keepalive error: {e}")
-                    _inc('keepaliveErrors')
     except asyncio.CancelledError:
         logger.info("USER_STREAM: keepalive loop cancelled")
     finally:
@@ -962,7 +915,6 @@ async def user_data_stream_listener():
         except Exception as e:
             _user_stream_connection_errors += 1
             logger.error(f"USER_WS: listener error: {e}")
-            _inc('wsListenerErrors')
             _user_stream_listen_key = None  # force re-init
             reconnect_delay = min(reconnect_delay * 2, 60)
             await asyncio.sleep(reconnect_delay)
@@ -985,16 +937,7 @@ async def user_data_event_processor():
             except Exception as e:
                 logger.warning("Error while updating user stream event timestamp: %s", e, exc_info=True)
             etype = evt.get('e')
-            # compute processing latency if eventTime present
-            try:
-                evt_time_ms = evt.get('E') or evt.get('eventTime')
-                if evt_time_ms:
-                    now_ms = int(asyncio.get_event_loop().time() * 1000)
-                    latency = now_ms - int(evt_time_ms)
-                    if 0 <= latency < 60000:  # filter out absurd values
-                        _EVENT_LATENCIES.append(latency)
-            except Exception as e:
-                logger.warning("Error while computing event latency: %s", e, exc_info=True)
+            # latency metrics removed
             if etype == 'executionReport':
                 norm = {
                     'type': 'execution_report',
@@ -1003,6 +946,10 @@ async def user_data_event_processor():
                     'clientOrderId': evt.get('c'),
                     'side': evt.get('S'),
                     'orderType': evt.get('o'),
+                    # Include original order quantity and price for accurate history
+                    'origQty': evt.get('q'),
+                    'price': evt.get('p'),
+                    'timeInForce': evt.get('f'),
                     'status': evt.get('X'),
                     'execType': evt.get('x'),
                     'lastQty': evt.get('l'),
@@ -1061,7 +1008,6 @@ async def user_data_event_processor():
         logger.info("USER_STREAM: processor cancelled")
     except Exception as e:
         logger.error(f"USER_STREAM: processor error: {e}")
-        _inc('wsListenerErrors')
     finally:
         logger.info("USER_STREAM: processor stopped")
 
@@ -1120,7 +1066,7 @@ async def order_store_broadcaster(debounce_ms: int = 50):
                     await manager.broadcast_to_user(envelope)
                 else:
                     await manager.broadcast_to_bot(envelope)
-                _inc('batchesSent')
+                # metrics removed
             except Exception as e:
                 logger.error(f"ORDER_STORE: broadcast loop error: {e}")
                 await asyncio.sleep(1)
@@ -1337,7 +1283,7 @@ async def fallback_user_stream_watchdog(check_interval: float = 2.0, stale_after
                             'mergeStats': merge_stats,
                             'ts': now
                         })
-                        _inc('watchdogFallbacks')
+                            # metrics removed
                 except Exception as e:
                     logger.error(f"USER_WATCHDOG: fallback error {e}")
     except asyncio.CancelledError:
@@ -1630,7 +1576,7 @@ async def websocket_user_endpoint(websocket: WebSocket):
 
     try:
         connection_count = await manager.connect_user(websocket)
-        _inc('userStreamReconnects')
+    # metrics removed
         loop = asyncio.get_event_loop()
 
         # Build initial snapshot
@@ -1692,15 +1638,6 @@ async def websocket_user_endpoint(websocket: WebSocket):
     finally:
         manager.disconnect_user(websocket)
         logger.info(f"USER_WS: cleanup done for {client_id}")
-
-# Health check endpoint
-
- 
-@app.get("/metrics/basic")
-async def metrics_basic():
-    """Basic internal metrics snapshot (JSON)."""
-    return build_metrics_snapshot()
-
 
 @app.get("/health")
 async def health_check():

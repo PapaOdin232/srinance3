@@ -433,35 +433,7 @@ export async function cancelOrder(orderId: number, symbol: string, origClientOrd
   }
 }
 
-// ===== METRICS FUNCTIONS =====
-
-export interface MetricsResponse {
-  batchesSent: number;
-  watchdogFallbacks: number;
-  userStreamReconnects: number;
-  keepaliveErrors: number;
-  wsListenerErrors: number;
-  openOrders: number;
-  ordersTotal: number;
-  historySize: number;
-  balancesCount: number;
-  userConnections: number;
-  lastEventAgeMs: number | null;
-  lastKeepAliveAgeMs: number | null;
-  connectionErrors: number;
-  userStreamRestarts: number;
-  listenKeyActive: boolean;
-  avgEventLatencyMs: number | null;
-}
-
-export async function getMetrics() {
-  try {
-    const res = await api.get<MetricsResponse>('/metrics/basic');
-    return res.data;
-  } catch (err) {
-    handleError(err);
-  }
-}
+// Metrics API removed
 
 function handleError(error: unknown): never {
   // Obsługa błędów Axios

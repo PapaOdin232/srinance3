@@ -7,41 +7,12 @@ Zaawansowana aplikacja do automatyzacji handlu na giełdzie Binance z wykorzy###
 - `GET /account` - pobiera dane konta Binance (saldo, uprawnienia)
 - `POST /ticker` - pobiera aktualną cenę symbolu (np. BTCUSDT)
 - `GET /orderbook/{symbol}` - pobiera orderbook dla symbolu
-- `GET /metrics/basic` - podstawowe metryki systemu i diagnostyka
 - `POST /bot/start` - uruchamia trading bota
 - `POST /bot/stop` - zatrzymuje trading bota
 - `GET /bot/status` - pobiera status bota
 - `GET /bot/logs` - pobiera logi bota
 
-### Metryki systemu (/metrics/basic)
-
-Panel diagnostyczny dostępny w zakładce "Diagnostyka" przedstawia kluczowe metryki systemu:
-
-#### Metryki czasu rzeczywistego:
-- **lastEventAgeMs** - wiek ostatniego eventu user stream (< 5s = dobry, 5-15s = uwaga, > 15s = problem)
-- **lastKeepAliveAgeMs** - wiek ostatniego keepalive user stream (keepalive co 25 minut)
-- **avgEventLatencyMs** - średnie opóźnienie przetwarzania eventów (< 100ms = dobry, 100-500ms = uwaga, > 500ms = problem)
-- **userConnections** - liczba aktywnych połączeń WebSocket
-
-#### Liczniki błędów:
-- **keepaliveErrors** - błędy podczas wysyłania keepalive
-- **userStreamRestarts** - restarty user data stream
-- **connectionErrors** - błędy połączeń WebSocket
-- **wsListenerErrors** - błędy w listenerze WebSocket
-- **watchdogFallbacks** - fallbacki watchdog na REST API
-
-#### Statystyki danych:
-- **openOrders** - liczba aktywnych zleceń
-- **ordersTotal** - całkowita liczba zleceń w pamięci
-- **historySize** - rozmiar historii zleceń (max 200)
-- **balancesCount** - liczba śledzonych aktywów
-
-**Interpretacja kolorów:**
-- 🟢 **Zielony**: Stan dobry (< 5s dla opóźnień, 0 błędów)
-- 🟡 **Żółty**: Uwaga (5-15s dla opóźnień, < 5 błędów)
-- 🔴 **Czerwony**: Problem (> 15s dla opóźnień, ≥ 5 błędów)
-
-Metryki są automatycznie aktualizowane co 5 sekund i pomagają w monitorowaniu stabilności systemu.
+<!-- Sekcja metryk usunięta -->
 
 ### Real-time order flow
 

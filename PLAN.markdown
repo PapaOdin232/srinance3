@@ -24,7 +24,7 @@ Cel nadrzędny: Zmniejszyć liczbę wywołań REST /orders/* oraz /account poprz
 - [x] Zadanie background (async task) keepalive co 25 minut: PUT /userDataStream?listenKey=... (pętla z kontrolą czasu)
 - [x] Obsługa odnowienia przy błędzie (restart cyklu + nowy listenKey) – restart w przypadku nieudanego keepalive.
 - [x] Endpoint DELETE /user-stream/close (manualne zamknięcie / cleanup przy shutdown).
-- [x] Metryki: licznik błędów keepalive / restartów + ekspozycja lastKeepAliveAge (ZAKOŃCZONE – zaimplementowane countery: keepaliveErrors, userStreamRestarts, connectionErrors, lastKeepAliveAgeMs w /metrics/basic).
+<!-- Sekcja metryk została usunięta wraz z endpointem /metrics/basic -->
 
 #### Faza 2 – Konsument User Data WebSocket (ZAKOŃCZONE)
 - [x] Async klient do strumienia: task ws_user_data_listener.
@@ -49,9 +49,7 @@ Cel nadrzędny: Zmniejszyć liczbę wywołań REST /orders/* oraz /account poprz
   
 #### Dodatki zrealizowane po wstępnej liście
 - [x] snapshot_history + włączenie w orders_snapshot.
-- [x] /metrics/basic endpoint (counters + lastEventAgeMs + avgEventLatencyMs).
-- [x] Wersjonowanie batch (`schemaVersion`).
-- [x] Rolling avg event latency (avgEventLatencyMs) – podstawowa implementacja (ostatnie 200 zdarzeń).
+<!-- /metrics/basic oraz średnie latencje usunięte -->
 - [x] **Faza 4 - Optymistyczne operacje** (11.08.2025):
   - [x] Dodano `addPendingOrder` w userStream store z timeout rollback (5s)
   - [x] Dodano `addOptimisticCancel` w userStream store z timeout rollback (10s)
