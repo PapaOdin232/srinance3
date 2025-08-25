@@ -356,6 +356,7 @@ class OrderStore:
             'placeholdersCreated': placeholders
         }
 
+
 order_store = OrderStore()
 
 
@@ -470,7 +471,8 @@ class ConnectionManager:
                 market_data_manager.unsubscribe_client_from_symbol(str(client_id), symbol)
 
             logger.info(
-                f"WS_MARKET: client unsubscribed from {symbol}. Remaining subscriptions: {len(self.client_subscriptions[websocket])}"
+                f"WS_MARKET: client unsubscribed from {symbol}. "
+                f"Remaining subscriptions: {len(self.client_subscriptions[websocket])}"
             )
 
     def get_client_subscriptions(self, websocket: WebSocket) -> set[str]:
@@ -565,11 +567,13 @@ class ConnectionManager:
 
 # ===== Pydantic MODELS (Faza 0) =====
 
+
 class BalanceModel(BaseModel):
     asset: str
     free: str
     locked: str
 
+ 
 class OrderModel(BaseModel):
     # Minimal superset pól zwracanych przez Binance (pozostawiamy jako Any niektóre opcjonalne)
     symbol: str
@@ -591,18 +595,22 @@ class OrderModel(BaseModel):
     # Pozostałe pola dynamiczne
     fills: Optional[Any] = None
 
+ 
 class OpenOrdersSnapshot(BaseModel):
     orders: List[OrderModel] = []
     cached: Optional[bool] = None
     stale: Optional[bool] = None
     error: Optional[str] = None
 
+
 class OrderStatusResponse(BaseModel):
     order: Optional[OrderModel] = None
     error: Optional[str] = None
 
+ 
 class GenericErrorResponse(BaseModel):
     error: str
+
 
 # ===== KONIEC MODELI =====
 
@@ -650,6 +658,7 @@ async def _user_stream_keepalive_loop():
     finally:
         logger.info("USER_STREAM: keepalive loop stopped")
 
+
 async def _start_user_stream(force: bool = False):
     """Internal helper to start or restart user data stream (listenKey)."""
     global _user_stream_listen_key, _user_stream_last_keepalive, _user_stream_keepalive_task
@@ -674,6 +683,7 @@ async def _start_user_stream(force: bool = False):
     if not _user_stream_keepalive_task or _user_stream_keepalive_task.done():
         _user_stream_keepalive_task = asyncio.create_task(_user_stream_keepalive_loop())
     return _user_stream_listen_key
+
 
 async def _close_user_stream():
     global _user_stream_listen_key
@@ -706,7 +716,16 @@ async def lifespan(app: FastAPI):
         await binance_client.initialize()
 
         # Initialize Binance WebSocket API client (optional)
-        from backend.config import ENABLE_WS_API, BINANCE_WS_API_URL, BINANCE_API_KEY, BINANCE_API_SECRET, WS_API_TIMEOUT, WS_API_MAX_RETRIES, BINANCE_WS_URL, BINANCE_ENV
+        from backend.config import (
+            ENABLE_WS_API,
+            BINANCE_WS_API_URL,
+            BINANCE_API_KEY,
+            BINANCE_API_SECRET,
+            WS_API_TIMEOUT,
+            WS_API_MAX_RETRIES,
+            BINANCE_WS_URL,
+            BINANCE_ENV,
+        )
         if ENABLE_WS_API and BINANCE_API_KEY and BINANCE_API_SECRET:
             logger.info("🌐 BINANCE_WS_API: initializing...")
             try:
@@ -856,6 +875,8 @@ app.add_middleware(
 )
 
 # User stream endpoints (defined after app instantiation)
+
+
 @app.post("/user-stream/start")
 async def user_stream_start():
     try:
@@ -864,6 +885,7 @@ async def user_stream_start():
     except Exception as e:
         logger.error(f"USER_STREAM start error: {e}")
         return {"error": str(e)}
+
 
 @app.delete("/user-stream/close")
 async def user_stream_close():
@@ -874,15 +896,21 @@ async def user_stream_close():
         logger.error(f"USER_STREAM close error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/user-stream/status")
 async def user_stream_status():
     return {
         "listenKey": _user_stream_listen_key,
-        "lastKeepAliveAge": (asyncio.get_event_loop().time() - _user_stream_last_keepalive) if _user_stream_last_keepalive else None,
+        "lastKeepAliveAge": (
+            (asyncio.get_event_loop().time() - _user_stream_last_keepalive)
+            if _user_stream_last_keepalive
+            else None
+        ),
         "active": _user_stream_listen_key is not None
     }
 
 # ===== USER DATA STREAM LISTENER (Faza 2) =====
+
 
 async def user_data_stream_listener():
     """Listener for Binance user data stream events (raw parsing phase)."""
@@ -940,6 +968,7 @@ async def user_data_stream_listener():
             await asyncio.sleep(reconnect_delay)
             continue
     logger.info("USER_WS: listener stopped")
+
 
 async def user_data_event_processor():
     """Process raw user stream events into normalized interim structures (Phase 2)."""
@@ -1036,6 +1065,7 @@ async def user_data_event_processor():
     finally:
         logger.info("USER_STREAM: processor stopped")
 
+
 async def order_store_broadcaster(debounce_ms: int = 50):
     """Debounced broadcaster agregujący delty i wysyłający paczki do kanału user.
 
@@ -1098,6 +1128,7 @@ async def order_store_broadcaster(debounce_ms: int = 50):
         logger.info("ORDER_STORE: debounced broadcaster cancelled")
     finally:
         logger.info("ORDER_STORE: debounced broadcaster stopped")
+
 
 async def market_data_broadcaster():
     """Background task to broadcast market data (ticker and orderbook) using MarketDataManager"""
@@ -1164,6 +1195,7 @@ async def market_data_broadcaster():
             logger.error(f"MARKET_BROADCASTER: error: {e}")
             await asyncio.sleep(10)  # Wait longer on error
 
+
 async def bot_log_broadcaster():
     """Background task to broadcast bot logs and status"""
     logger.info("📝 BOT_BROADCASTER: starting...")
@@ -1194,6 +1226,7 @@ async def bot_log_broadcaster():
         except Exception as e:
             logger.error(f"BOT_BROADCASTER: error: {e}")
             await asyncio.sleep(10)
+
 
 async def user_channel_heartbeat(interval: int = 10):
     """Heartbeat dla kanału user: latency i statystyki store"""
@@ -1226,13 +1259,16 @@ async def user_channel_heartbeat(interval: int = 10):
     finally:
         logger.info("USER_CHANNEL: heartbeat stopped")
 
+
 async def fallback_user_stream_watchdog(check_interval: float = 2.0, stale_after: float = 10.0):
-    """Watchdog: jeśli brak eventów user stream > stale_after sekund -> fallback REST snapshot + system warn.
+    """Watchdog: jeśli brak eventów user stream > stale_after sekund
+    -> fallback REST snapshot + system warn.
 
     Mechanizm:
-      - Sprawdza wiek ostatniego eventu (_user_stream_last_event_time)
-      - Jeśli przekracza próg i nie wykonano niedawno fallbacku, pobiera snapshot open orders + balances REST (jeśli binance_client dostępny)
-      - Wysyła 'system' (level=warn) oraz 'orders_snapshot' do kanału user
+    - Sprawdza wiek ostatniego eventu (_user_stream_last_event_time)
+    - Jeśli przekracza próg i nie wykonano niedawno fallbacku,
+      pobiera snapshot open orders + balances REST (jeśli binance_client dostępny)
+    - Wysyła 'system' (level=warn) oraz 'orders_snapshot' do kanału user
     """
     logger.info("USER_WATCHDOG: started")
     last_fallback_ts: Optional[float] = None
@@ -1261,23 +1297,32 @@ async def fallback_user_stream_watchdog(check_interval: float = 2.0, stale_after
                             if isinstance(raw_open, list):
                                 snapshot_open = raw_open
                         except Exception as e:
-                            logger.warning(f"USER_WATCHDOG: open orders REST failed: {e}")
+                            logger.warning(
+                                f"USER_WATCHDOG: open orders REST failed: {e}"
+                            )
                         try:
                             acct = await binance_client.get_account_info_async()
                             if acct and isinstance(acct, dict):
                                 bals = acct.get('balances') or []
                                 snapshot_balances = bals
                         except Exception as e:
-                            logger.warning(f"USER_WATCHDOG: account REST failed: {e}")
+                            logger.warning(
+                                f"USER_WATCHDOG: account REST failed: {e}"
+                            )
                         # Merge with in-memory (optional)
                         try:
-                            merge_stats = await order_store.merge_rest_open_orders(snapshot_open, snapshot_balances)
+                            merge_stats = await order_store.merge_rest_open_orders(
+                                snapshot_open, snapshot_balances
+                            )
                         except Exception as me:
                             logger.warning(f"USER_WATCHDOG: merge error: {me}")
                     warn_msg = {
                         'type': 'system',
                         'level': 'warn',
-                        'message': f'User stream stale ({int(age)}s). Fallback snapshot applied.',
+                        'message': (
+                            f'User stream stale ({int(age)}s). '
+                            'Fallback snapshot applied.'
+                        ),
                         'lastEventAgeMs': age * 1000.0,
                         'ts': now,
                         'mergeStats': merge_stats
@@ -1409,6 +1454,7 @@ async def websocket_market_endpoint(websocket: WebSocket):
     finally:
         manager.disconnect_market(websocket)
         logger.info(f"Market WebSocket cleanup completed for {client_id}")
+
 
 @app.websocket("/ws/bot")
 async def websocket_bot_endpoint(websocket: WebSocket):
@@ -1648,10 +1694,13 @@ async def websocket_user_endpoint(websocket: WebSocket):
         logger.info(f"USER_WS: cleanup done for {client_id}")
 
 # Health check endpoint
+
+ 
 @app.get("/metrics/basic")
 async def metrics_basic():
     """Basic internal metrics snapshot (JSON)."""
     return build_metrics_snapshot()
+
 
 @app.get("/health")
 async def health_check():
@@ -1666,10 +1715,12 @@ async def health_check():
         "bot_running": trading_bot.running if trading_bot else False
     }
 
+
 @app.get("/env/info")
 async def env_info():
     """Diagnostic: zwraca podstawowe informacje środowiskowe (bez pełnych kluczy)."""
     from backend.config import BINANCE_API_URL, BINANCE_WS_URL, BINANCE_ENV, BINANCE_API_KEY
+
     def _mask(s: str, show: int = 4):
         if not s:
             return None
@@ -1695,12 +1746,17 @@ async def env_info():
             if acct and isinstance(acct, dict):
                 bal_count = len(acct.get('balances', []))
                 if bal_count > 100:
-                    info['warning'] = f'Unusually high balances count ({bal_count}) on testnet – check if prod keys used.'
+                    info['warning'] = (
+                        f'Unusually high balances count ({bal_count}) on testnet '
+                        '– check if prod keys used.'
+                    )
     except Exception as e:
         logger.warning("Error computing diagnostic info: %s", e, exc_info=True)
     return info
 
 # REST API Endpoints
+
+
 @app.get("/account")
 async def get_account():
     """Get account information"""
@@ -1760,6 +1816,7 @@ async def get_account():
             }
         return {"error": str(e)}
 
+
 @app.get("/ticker")
 async def get_ticker(symbol: str):
     """Get ticker information for a symbol"""
@@ -1785,6 +1842,7 @@ async def get_ticker(symbol: str):
         logger.error(f"API_TICKER: endpoint error for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
 @app.get("/orderbook")
 async def get_orderbook(symbol: str, limit: int = 20):
     """Get order book for a symbol"""
@@ -1804,6 +1862,7 @@ async def get_orderbook(symbol: str, limit: int = 20):
         logger.error(f"API_ORDERBOOK: endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/klines")
 async def get_klines(symbol: str, interval: str = "1m", limit: int = 100):
     """Get klines/candlestick data for a symbol"""
@@ -1819,6 +1878,7 @@ async def get_klines(symbol: str, interval: str = "1m", limit: int = 100):
         logger.error(f"Klines endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/exchangeInfo")
 async def get_exchange_info():
     """Get exchange information (cached for 1 hour)"""
@@ -1831,6 +1891,7 @@ async def get_exchange_info():
     except Exception as e:
         logger.error(f"Exchange info endpoint error: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 @app.get("/24hr")
 async def get_24hr_ticker():
@@ -1845,6 +1906,7 @@ async def get_24hr_ticker():
         logger.error(f"24hr ticker endpoint error: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
 @app.get("/account/history")
 async def get_account_history(symbol: str):
     """Get account trade history for a symbol"""
@@ -1858,6 +1920,7 @@ async def get_account_history(symbol: str):
         logger.error(f"Account history endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/account/balance")
 async def get_account_balance(asset: str):
     """Get account balance for an asset"""
@@ -1870,6 +1933,7 @@ async def get_account_balance(asset: str):
     except Exception as e:
         logger.error(f"Account balance endpoint error: {e}")
         return {"error": str(e)}
+
 
 @app.get("/orders/open", response_model=OpenOrdersSnapshot)
 async def get_open_orders(symbol: Optional[str] = None):
@@ -1893,7 +1957,11 @@ async def get_open_orders(symbol: Optional[str] = None):
             if cached:
                 logger.warning("Using stale open orders cache due to upstream failure")
                 logger.debug("/orders/open cache STALE key=%s age=%.2fs", cache_key, now - cached['time'])
-                return OpenOrdersSnapshot(orders=cached['data'], stale=True, error=_last_open_orders_error or 'Upstream error')
+                return OpenOrdersSnapshot(
+                    orders=cached['data'],
+                    stale=True,
+                    error=_last_open_orders_error or 'Upstream error',
+                )
             _last_open_orders_error = "Failed to fetch open orders"
             return OpenOrdersSnapshot(orders=[], error=_last_open_orders_error)
 
@@ -1909,6 +1977,7 @@ async def get_open_orders(symbol: Optional[str] = None):
             logger.debug("/orders/open exception served STALE key=%s age=%.2fs", cache_key, now - cached['time'])
             return OpenOrdersSnapshot(orders=cached['data'], stale=True, error=_last_open_orders_error)
         return OpenOrdersSnapshot(orders=[], error=_last_open_orders_error)
+
 
 @app.get("/orders/history")
 async def get_orders_history(
@@ -1960,6 +2029,7 @@ async def get_orders_history(
         logger.error(f"Orders history endpoint error: {e}")
         return {"error": str(e), "source": source}
 
+
 @app.get("/orders/{order_id}", response_model=OrderStatusResponse)
 async def get_order_status(order_id: int, symbol: str, origClientOrderId: Optional[str] = None):
     """Get specific order status"""
@@ -1980,6 +2050,7 @@ async def get_order_status(order_id: int, symbol: str, origClientOrderId: Option
         logger.error(f"Order status endpoint error: {e}")
         return OrderStatusResponse(error=str(e))
 
+
 @app.get("/orders/snapshot")
 async def orders_snapshot():
     """Return current open orders snapshot and balances from in-memory store"""
@@ -1990,6 +2061,7 @@ async def orders_snapshot():
     except Exception as e:
         logger.error(f"Orders snapshot error: {e}")
         return {"error": str(e), "openOrders": [], "balances": []}
+
 
 @app.get("/bot/status")
 async def get_bot_status():
@@ -2006,6 +2078,7 @@ async def get_bot_status():
         logger.error(f"API_BOT: status endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/bot/logs")
 async def get_bot_logs():
     """Get bot logs"""
@@ -2017,6 +2090,7 @@ async def get_bot_logs():
     except Exception as e:
         logger.error(f"Bot logs endpoint error: {e}")
         return {"error": str(e)}
+
 
 @app.post("/bot/config")
 async def update_bot_config(config: dict):
@@ -2034,6 +2108,7 @@ async def update_bot_config(config: dict):
         logger.error(f"Bot config update endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/bot/strategies")
 async def get_available_strategies():
     """Get available trading strategies"""
@@ -2046,6 +2121,7 @@ async def get_available_strategies():
     except Exception as e:
         logger.error(f"Bot strategies endpoint error: {e}")
         return {"error": str(e)}
+
 
 @app.get("/bot/config")
 async def get_bot_config():
@@ -2066,6 +2142,7 @@ async def get_bot_config():
         return {"error": str(e)}
 
 # ===== ORDER MANAGEMENT ENDPOINTS =====
+
 
 @app.post("/orders")
 async def place_order(order_data: dict, prefer: str = "auto"):
@@ -2160,8 +2237,18 @@ async def place_order(order_data: dict, prefer: str = "auto"):
                             locked_usdt = float(usdt.get('locked', '0'))
                             total_usdt = free_usdt + locked_usdt
                             if notional > free_usdt:
-                                logger.warning(f"Pre-check insufficient USDT: need {notional} free {free_usdt} locked {locked_usdt} total {total_usdt}")
-                                return {"error": "Insufficient USDT balance (pre-check)", "needed": notional, "free": free_usdt}
+                                logger.warning(
+                                    "Pre-check insufficient USDT: need %s free %s locked %s total %s",
+                                    notional,
+                                    free_usdt,
+                                    locked_usdt,
+                                    total_usdt,
+                                )
+                                return {
+                                    "error": "Insufficient USDT balance (pre-check)",
+                                    "needed": notional,
+                                    "free": free_usdt,
+                                }
         except Exception as _pc_err:
             logger.debug(f"Pre-check error ignored: {_pc_err}")
 
@@ -2178,11 +2265,19 @@ async def place_order(order_data: dict, prefer: str = "auto"):
         # Jeśli przyszła struktura z kluczem error / binanceMsg traktuj jako błąd
         if isinstance(result, dict) and (result.get('error') or result.get('binanceMsg')):
             logger.warning(f"Order placement failed (REST) details={result}")
-            return {"error": result.get('binanceMsg') or result.get('error') or 'Failed to place order', "details": result}
+            return {
+                "error": (
+                    result.get('binanceMsg')
+                    or result.get('error')
+                    or 'Failed to place order'
+                ),
+                "details": result,
+            }
 
         if result and isinstance(result, dict):
             logger.info(f"Order placed successfully via REST API: {result}")
-            # Post-order szybki merge REST (jeśli user stream opóźniony) – zapewnia natychmiastową obecność w UI
+            # Post-order szybki merge REST (jeśli user stream opóźniony)
+            # – zapewnia natychmiastową obecność w UI
             try:
                 open_orders_rest_raw = await binance_client.get_open_orders_async(symbol=None)
                 open_orders_rest = open_orders_rest_raw if isinstance(open_orders_rest_raw, list) else []
@@ -2212,6 +2307,7 @@ async def place_order(order_data: dict, prefer: str = "auto"):
     except Exception as e:
         logger.error(f"Place order endpoint error: {e}")
         return {"error": str(e)}
+
 
 @app.post("/orders/test")
 async def test_order(order_data: dict):
@@ -2254,6 +2350,7 @@ async def test_order(order_data: dict):
     except Exception as e:
         logger.error(f"Test order endpoint error: {e}")
         return {"error": str(e)}
+
 
 @app.delete("/orders/{order_id}")
 async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[str] = None, prefer: str = "auto"):
@@ -2322,6 +2419,7 @@ async def cancel_order(order_id: int, symbol: str, origClientOrderId: Optional[s
         logger.error(f"Cancel order endpoint error: {e}")
         return {"error": str(e)}
 
+
 @app.get("/ws-api/stats")
 async def get_ws_api_stats():
     """Get WebSocket API client statistics"""
@@ -2340,6 +2438,7 @@ async def get_ws_api_stats():
     except Exception as e:
         logger.error(f"WebSocket API stats error: {e}")
         return {"error": str(e)}
+
 
 @app.get("/ws-api/health")
 async def ws_api_health_check():
@@ -2392,6 +2491,7 @@ async def ws_api_health_check():
 
 # Market Data Manager API endpoints
 
+
 @app.get("/market-data/stats")
 async def get_market_data_stats():
     """Get comprehensive statistics about the MarketDataManager"""
@@ -2413,6 +2513,7 @@ async def get_market_data_stats():
             "status": "error",
             "message": str(e)
         }
+
 
 @app.get("/market-data/active-symbols")
 async def get_active_symbols():
@@ -2438,9 +2539,11 @@ async def get_active_symbols():
             "message": str(e)
         }
 
+
 class MarketSubscriptionRequest(BaseModel):
     symbol: str = Field(..., description="Trading pair symbol (e.g., BTCUSDT)")
     client_id: Optional[str] = Field(None, description="Optional client identifier")
+
 
 @app.post("/market-data/subscribe")
 async def subscribe_to_symbol(request: MarketSubscriptionRequest):
@@ -2473,6 +2576,7 @@ async def subscribe_to_symbol(request: MarketSubscriptionRequest):
             "success": False,
             "message": str(e)
         }
+
 
 @app.delete("/market-data/unsubscribe")
 async def unsubscribe_from_symbol(request: MarketSubscriptionRequest):

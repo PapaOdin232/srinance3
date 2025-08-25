@@ -1,0 +1,18 @@
+from typing import List
+
+BINANCE_API_KEY: str
+BINANCE_API_SECRET: str
+ENV: str
+BINANCE_ENV: str
+ADMIN_TOKEN: str
+
+BINANCE_API_URL: str
+BINANCE_WS_URL: str
+BINANCE_WS_API_URL: str
+
+ENABLE_WS_API: bool
+WS_API_PRIMARY: bool
+WS_API_TIMEOUT: float
+WS_API_MAX_RETRIES: int
+
+__all__: List[str]
