@@ -89,6 +89,8 @@ export interface OrderResponse {
   origQty: string;
   executedQty: string;
   cummulativeQuoteQty: string;
+  /** Średnia cena (dla MARKET może być wyliczana lub zwracana z backendu) */
+  avgPrice?: string;
   status: string;
   timeInForce: string;
   type: string;
@@ -107,8 +109,13 @@ export interface OpenOrdersResponse {
   orders: OrderResponse[];
 }
 
+// Order history: unify shape between different backends
 export interface OrderHistoryResponse {
   orders: OrderResponse[];
+  hasMore?: boolean;
+  nextCursor?: number | null;
+  source?: string;
+  symbol?: string;
 }
 
 export interface OrderStatusResponse {
@@ -205,8 +212,75 @@ export async function getOrdersHistory(
     if (startTime) params.append('startTime', startTime.toString());
     if (endTime) params.append('endTime', endTime.toString());
 
-    const res = await api.get<OrderHistoryResponse>(`/orders/history?${params}`);
-    return res.data;
+    const res = await api.get<any>(`/orders/history?${params}`);
+    const raw = res.data || {};
+
+    // Helper: normalize single order record
+    const normalizeOrder = (o: any): OrderResponse => {
+      // Ensure numeric timestamps in ms
+      const toMs = (v: any): number => {
+        if (v == null) return 0;
+        let n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
+        if (!Number.isFinite(n)) return 0;
+        if (n < 1e12) n = n * 1000; // seconds -> ms
+        return n;
+      };
+      // Stringify numeric-like fields
+      const toStr = (v: any, def: string = '0') => {
+        if (v == null) return def;
+        return String(v);
+      };
+      const executedQty = toStr(o.executedQty, '0');
+      const cqq = toStr(o.cummulativeQuoteQty, '0');
+      // avgPrice: prefer provided, else derive if possible
+      const avg = o.avgPrice != null && o.avgPrice !== ''
+        ? toStr(o.avgPrice)
+        : (() => {
+            const ex = parseFloat(executedQty);
+            const cq = parseFloat(cqq);
+            if (ex > 0 && Number.isFinite(cq)) return String(cq / ex);
+            return '0';
+          })();
+      return {
+        symbol: toStr(o.symbol, ''),
+        orderId: Number(o.orderId ?? o.id ?? 0),
+        orderListId: Number(o.orderListId ?? 0),
+        clientOrderId: toStr(o.clientOrderId, ''),
+        price: toStr(o.price, '0'),
+        origQty: toStr(o.origQty, '0'),
+        executedQty,
+        cummulativeQuoteQty: cqq,
+        avgPrice: avg,
+        status: toStr(o.status, ''),
+        timeInForce: toStr(o.timeInForce, ''),
+        type: toStr(o.type, ''),
+        side: toStr(o.side, ''),
+        stopPrice: o.stopPrice != null ? toStr(o.stopPrice) : undefined,
+        icebergQty: o.icebergQty != null ? toStr(o.icebergQty) : undefined,
+        time: toMs(o.time),
+        updateTime: toMs(o.updateTime ?? o.time),
+        isWorking: Boolean(o.isWorking),
+        workingTime: o.workingTime != null ? Number(o.workingTime) : undefined,
+        origQuoteOrderQty: toStr(o.origQuoteOrderQty, '0'),
+        selfTradePreventionMode: o.selfTradePreventionMode,
+      };
+    };
+
+    // Normalize various response shapes to a single interface
+    const rawOrders = raw.orders || raw.items || [];
+    const orders: OrderResponse[] = Array.isArray(rawOrders) ? rawOrders.map(normalizeOrder) : [];
+    const hasMore: boolean | undefined =
+      typeof raw.hasMore === 'boolean' ? raw.hasMore : (Array.isArray(orders) ? orders.length >= limit : undefined);
+    const nextCursor: number | null | undefined =
+      raw.nextCursor !== undefined ? raw.nextCursor : (Array.isArray(orders) && orders.length > 0 ? orders[orders.length - 1].orderId : null);
+    const normalized: OrderHistoryResponse = {
+      orders,
+      hasMore,
+      nextCursor,
+      source: raw.source,
+      symbol: raw.symbol,
+    };
+    return normalized;
   } catch (err) {
     handleError(err);
   }

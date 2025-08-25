@@ -20,11 +20,39 @@ const statusColorMap: Record<string, string> = {
 };
 
 const numberFmt = new Intl.NumberFormat('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-const timeFmt = (ts: number) => new Date(ts).toLocaleString('pl-PL');
+const timeFmt = (ts?: number | null) => {
+  if (!ts || Number.isNaN(ts)) return '—';
+  let n = Number(ts);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  // Normalize seconds -> ms if needed
+  if (n < 1e12) n = n * 1000;
+  const d = new Date(n);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('pl-PL');
+};
+
+const isMarket = (o: OrderResponse) => (o.type || '').toUpperCase() === 'MARKET';
+const priceToDisplay = (o: OrderResponse) => {
+  if (isMarket(o)) {
+    // Prefer avgPrice for market; fallback to price if present
+    const p = o.avgPrice ?? o.price;
+    return numberFmt.format(parseFloat(p || '0'));
+  }
+  return numberFmt.format(parseFloat(o.price || '0'));
+};
+const qtyToDisplay = (o: OrderResponse) => {
+  // For MARKET, if origQty missing/0, fallback to executedQty
+  const base = parseFloat(o.origQty || '0');
+  if (isMarket(o) && (!Number.isFinite(base) || base === 0)) {
+    return numberFmt.format(parseFloat(o.executedQty || '0'));
+  }
+  return numberFmt.format(base);
+};
 
 const OrdersPanel: React.FC<OrdersPanelProps> = () => {
   const [tab, setTab] = useState<string>('open');
   const [filterSymbol, setFilterSymbol] = useState<string | null>(null); // null = ALL (lazy)
+  const [autoDefaultApplied, setAutoDefaultApplied] = useState(false);
   const { state: userState, sendResnapshot, addOptimisticCancel } = useUserStream();
   const [historyItems, setHistoryItems] = useState<OrderResponse[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
@@ -49,6 +77,14 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
   const filterOptions = useMemo(() => (
     [{ value: 'ALL', label: 'Wszystkie' }, ...symbols.map(s => ({ value: s, label: s }))]
   ), [symbols]);
+
+  // Auto-default do pierwszego symbolu gdy user przechodzi na tab historia
+  useEffect(() => {
+    if (tab === 'history' && !autoDefaultApplied && symbols.length > 0 && !filterSymbol) {
+      setFilterSymbol(symbols[0]);
+      setAutoDefaultApplied(true);
+    }
+  }, [tab, symbols, filterSymbol, autoDefaultApplied]);
 
   // Pobierz otwarte zlecenia dla wszystkich (API bez parametru zwraca wszystkie dla konta)
   // open orders pobieramy z user stream state
@@ -89,11 +125,12 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
         const key = `${o.orderId}:${FINAL_STATUSES.includes(o.status) ? o.status : ''}`;
         if (!dedupMap.has(key)) dedupMap.set(key, o);
       });
-      const deduped = Array.from(dedupMap.values());
-      deduped.sort((a, b) => b.time - a.time);
+  const deduped = Array.from(dedupMap.values());
+  deduped.sort((a, b) => (b.updateTime ?? b.time ?? 0) - (a.updateTime ?? a.time ?? 0));
       setHistoryItems(deduped);
-      setNextCursor(deduped.length > 0 ? deduped[deduped.length-1].orderId : null);
-      setHasMore(list.length === 50);
+      // Preferuj nextCursor/hasMore z backendu jeśli dostępne
+      setNextCursor((res && typeof res.nextCursor !== 'undefined') ? (res.nextCursor as number | null) : (deduped.length > 0 ? deduped[deduped.length-1].orderId : null));
+      setHasMore((res && typeof res.hasMore === 'boolean') ? !!res.hasMore : (list.length === 50));
       setLastRefresh(new Date());
     } catch (e) {
       setError('Błąd podczas pobierania historii zleceń');
@@ -113,11 +150,12 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
         const key = `${o.orderId}:${FINAL_STATUSES.includes(o.status) ? o.status : ''}`;
         if (!dedupMap.has(key)) dedupMap.set(key, o);
       });
-      const deduped = Array.from(dedupMap.values());
-      deduped.sort((a, b) => b.time - a.time);
+  const deduped = Array.from(dedupMap.values());
+  deduped.sort((a, b) => (b.updateTime ?? b.time ?? 0) - (a.updateTime ?? a.time ?? 0));
       setHistoryItems(deduped);
-      setNextCursor(list.length > 0 ? list[list.length-1].orderId : nextCursor);
-      setHasMore(list.length === 50);
+      // Preferuj nextCursor/hasMore z backendu jeśli dostępne
+      setNextCursor((res && typeof res.nextCursor !== 'undefined') ? (res.nextCursor as number | null) : (list.length > 0 ? list[list.length-1].orderId : nextCursor));
+      setHasMore((res && typeof res.hasMore === 'boolean') ? !!res.hasMore : (list.length === 50));
     } catch (e) {
       setErrorMore('Błąd podczas ładowania starszych zleceń');
     } finally { setLoadingMore(false); }
@@ -197,15 +235,15 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
         <Table.Td>{o.symbol}</Table.Td>
         <Table.Td>{o.type}</Table.Td>
         <Table.Td c={o.side === 'BUY' ? 'teal' : 'red'} fw={500}>{o.side}</Table.Td>
-        <Table.Td ta="right" ff="monospace">{numberFmt.format(parseFloat(o.price || '0'))}</Table.Td>
-        <Table.Td ta="right" ff="monospace">{numberFmt.format(parseFloat(o.origQty || '0'))}</Table.Td>
+  <Table.Td ta="right" ff="monospace">{priceToDisplay(o)}</Table.Td>
+  <Table.Td ta="right" ff="monospace">{qtyToDisplay(o)}</Table.Td>
         <Table.Td ta="right" ff="monospace">{numberFmt.format(parseFloat(o.executedQty || '0'))}</Table.Td>
         {showStatus && (
           <Table.Td>
             <Badge color={statusColorMap[o.status] || 'gray'} variant="light" size="sm">{o.status}</Badge>
           </Table.Td>
         )}
-        <Table.Td>{timeFmt(o.time)}</Table.Td>
+  <Table.Td>{timeFmt(o.updateTime ?? o.time)}</Table.Td>
         {allowCancel && (
           <Table.Td>
             <Tooltip label="Anuluj zlecenie">
@@ -329,7 +367,33 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
                 </Table.Thead>
                 <Table.Tbody>
                   {filterSymbol === null || filterSymbol === 'ALL' ? (
-                    <Table.Tr><Table.Td colSpan={8}><Text ta="center" c="dimmed">Wybierz symbol aby załadować historię (brak masowego pobierania wszystkich par)</Text></Table.Td></Table.Tr>
+                    <Table.Tr>
+                      <Table.Td colSpan={8}>
+                        <Stack align="center" gap="sm" p="xl">
+                          <Text ta="center" c="dimmed" size="lg">
+                            📊 Wybierz symbol aby załadować historię zleceń
+                          </Text>
+                          <Text ta="center" c="dimmed" size="sm">
+                            API Binance wymaga symbolu do pobrania historii. Wybierz parę handlową z listy powyżej.
+                          </Text>
+                          {symbols.length > 0 && (
+                            <Group>
+                              <Text size="sm" c="dimmed">Popularne pary:</Text>
+                              {symbols.slice(0, 3).map(symbol => (
+                                <Badge
+                                  key={symbol}
+                                  variant="light"
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => setFilterSymbol(symbol)}
+                                >
+                                  {symbol}
+                                </Badge>
+                              ))}
+                            </Group>
+                          )}
+                        </Stack>
+                      </Table.Td>
+                    </Table.Tr>
                   ) : loadingHistory ? (
                     <Table.Tr><Table.Td colSpan={8}><Group justify="center"><Loader /></Group></Table.Td></Table.Tr>
                   ) : (
