@@ -125,7 +125,7 @@ export class BinanceTickerWSClient {
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-  this.logger.info('connected', { streams: this.subscribedSymbols.size });
+        this.logger.debug('connected', { streams: this.subscribedSymbols.size });
         this.reconnectAttempts = 0;
       };
 

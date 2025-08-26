@@ -12,6 +12,7 @@
 
 import { connectionManager, ConnectionState } from '../websocket/ConnectionManager';
 import { apiCache, cacheKeys, cacheTTL } from '../cache/ApiCacheManager';
+import { createDebugLogger } from '../../utils/debugLogger';
 
 // Normalized data types
 export interface TickerData {
@@ -69,6 +70,10 @@ interface SubscriptionConfig {
 
 class MarketDataService {
   private static instance: MarketDataService;
+  
+  // Debug logger
+  private logger = createDebugLogger('MarketDataService');
+  
   private subscribers: Map<string, MarketDataSubscriber> = new Map();
   private activeSubscriptions: Map<string, SubscriptionConfig> = new Map();
   private wsConnections: Map<string, string> = new Map(); // symbol -> connectionId
@@ -310,33 +315,33 @@ class MarketDataService {
   }
 
   private handleBackendMessage(data: any, symbol: string): void {
-    console.log(`[MarketDataService] handleBackendMessage:`, { data, symbol, subscribers: this.subscribers.size });
+    this.logger.log(`handleBackendMessage:`, { data, symbol, subscribers: this.subscribers.size });
     try {
       const config = this.activeSubscriptions.get(symbol);
       if (!config) {
-        console.log(`[MarketDataService] No config for symbol:`, symbol);
+        this.logger.log(`No config for symbol:`, symbol);
         return;
       }
 
-      console.log(`[MarketDataService] Processing message type:`, data.type);
+      this.logger.log(`Processing message type:`, data.type);
       switch (data.type) {
         case 'ticker':
-          console.log(`[MarketDataService] Ticker event - includeTicker:`, config.includeTicker, 'symbol match:', data.symbol === symbol);
+          this.logger.log(`Ticker event - includeTicker:`, config.includeTicker, 'symbol match:', data.symbol === symbol);
           if (config.includeTicker && data.symbol === symbol) {
             const tickerData = this.normalizeBackendTicker(data);
-            console.log(`[MarketDataService] Normalized ticker:`, tickerData);
+            this.logger.log(`Normalized ticker:`, tickerData);
             this.notifySubscribers({ type: 'ticker', data: tickerData });
-            console.log(`[MarketDataService] Notified ${this.subscribers.size} subscribers`);
+            this.logger.log(`Notified ${this.subscribers.size} subscribers`);
           }
           break;
           
         case 'orderbook':
-          console.log(`[MarketDataService] Orderbook event - includeOrderbook:`, config.includeOrderbook, 'symbol match:', data.symbol === symbol);
+          this.logger.log(`Orderbook event - includeOrderbook:`, config.includeOrderbook, 'symbol match:', data.symbol === symbol);
           if (config.includeOrderbook && data.symbol === symbol) {
             const orderbookData = this.normalizeBackendOrderbook(data);
-            console.log(`[MarketDataService] Normalized orderbook:`, orderbookData);
+            this.logger.log(`Normalized orderbook:`, orderbookData);
             this.notifySubscribers({ type: 'orderbook', data: orderbookData });
-            console.log(`[MarketDataService] Notified ${this.subscribers.size} subscribers`);
+            this.logger.log(`Notified ${this.subscribers.size} subscribers`);
           }
           break;
       }
@@ -501,14 +506,14 @@ class MarketDataService {
   // getSymbolForSubscriber removed (replaced by subscriberSymbols map directly)
 
   private notifySubscribers(event: MarketDataEvent): void {
-    console.log(`[MarketDataService] notifySubscribers:`, { type: event.type, subscriberCount: this.subscribers.size });
+    this.logger.log(`notifySubscribers:`, { type: event.type, subscriberCount: this.subscribers.size });
     for (const subscriber of this.subscribers.values()) {
       try {
-        console.log(`[MarketDataService] Notifying subscriber:`, subscriber.id);
+        this.logger.log(`Notifying subscriber:`, subscriber.id);
         subscriber.onEvent(event);
-        console.log(`[MarketDataService] Successfully notified:`, subscriber.id);
+        this.logger.log(`Successfully notified:`, subscriber.id);
       } catch (error) {
-        console.error(`[MarketDataService] Error notifying subscriber ${subscriber.id}:`, error);
+        this.logger.error(`Error notifying subscriber ${subscriber.id}:`, error);
         this.log(`Error notifying subscriber ${subscriber.id}:`, error);
       }
     }

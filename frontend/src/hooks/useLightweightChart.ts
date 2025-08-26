@@ -1,6 +1,9 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
+import { createDebugLogger } from '../utils/debugLogger';
+
+const logger = createDebugLogger('useLightweightChart');
 
 /**
  * Custom hook for managing Lightweight Charts instances
@@ -23,11 +26,11 @@ export function useLightweightChart() {
   useEffect(() => {
     const chartContainer = chartContainerRef.current;
     if (!chartContainer) {
-      console.warn('[useLightweightChart] Container ref is not available');
+      logger.warn('Container ref is not available');
       return;
     }
 
-    console.log('[useLightweightChart] Creating new Lightweight Chart instance');
+    logger.log('Creating new Lightweight Chart instance');
 
     // Create chart with optimized scroll performance settings
     const chart = createChart(chartContainer, {
@@ -82,7 +85,7 @@ export function useLightweightChart() {
     chartInstanceRef.current = chart;
     candlestickSeriesRef.current = candlestickSeries;
 
-    console.log('[useLightweightChart] Chart instance created successfully');
+    logger.log('Chart instance created successfully');
 
     // Handle resize
     const handleResize = () => {
@@ -98,7 +101,7 @@ export function useLightweightChart() {
 
     // Cleanup function
     return () => {
-      console.log('[useLightweightChart] Cleaning up chart instance');
+      logger.log('Cleaning up chart instance');
       window.removeEventListener('resize', handleResize);
       
       if (chartInstanceRef.current) {
@@ -111,28 +114,24 @@ export function useLightweightChart() {
 
   // Set historical data
   const setHistoricalData = useCallback((data: CandlestickData[]) => {
-    if (candlestickSeriesRef.current) {
-      console.log(`[useLightweightChart] Setting ${data.length} historical data points`);
+    if (candlestickSeriesRef.current && data.length > 0) {
+      logger.log(`Setting ${data.length} historical data points`);
       candlestickSeriesRef.current.setData(data);
-    } else {
-      console.warn('[useLightweightChart] Candlestick series not available');
     }
   }, []);
 
-  // Update with new candlestick data
+  // Update single candlestick
   const updateCandlestick = useCallback((candlestick: CandlestickData) => {
     if (candlestickSeriesRef.current) {
-      console.log(`[useLightweightChart] Updating candlestick:`, candlestick);
+      logger.log(`Updating candlestick:`, candlestick);
       candlestickSeriesRef.current.update(candlestick);
-    } else {
-      console.warn('[useLightweightChart] Candlestick series not available for update');
     }
   }, []);
 
-  // Clear chart data
-  const clearChart = useCallback(() => {
+  // Clear all data
+  const clearData = useCallback(() => {
     if (candlestickSeriesRef.current) {
-      console.log('[useLightweightChart] Clearing chart data');
+      logger.log('Clearing chart data');
       candlestickSeriesRef.current.setData([]);
     }
   }, []);
@@ -150,7 +149,7 @@ export function useLightweightChart() {
     candlestickSeries: candlestickSeriesRef.current,
     setHistoricalData,
     updateCandlestick,
-    clearChart,
+    clearData,
     fitContent
   };
 }

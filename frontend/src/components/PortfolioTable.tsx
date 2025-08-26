@@ -330,7 +330,8 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     autoResetPageIndex: false,
     // Stabilne ID wiersza – aktywo jest unikalne
     getRowId: (row) => row.asset,
-  debugTable: (typeof process !== 'undefined' && (process as any).env && (process as any).env.NODE_ENV === 'development') || false,
+    // Disable debug logs in TanStack Table
+    debugTable: false,
   });
 
   // Post-processing: przenieś wiersze z zerową wartością/ceną/udziałem na dół niezależnie od kierunku

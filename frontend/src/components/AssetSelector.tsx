@@ -202,7 +202,8 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     getPaginationRowModel: getPaginationRowModel(),
     // Ważne: nie resetuj paginacji przy każdej zmianie danych (np. update tickera)
     autoResetPageIndex: false,
-  debugTable: (typeof process !== 'undefined' && (process as any).env && (process as any).env.NODE_ENV === 'development') || false,
+    // Disable debug logs in TanStack Table
+    debugTable: false,
   });
 
   // Zabezpieczenie: jeśli po filtracji/zmianie pageSize obecny pageIndex wykracza poza zakres, zawęź go

@@ -7,6 +7,7 @@ import './optimizations.css'
 import App from './App.tsx'
 import { setupGlobalPassiveListeners } from './utils/passiveListeners'
 import './utils/scrollPerformanceMonitor'
+import './utils/debugLogger' // Import debug helpers for global access
 
 // Setup passive event listeners for better scroll performance
 setupGlobalPassiveListeners();

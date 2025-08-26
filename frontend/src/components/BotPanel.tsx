@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import { createDebugLogger } from '../utils/debugLogger';
 import {
   Paper,
   Stack,
@@ -47,6 +48,9 @@ interface LogEntry {
 }
 
 const BotPanel: React.FC = () => {
+  // Debug logger
+  const logger = createDebugLogger('BotPanel');
+  
   const [botStatus, setBotStatus] = useState<BotStatus>({ running: false });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +119,7 @@ const BotPanel: React.FC = () => {
     try {
       switch (message.type) {
         case 'bot_status':
-          console.log('Received bot_status:', message); // Debug
+          logger.log('Received bot_status:', message); // Debug
           
           // Sprawdź czy running jest na najwyższym poziomie lub w status
           const running = message.running !== undefined ? message.running : message.status?.running;
@@ -183,7 +187,7 @@ const BotPanel: React.FC = () => {
           break;
           
         default:
-          console.log('Unknown message type:', message);
+          logger.log('Unknown message type:', message);
       }
     } catch (err) {
       console.error('Error handling WebSocket message:', err);
@@ -250,7 +254,7 @@ const BotPanel: React.FC = () => {
         strategy: currentConfig?.type || 'simple_momentum'
       };
       
-      console.log('Sending start command with config:', { currentConfig, startCommand });
+      logger.log('Sending start command with config:', { currentConfig, startCommand });
       wsClientRef.current.send(startCommand);
       
       // Add local log entry

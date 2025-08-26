@@ -1,6 +1,9 @@
 import React from 'react';
 import { Paper, Stack, Group, Text, Badge, Box } from '@mantine/core';
 import { IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+import { createDebugLogger } from '../utils/debugLogger';
+
+const logger = createDebugLogger('PriceDisplay');
 
 interface TickerData {
   symbol: string;
@@ -16,7 +19,7 @@ interface PriceDisplayProps {
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({ ticker, currency = 'USDT' }) => {
   // Debug log to see if component re-renders
-  console.log('[PriceDisplay] Rendering with ticker:', ticker);
+  logger.render('Rendering with ticker:', ticker);
   
   const price = parseFloat(ticker.price);
   const change = parseFloat(ticker.change);

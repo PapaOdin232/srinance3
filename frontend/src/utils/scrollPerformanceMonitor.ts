@@ -48,6 +48,15 @@ class ScrollPerformanceMonitor {
   }
 
   logMetrics(): void {
+    // Only log in development and if debugging is enabled
+    const isDev = import.meta.env.DEV;
+    const debugEnabled = localStorage.getItem('debug:enabled') !== 'false';
+    const performanceDebugEnabled = localStorage.getItem('debug:performance') !== 'false';
+    
+    if (!isDev || !debugEnabled || !performanceDebugEnabled) {
+      return;
+    }
+    
     const metrics = this.getMetrics();
     console.group('📊 Scroll Performance Metrics');
     console.log('Wheel Events:', metrics.wheelEvents);

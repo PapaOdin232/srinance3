@@ -26,6 +26,7 @@ import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { marketDataService, type MarketDataEvent } from '../services/market/MarketDataService';
 import { chartDataService, type ChartDataSubscriber } from '../services/chart/ChartDataService';
 import useLightweightChart from '../hooks/useLightweightChart';
+import { createDebugLogger } from '../utils/debugLogger';
 // useThrottledState removed (ticker UI removed)
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
@@ -61,6 +62,9 @@ interface ConnectionStatus {
 }
 
 const MarketPanel: React.FC = () => {
+  // Debug logger
+  const logger = createDebugLogger('MarketPanel');
+  
   const [tickerData, setTickerData] = useState<TickerData | null>(null);
   const [orderbookData, setOrderbookData] = useState<OrderBookData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
@@ -100,14 +104,14 @@ const MarketPanel: React.FC = () => {
       chartDataSubscriberRef.current = {
         id: `market-panel-chart-${Date.now()}`,
         onHistoricalData: (data: CandlestickData[]) => {
-          console.log(`[MarketPanel] Received ${data.length} historical data points`);
+          logger.log(`Received ${data.length} historical data points`);
           setHistoricalData(data);
           setCandlestickData(data);
           fitContent();
           setConnectionStatus(prev => ({ ...prev, chart: true }));
         },
         onUpdate: (data: CandlestickData) => {
-          console.log(`[MarketPanel] Chart update - Price: ${data.close}`);
+          logger.log(`Chart update - Price: ${data.close}`);
           updateCandlestick(data);
           setCandlestickData(prev => {
             const updated = [...prev];
@@ -121,7 +125,7 @@ const MarketPanel: React.FC = () => {
           });
         },
         onError: (error: Error) => {
-          console.error(`[MarketPanel] Chart error:`, error);
+          logger.error(`Chart error:`, error);
           setError(`Błąd wykresu: ${error.message}`);
           setConnectionStatus(prev => ({ ...prev, chart: false }));
         }
@@ -132,7 +136,7 @@ const MarketPanel: React.FC = () => {
   // Market data event handler
   const handleMarketDataEvent = useCallback((event: MarketDataEvent) => {
     const currentSymbol = selectedSymbolRef.current;
-    console.log(`[MarketPanel] handleMarketDataEvent:`, { 
+    logger.log(`handleMarketDataEvent:`, { 
       eventType: event.type, 
       currentSymbol,
       fullEvent: event
@@ -140,8 +144,8 @@ const MarketPanel: React.FC = () => {
     
     switch (event.type) {
       case 'ticker':
-        console.log(`[MarketPanel] Setting ticker data:`, event);
-        console.log(`[MarketPanel] NEW TICKER STATE:`, {
+        logger.log(`Setting ticker data:`, event);
+        logger.log(`NEW TICKER STATE:`, {
           symbol: event.data.symbol,
           price: event.data.price,
           change: event.data.change,
@@ -155,14 +159,14 @@ const MarketPanel: React.FC = () => {
             changePercent: event.data.changePercent.toString()
           };
           setTickerData(newTickerData);
-          console.log(`[MarketPanel] STATE UPDATED! tickerData set to:`, newTickerData);
+          logger.log(`STATE UPDATED! tickerData set to:`, newTickerData);
           setConnectionStatus(prev => ({ ...prev, ticker: true }));
         }
         break;
         
       case 'orderbook':
-        console.log(`[MarketPanel] Setting orderbook data:`, event);
-        console.log(`[MarketPanel] NEW ORDERBOOK STATE:`, {
+        logger.log(`Setting orderbook data:`, event);
+        logger.log(`NEW ORDERBOOK STATE:`, {
           symbol: event.data.symbol,
           bidsCount: event.data.bids.length,
           asksCount: event.data.asks.length,
@@ -176,32 +180,32 @@ const MarketPanel: React.FC = () => {
             timestamp: event.data.timestamp
           };
           setOrderbookData(newOrderbookData);
-          console.log(`[MarketPanel] STATE UPDATED! orderbookData set to:`, newOrderbookData);
+          logger.log(`STATE UPDATED! orderbookData set to:`, newOrderbookData);
           setConnectionStatus(prev => ({ ...prev, orderbook: true }));
         }
         break;
         
       case 'connection':
-        console.log(`[MarketPanel] Connection state changed: ${event.state} for ${event.url}`);
+        logger.connection(event.state, event.url);
         break;
         
       case 'error':
-        console.error(`[MarketPanel] Market data error:`, event.error);
+        logger.error(`Market data error:`, event.error);
         setError(`Błąd danych rynkowych: ${event.context}`);
         break;
     }
-  }, []);
+  }, [logger]);
 
   // Setup market data subscription
   const setupMarketDataSubscription = useCallback(async (symbol: string) => {
-    console.log(`[MarketPanel] setupMarketDataSubscription called for ${symbol}, current: ${selectedSymbolRef.current}, ref: ${marketDataSubscriptionRef.current}`);
+    logger.log(`setupMarketDataSubscription called for ${symbol}, current: ${selectedSymbolRef.current}, ref: ${marketDataSubscriptionRef.current}`);
     
     if (!symbol) {
-      console.warn('[MarketPanel] Skipping market data subscription: empty symbol');
+      logger.warn('Skipping market data subscription: empty symbol');
       return;
     }
     if (marketDataSubscriptionRef.current && selectedSymbolRef.current === symbol) {
-      console.log('[MarketPanel] Already subscribed to this symbol, skipping');
+      logger.log('Already subscribed to this symbol, skipping');
       return; // already subscribed
     }
     try {
@@ -209,7 +213,7 @@ const MarketPanel: React.FC = () => {
       setError(null);
   setConnectionStatus(prev => ({ ...prev, ticker: false, orderbook: false }));
       
-      console.log(`[MarketPanel] Setting up market data subscription for ${symbol}`);
+      logger.log(`Setting up market data subscription for ${symbol}`);
       
       // Clean up previous subscription (let service resolve symbol from subscriber id)
       if (marketDataSubscriptionRef.current) {
@@ -258,21 +262,21 @@ const MarketPanel: React.FC = () => {
   }
       
     } catch (error) {
-      console.error(`[MarketPanel] Failed to setup market data for ${symbol}:`, error);
+      logger.error(`Failed to setup market data for ${symbol}:`, error);
       setError(`Nie udało się załadować danych dla ${symbol}`);
     } finally {
       setIsLoading(false);
     }
-  }, [handleMarketDataEvent]);
+  }, [handleMarketDataEvent, logger]);
 
   // Setup chart data subscription  
   const setupChartDataSubscription = useCallback(async (symbol: string, interval: TimeInterval) => {
     if (!symbol) {
-      console.warn('[MarketPanel] Skipping chart subscription: empty symbol');
+      logger.warn('Skipping chart subscription: empty symbol');
       return;
     }
     try {
-      console.log(`[MarketPanel] Setting up chart subscription for ${symbol} ${interval}`);
+      logger.log(`Setting up chart subscription for ${symbol} ${interval}`);
       
       // Clean up previous subscription
       if (chartDataSubscriptionRef.current) {
@@ -298,10 +302,10 @@ const MarketPanel: React.FC = () => {
       chartDataSubscriptionRef.current = chartDataSubscriberRef.current!.id;
       
     } catch (error) {
-      console.error(`[MarketPanel] Failed to setup chart data for ${symbol} ${interval}:`, error);
+      logger.error(`Failed to setup chart data for ${symbol} ${interval}:`, error);
       setError(`Nie udało się załadować wykresu dla ${symbol}`);
     }
-  }, [setHistoricalData]); // Remove chartDataSubscriber dependency
+  }, [setHistoricalData, logger]); // Remove chartDataSubscriber dependency
 
   // Handle symbol changes
   useEffect(() => {
@@ -323,14 +327,14 @@ const MarketPanel: React.FC = () => {
       // In development/StrictMode, avoid cleanup to prevent double mounting issues
       const isDevelopment = import.meta.env.DEV;
       if (isDevelopment) {
-        console.log('[MarketPanel] Skipping cleanup in development mode (StrictMode protection)');
+        logger.log('Skipping cleanup in development mode (StrictMode protection)');
         return;
       }
       
       // Only cleanup in production after a delay to ensure component is truly unmounting
       window.setTimeout(() => {
         if (!isMounted) {
-          console.log('[MarketPanel] Cleaning up subscriptions (production)');
+          logger.log('Cleaning up subscriptions (production)');
           if (marketDataSubscriptionRef.current) {
             marketDataService.unsubscribe(marketDataSubscriptionRef.current);
             marketDataSubscriptionRef.current = null;
@@ -345,38 +349,38 @@ const MarketPanel: React.FC = () => {
   }, []); // Empty dependency array - cleanup only on unmount
 
   const handleSymbolChange = useCallback((newSymbol: string) => {
-    console.log(`[MarketPanel] Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
+    logger.log(`Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
   setSelectedSymbol(newSymbol);
     setError(null);
     setConnectionStatus({ ticker: false, orderbook: false, chart: false });
-  }, []); // Remove selectedSymbol dependency to prevent cycle
+  }, [logger]); // Remove selectedSymbol dependency to prevent cycle
 
   const handleIntervalChange = useCallback((newInterval: TimeInterval) => {
-    console.log(`[MarketPanel] Interval changed: ${selectedSymbolRef.current} -> ${newInterval}`);
+    logger.log(`Interval changed: ${selectedSymbolRef.current} -> ${newInterval}`);
     setSelectedInterval(newInterval);
     setConnectionStatus(prev => ({ ...prev, chart: false }));
-  }, []); // Remove selectedInterval dependency to prevent cycle
+  }, [logger]); // Remove selectedInterval dependency to prevent cycle
 
   const handleAssetSelect = useCallback((asset: Asset) => {
     handleSymbolChange(asset.symbol);
   }, [handleSymbolChange]);
 
   const handleRetryConnection = useCallback(async () => {
-    console.log('[MarketPanel] Retrying connections');
+    logger.log('Retrying connections');
     await Promise.all([
       setupMarketDataSubscription(selectedSymbol),
       setupChartDataSubscription(selectedSymbol, selectedInterval)
     ]);
-  }, [selectedSymbol, selectedInterval]); // Remove function deps to prevent cycles
+  }, [selectedSymbol, selectedInterval, logger, setupMarketDataSubscription, setupChartDataSubscription]); // Remove function deps to prevent cycles
 
   const handleRefreshChart = useCallback(async () => {
     try {
       await chartDataService.refreshData(selectedSymbol, selectedInterval);
     } catch (error) {
-      console.error('[MarketPanel] Failed to refresh chart:', error);
+      logger.error('Failed to refresh chart:', error);
       setError('Nie udało się odświeżyć wykresu');
     }
-  }, [selectedSymbol, selectedInterval]);
+  }, [selectedSymbol, selectedInterval, logger]);
 
   // Connection status display
   const getConnectionDisplay = () => {
@@ -395,7 +399,7 @@ const MarketPanel: React.FC = () => {
   const connectionDisplay = getConnectionDisplay();
 
   // Debug log for re-renders
-  console.log(`[MarketPanel] RENDER:`, {
+  logger.render(`RENDER:`, {
     tickerData,
     orderbookData,
     connectionStatus,

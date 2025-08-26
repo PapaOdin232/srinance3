@@ -1,6 +1,9 @@
 import React from 'react';
 import { Paper, Stack, Group, Text, Badge, Box, ScrollArea } from '@mantine/core';
 import { IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+import { createDebugLogger } from '../utils/debugLogger';
+
+const logger = createDebugLogger('OrderBookDisplay');
 
 interface OrderBookData {
   symbol: string;
@@ -16,7 +19,7 @@ interface OrderBookDisplayProps {
 
 const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows = 10 }) => {
   // Debug log to see if component re-renders
-  console.log('[OrderBookDisplay] Rendering with orderbook:', orderbook.symbol, orderbook.timestamp);
+  logger.render(`Rendering with orderbook: ${orderbook.symbol} ${orderbook.timestamp}`);
   
   // Format price and quantity with proper decimals
   const formatPrice = (price: string): string => {
