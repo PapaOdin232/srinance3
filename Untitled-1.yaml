@@ -1,0 +1,616 @@
+
+client:826 [vite] connected.
+react-dom_client.js?v=26b51a4f:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+scrollPerformanceMonitor.ts:35 [ScrollMonitor] Performance monitoring started
+passiveListeners.ts:95 [PassiveListeners] Global passive listeners setup completed
+PortfolioTable.tsx:291 Creating Table Instance...
+PortfolioTable.tsx:291 Creating Table Instance...
+PortfolioTable.tsx:353 ⏱     0 /    0 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getPaginationRowModel
+userStream.tsx:174 [UserStream] Connecting to ws://localhost:8001/ws/user (raw base: ws://localhost:8001/ws )
+browser-polyfill.js:1 Returning a Promise is the preferred way to send a reply from an onMessage/onMessageExternal listener, as the sendResponse will be removed from the specs (See https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage) Error
+    at n (chrome-extension://dacdinoicboceafielngnmjjplncljhj/lib/js/browser-polyfill.js:1:8113)
+n @ browser-polyfill.js:1
+Promise.then
+(anonymous) @ content.js:334
+(anonymous) @ content.js:334
+x.reject @ browser-polyfill.js:1Understand this warning
+PortfolioTable.tsx:353 ⏱     2 /    2 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     2 /    4 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    4 ms getPaginationRowModel
+PortfolioTable.tsx:483 ⏱     0 /    0 ms _getOrderColumnsFn
+BotConfigPanel.tsx:80 Bot config response: {config: {…}, state: {…}, position: {…}, daily_stats: {…}}
+BotConfigPanel.tsx:96 Strategies response: {strategies: {…}}
+BotConfigPanel.tsx:80 Bot config response: {config: {…}, state: {…}, position: {…}, daily_stats: {…}}
+BotConfigPanel.tsx:96 Strategies response: {strategies: {…}}
+BotPanel.tsx:186 Unknown message type: {type: 'welcome', message: 'Connected to bot stream (connection #1)', timestamp: 37496.976491208}
+BotPanel.tsx:118 Received bot_status: {type: 'bot_status', running: false, status: {…}}
+BotPanel.tsx:118 Received bot_status: {type: 'bot_status', running: false, status: {…}}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:12.959Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:12.960Z'}
+AssetSelector.tsx:186 Creating Table Instance...
+AssetSelector.tsx:186 Creating Table Instance...
+AssetSelector.tsx:210 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:210 ⏱     0 /    0 ms getFilteredRowModel
+AssetSelector.tsx:210 ⏱     0 /    0 ms getSortedRowModel
+useLightweightChart.ts:30 [useLightweightChart] Creating new Lightweight Chart instance
+useLightweightChart.ts:85 [useLightweightChart] Chart instance created successfully
+MarketPanel.tsx:197 [MarketPanel] setupMarketDataSubscription called for BTCUSDT, current: BTCUSDT, ref: null
+MarketPanel.tsx:212 [MarketPanel] Setting up market data subscription for BTCUSDT
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'connection', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'connection', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:185 [MarketPanel] Connection state changed: CONNECTING for ws://localhost:8001/ws/market
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketPanel.tsx:275 [MarketPanel] Setting up chart subscription for BTCUSDT 5m
+useLightweightChart.ts:115 [useLightweightChart] Setting 0 historical data points
+useLightweightChart.ts:101 [useLightweightChart] Cleaning up chart instance
+MarketPanel.tsx:326 [MarketPanel] Skipping cleanup in development mode (StrictMode protection)
+useLightweightChart.ts:30 [useLightweightChart] Creating new Lightweight Chart instance
+useLightweightChart.ts:85 [useLightweightChart] Chart instance created successfully
+MarketPanel.tsx:197 [MarketPanel] setupMarketDataSubscription called for BTCUSDT, current: BTCUSDT, ref: market-panel-BTCUSDT
+MarketPanel.tsx:204 [MarketPanel] Already subscribed to this symbol, skipping
+MarketPanel.tsx:275 [MarketPanel] Setting up chart subscription for BTCUSDT 5m
+useLightweightChart.ts:115 [useLightweightChart] Setting 0 historical data points
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:12.994Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:12.994Z'}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'connection', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'connection', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:185 [MarketPanel] Connection state changed: CONNECTED for ws://localhost:8001/ws/market
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: welcome
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.305Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.306Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110359.24', change: '-1728.82', changePercent: '-1.542%'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110359.24', change: '-1728.82', changePercent: '-1.542%'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.379Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.380Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+MarketPanel.tsx:103 [MarketPanel] Received 500 historical data points
+useLightweightChart.ts:115 [useLightweightChart] Setting 500 historical data points
+MarketPanel.tsx:103 [MarketPanel] Received 500 historical data points
+useLightweightChart.ts:115 [useLightweightChart] Setting 500 historical data points
+binanceWSClient.ts:56 [BinanceWSClient] Connecting to wss://data-stream.binance.vision/ws/btcusdt@kline_5m
+binanceWSClient.ts:57 [BinanceWSClient] Using data-stream.binance.vision (optimized for market data)
+binanceWSClient.ts:145 [BinanceWSClient] Added listener, total: 1
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.471Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.473Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.694Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:13.696Z'}
+AssetSelector.tsx:255 ⏱     5 /    5 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    5 ms getFilteredRowModel
+AssetSelector.tsx:307 ⏱     0 /    0 ms _getOrderColumnsFn
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219333305
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219334022}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219334022}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219334022}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.023Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.024Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334022
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334022
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: kline
+binanceWSClient.ts:63 [BinanceWSClient] Successfully connected to wss://data-stream.binance.vision/ws/btcusdt@kline_5m
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.248Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.248Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334022
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334022
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219334563}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219334563}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219334563}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.564Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:14.565Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+logger.ts:45 [binance:ticker] connected {streams: 100}
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.013Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.015Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    1 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110359.23
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110359.23}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.353Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.353Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110323.18, change: -1779.57, changePercent: -1.587}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.864Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:16.864Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:17.242Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:17.243Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219334563
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219337565}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219337565}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219337565}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:17.565Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:17.565Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110348.29
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110348.29}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.098Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.098Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+PortfolioTable.tsx:353 ⏱     0 /    0 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.447Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.448Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.778Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:18.779Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.18', change: '-1779.57', changePercent: '-1.587'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110323.17, change: -1771.23, changePercent: -1.58, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110323.17, change: -1771.23, changePercent: -1.58}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.484Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.484Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.554Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.554Z'}
+AssetSelector.tsx:255 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    0 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219337565
+BotPanel.tsx:118 Received bot_status: {type: 'bot_status', running: false, status: {…}}
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219339816}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219339816}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219339816}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.817Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:19.817Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110348.3
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110348.3}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:20.106Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:20.106Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:20.596Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:20.597Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:21.705Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:21.705Z'}
+AssetSelector.tsx:255 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    0 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110359
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110359}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.099Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.099Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110323.17', change: '-1771.23', changePercent: '-1.58'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110337.73, change: -1756.68, changePercent: -1.567, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110337.73, change: -1756.68, changePercent: -1.567}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.128Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.128Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.532Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.534Z'}
+AssetSelector.tsx:255 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:255 ⏱     1 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219339816
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219342846}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219342846}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219342846}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.846Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:22.847Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:23.713Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:23.715Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110390.02
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110390.02}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.099Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.099Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110337.73', change: '-1756.68', changePercent: '-1.567'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110348.3, change: -1746.11, changePercent: -1.558, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110348.3, change: -1746.11, changePercent: -1.558}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.717Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.719Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.901Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:24.902Z'}
+AssetSelector.tsx:255 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    0 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219342846
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219345250}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219345250}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219345250}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:25.250Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:25.251Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:26.133Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:26.134Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110382
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110382}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:26.449Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:26.450Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.345Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.346Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110348.3, change: -1746.11, changePercent: -1.558, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110348.3, change: -1746.11, changePercent: -1.558}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.671Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.671Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219345250
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: orderbook
+MarketDataService.ts:334 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+MarketDataService.ts:337 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219347682}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:164 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+MarketPanel.tsx:165 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756219347682}
+MarketPanel.tsx:179 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756219347682}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:339 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.683Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:27.683Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+MarketPanel.tsx:110 [MarketPanel] Chart update - Price: 110382
+useLightweightChart.ts:125 [useLightweightChart] Updating candlestick: {time: 1756219200, open: 110384.01, high: 110492.05, low: 110259.94, close: 110382}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:28.097Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:28.098Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     1 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:28.562Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:28.564Z'}
+AssetSelector.tsx:255 ⏱     0 /    0 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    0 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    1 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+PortfolioTable.tsx:353 ⏱     1 /    1 ms getRowModel
+PortfolioTable.tsx:353 ⏱     0 /    1 ms getFilteredRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getSortedRowModel
+PortfolioTable.tsx:353 ⏱     0 /    2 ms getPaginationRowModel
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:29.777Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:29.779Z'}
+AssetSelector.tsx:255 ⏱     1 /    1 ms getRowModel
+AssetSelector.tsx:255 ⏱     0 /    1 ms getFilteredRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getSortedRowModel
+AssetSelector.tsx:343 ⏱     0 /    0 ms getPaginationRowModel
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.3', change: '-1746.11', changePercent: '-1.558'}
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+OrderBookDisplay.tsx:19 [OrderBookDisplay] Rendering with orderbook: BTCUSDT 1756219347682
+MarketDataService.ts:313 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+MarketDataService.ts:321 [MarketDataService] Processing message type: ticker
+MarketDataService.ts:324 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+MarketDataService.ts:327 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110348.29, change: -1746.11, changePercent: -1.558, volume: 0, …}
+MarketDataService.ts:504 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+MarketDataService.ts:507 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+MarketPanel.tsx:135 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+MarketPanel.tsx:143 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+MarketPanel.tsx:144 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110348.29, change: -1746.11, changePercent: -1.558}
+MarketPanel.tsx:158 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110348.29', change: '-1746.11', changePercent: '-1.558'}
+MarketDataService.ts:509 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:329 [MarketDataService] Notified 1 subscribers
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:30.100Z'}
+MarketPanel.tsx:398 [MarketPanel] RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-26T14:42:30.100Z'}
+PriceDisplay.tsx:19 [PriceDisplay] Rendering with ticker: {symbol: 'BTCUSDT', price: '110348.29', change: '-1746.11', changePercent: '-1.558'}

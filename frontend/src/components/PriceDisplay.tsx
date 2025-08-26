@@ -15,6 +15,9 @@ interface PriceDisplayProps {
 }
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({ ticker, currency = 'USDT' }) => {
+  // Debug log to see if component re-renders
+  console.log('[PriceDisplay] Rendering with ticker:', ticker);
+  
   const price = parseFloat(ticker.price);
   const change = parseFloat(ticker.change);
   const isPositive = change >= 0;
@@ -73,6 +76,9 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({ ticker, currency = 'USDT' }
               </Text>
               <Text size="lg" c="dimmed" fw={500}>
                 {currency}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {new Date().toLocaleTimeString()}
               </Text>
             </Group>
           </Box>

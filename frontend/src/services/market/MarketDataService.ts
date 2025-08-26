@@ -99,7 +99,7 @@ class MarketDataService {
   public subscribe(config: SubscriptionConfig, subscriber: MarketDataSubscriber): string {
     this.subscribers.set(subscriber.id, subscriber);
     this.activeSubscriptions.set(config.symbol, config);
-  this.subscriberSymbols.set(subscriber.id, config.symbol);
+    this.subscriberSymbols.set(subscriber.id, config.symbol);
     
     this.log(`New subscription for ${config.symbol} by ${subscriber.id}`);
     
@@ -310,26 +310,38 @@ class MarketDataService {
   }
 
   private handleBackendMessage(data: any, symbol: string): void {
+    console.log(`[MarketDataService] handleBackendMessage:`, { data, symbol, subscribers: this.subscribers.size });
     try {
       const config = this.activeSubscriptions.get(symbol);
-      if (!config) return;
+      if (!config) {
+        console.log(`[MarketDataService] No config for symbol:`, symbol);
+        return;
+      }
 
+      console.log(`[MarketDataService] Processing message type:`, data.type);
       switch (data.type) {
         case 'ticker':
+          console.log(`[MarketDataService] Ticker event - includeTicker:`, config.includeTicker, 'symbol match:', data.symbol === symbol);
           if (config.includeTicker && data.symbol === symbol) {
             const tickerData = this.normalizeBackendTicker(data);
+            console.log(`[MarketDataService] Normalized ticker:`, tickerData);
             this.notifySubscribers({ type: 'ticker', data: tickerData });
+            console.log(`[MarketDataService] Notified ${this.subscribers.size} subscribers`);
           }
           break;
           
         case 'orderbook':
+          console.log(`[MarketDataService] Orderbook event - includeOrderbook:`, config.includeOrderbook, 'symbol match:', data.symbol === symbol);
           if (config.includeOrderbook && data.symbol === symbol) {
             const orderbookData = this.normalizeBackendOrderbook(data);
+            console.log(`[MarketDataService] Normalized orderbook:`, orderbookData);
             this.notifySubscribers({ type: 'orderbook', data: orderbookData });
+            console.log(`[MarketDataService] Notified ${this.subscribers.size} subscribers`);
           }
           break;
       }
     } catch (error) {
+      console.error(`[MarketDataService] Error processing backend message for ${symbol}:`, error);
       this.notifyError(`Error processing backend message for ${symbol}`, error as Error);
     }
   }
@@ -489,10 +501,14 @@ class MarketDataService {
   // getSymbolForSubscriber removed (replaced by subscriberSymbols map directly)
 
   private notifySubscribers(event: MarketDataEvent): void {
+    console.log(`[MarketDataService] notifySubscribers:`, { type: event.type, subscriberCount: this.subscribers.size });
     for (const subscriber of this.subscribers.values()) {
       try {
+        console.log(`[MarketDataService] Notifying subscriber:`, subscriber.id);
         subscriber.onEvent(event);
+        console.log(`[MarketDataService] Successfully notified:`, subscriber.id);
       } catch (error) {
+        console.error(`[MarketDataService] Error notifying subscriber ${subscriber.id}:`, error);
         this.log(`Error notifying subscriber ${subscriber.id}:`, error);
       }
     }

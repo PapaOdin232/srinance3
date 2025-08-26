@@ -20,6 +20,7 @@ import {
   Loader,
   Button,
   Box,
+  Grid,
 } from '@mantine/core';
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { marketDataService, type MarketDataEvent } from '../services/market/MarketDataService';
@@ -28,14 +29,27 @@ import useLightweightChart from '../hooks/useLightweightChart';
 // useThrottledState removed (ticker UI removed)
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
-// PriceDisplay and OrderBook removed per user request
+import PriceDisplay from './PriceDisplay';
+import OrderBookDisplay from './OrderBookDisplay';
 import IntervalSelector, { type TimeInterval } from './IntervalSelector';
 import IndicatorPanel from './IndicatorPanel';
 import { useAssets } from '../hooks/useAssets';
 import type { Asset } from '../types/asset';
 
 // UI types for display
-// Ticker UI removed
+interface TickerData {
+  symbol: string;
+  price: string;
+  change: string;
+  changePercent: string;
+}
+
+interface OrderBookData {
+  symbol: string;
+  bids: Array<[string, string]>; // [price, quantity]
+  asks: Array<[string, string]>; // [price, quantity]
+  timestamp?: number;
+}
 
 // OrderBook UI removed; OrderBookData type omitted
 
@@ -47,8 +61,8 @@ interface ConnectionStatus {
 }
 
 const MarketPanel: React.FC = () => {
-  // ticker state removed (UI removed)
-  // OrderBook state removed
+  const [tickerData, setTickerData] = useState<TickerData | null>(null);
+  const [orderbookData, setOrderbookData] = useState<OrderBookData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('5m');
   const [isLoading, setIsLoading] = useState(false);
@@ -117,18 +131,55 @@ const MarketPanel: React.FC = () => {
 
   // Market data event handler
   const handleMarketDataEvent = useCallback((event: MarketDataEvent) => {
-  // debug logging removed
     const currentSymbol = selectedSymbolRef.current;
+    console.log(`[MarketPanel] handleMarketDataEvent:`, { 
+      eventType: event.type, 
+      currentSymbol,
+      fullEvent: event
+    });
     
     switch (event.type) {
       case 'ticker':
+        console.log(`[MarketPanel] Setting ticker data:`, event);
+        console.log(`[MarketPanel] NEW TICKER STATE:`, {
+          symbol: event.data.symbol,
+          price: event.data.price,
+          change: event.data.change,
+          changePercent: event.data.changePercent
+        });
         if (event.data.symbol === currentSymbol) {
-          // ticker UI removed — just update connection status
+          const newTickerData = {
+            symbol: event.data.symbol,
+            price: event.data.price.toString(),
+            change: event.data.change.toString(),
+            changePercent: event.data.changePercent.toString()
+          };
+          setTickerData(newTickerData);
+          console.log(`[MarketPanel] STATE UPDATED! tickerData set to:`, newTickerData);
           setConnectionStatus(prev => ({ ...prev, ticker: true }));
         }
         break;
         
-  // orderbook events intentionally ignored (UI removed)
+      case 'orderbook':
+        console.log(`[MarketPanel] Setting orderbook data:`, event);
+        console.log(`[MarketPanel] NEW ORDERBOOK STATE:`, {
+          symbol: event.data.symbol,
+          bidsCount: event.data.bids.length,
+          asksCount: event.data.asks.length,
+          timestamp: event.data.timestamp
+        });
+        if (event.data.symbol === currentSymbol) {
+          const newOrderbookData = {
+            symbol: event.data.symbol,
+            bids: event.data.bids.map(([price, qty]) => [price.toString(), qty.toString()] as [string, string]),
+            asks: event.data.asks.map(([price, qty]) => [price.toString(), qty.toString()] as [string, string]),
+            timestamp: event.data.timestamp
+          };
+          setOrderbookData(newOrderbookData);
+          console.log(`[MarketPanel] STATE UPDATED! orderbookData set to:`, newOrderbookData);
+          setConnectionStatus(prev => ({ ...prev, orderbook: true }));
+        }
+        break;
         
       case 'connection':
         console.log(`[MarketPanel] Connection state changed: ${event.state} for ${event.url}`);
@@ -143,11 +194,14 @@ const MarketPanel: React.FC = () => {
 
   // Setup market data subscription
   const setupMarketDataSubscription = useCallback(async (symbol: string) => {
+    console.log(`[MarketPanel] setupMarketDataSubscription called for ${symbol}, current: ${selectedSymbolRef.current}, ref: ${marketDataSubscriptionRef.current}`);
+    
     if (!symbol) {
       console.warn('[MarketPanel] Skipping market data subscription: empty symbol');
       return;
     }
     if (marketDataSubscriptionRef.current && selectedSymbolRef.current === symbol) {
+      console.log('[MarketPanel] Already subscribed to this symbol, skipping');
       return; // already subscribed
     }
     try {
@@ -160,6 +214,7 @@ const MarketPanel: React.FC = () => {
       // Clean up previous subscription (let service resolve symbol from subscriber id)
       if (marketDataSubscriptionRef.current) {
         marketDataService.unsubscribe(marketDataSubscriptionRef.current);
+        marketDataSubscriptionRef.current = null;
       }
       
       // Create new subscription
@@ -167,7 +222,7 @@ const MarketPanel: React.FC = () => {
         {
           symbol,
           includeTicker: true,
-          includeOrderbook: false, // orderbook UI removed, backend subscription disabled
+          includeOrderbook: true,
           includeKlines: false, // Chart data is handled separately
         },
         {
@@ -178,11 +233,28 @@ const MarketPanel: React.FC = () => {
       
       marketDataSubscriptionRef.current = subscriptionId;
       
-  // Load initial data (ticker only)
+  // Load initial data (ticker and orderbook)
   const tickerData = await marketDataService.getTicker(symbol);
+  const orderbookData = await marketDataService.getOrderBook(symbol);
       
   if (tickerData) {
+    setTickerData({
+      symbol: tickerData.symbol,
+      price: tickerData.price.toString(),
+      change: tickerData.change.toString(),
+      changePercent: tickerData.changePercent.toString() + '%'
+    });
     setConnectionStatus(prev => ({ ...prev, ticker: true }));
+  }
+
+  if (orderbookData) {
+    setOrderbookData({
+      symbol: orderbookData.symbol,
+      bids: orderbookData.bids.map(([price, qty]) => [price.toString(), qty.toString()]),
+      asks: orderbookData.asks.map(([price, qty]) => [price.toString(), qty.toString()]),
+      timestamp: orderbookData.timestamp
+    });
+    setConnectionStatus(prev => ({ ...prev, orderbook: true }));
   }
       
     } catch (error) {
@@ -234,25 +306,43 @@ const MarketPanel: React.FC = () => {
   // Handle symbol changes
   useEffect(() => {
     setupMarketDataSubscription(selectedSymbol);
-  }, [selectedSymbol, setupMarketDataSubscription]);
+  }, [selectedSymbol]); // Remove setupMarketDataSubscription from deps to prevent cycle
 
   // Handle interval changes
   useEffect(() => {
     setupChartDataSubscription(selectedSymbol, selectedInterval);
-  }, [selectedSymbol, selectedInterval, setupChartDataSubscription]);
+  }, [selectedSymbol, selectedInterval]); // Remove setupChartDataSubscription from deps to prevent cycle
 
   // Cleanup on unmount
   useEffect(() => {
+    let isMounted = true;
+    
     return () => {
-      console.log('[MarketPanel] Cleaning up subscriptions');
-      if (marketDataSubscriptionRef.current) {
-        marketDataService.unsubscribe(marketDataSubscriptionRef.current);
+      isMounted = false;
+      
+      // In development/StrictMode, avoid cleanup to prevent double mounting issues
+      const isDevelopment = import.meta.env.DEV;
+      if (isDevelopment) {
+        console.log('[MarketPanel] Skipping cleanup in development mode (StrictMode protection)');
+        return;
       }
-      if (chartDataSubscriptionRef.current) {
-        chartDataService.unsubscribe(chartDataSubscriptionRef.current);
-      }
+      
+      // Only cleanup in production after a delay to ensure component is truly unmounting
+      window.setTimeout(() => {
+        if (!isMounted) {
+          console.log('[MarketPanel] Cleaning up subscriptions (production)');
+          if (marketDataSubscriptionRef.current) {
+            marketDataService.unsubscribe(marketDataSubscriptionRef.current);
+            marketDataSubscriptionRef.current = null;
+          }
+          if (chartDataSubscriptionRef.current) {
+            chartDataService.unsubscribe(chartDataSubscriptionRef.current);
+            chartDataSubscriptionRef.current = null;
+          }
+        }
+      }, 500);
     };
-  }, [selectedSymbol]);
+  }, []); // Empty dependency array - cleanup only on unmount
 
   const handleSymbolChange = useCallback((newSymbol: string) => {
     console.log(`[MarketPanel] Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
@@ -277,7 +367,7 @@ const MarketPanel: React.FC = () => {
       setupMarketDataSubscription(selectedSymbol),
       setupChartDataSubscription(selectedSymbol, selectedInterval)
     ]);
-  }, [selectedSymbol, selectedInterval, setupMarketDataSubscription, setupChartDataSubscription]);
+  }, [selectedSymbol, selectedInterval]); // Remove function deps to prevent cycles
 
   const handleRefreshChart = useCallback(async () => {
     try {
@@ -303,6 +393,15 @@ const MarketPanel: React.FC = () => {
   };
 
   const connectionDisplay = getConnectionDisplay();
+
+  // Debug log for re-renders
+  console.log(`[MarketPanel] RENDER:`, {
+    tickerData,
+    orderbookData,
+    connectionStatus,
+    selectedSymbol,
+    renderTime: new Date().toISOString()
+  });
 
   return (
     <Stack gap="md" p="md">
@@ -397,6 +496,41 @@ const MarketPanel: React.FC = () => {
       )}
       
   {/* Price Display removed */}
+      
+      {/* Market Data Display */}
+      <Grid>
+        <Grid.Col span={6}>
+          {tickerData ? (
+            <PriceDisplay 
+              key={`ticker-${tickerData.symbol}-${tickerData.price}`} 
+              ticker={tickerData} 
+            />
+          ) : (
+            <Paper p="xl" withBorder>
+              <Group justify="center" gap="md">
+                <Loader size="md" />
+                <Text>Ładowanie danych cenowych...</Text>
+              </Group>
+            </Paper>
+          )}
+        </Grid.Col>
+        <Grid.Col span={6}>
+          {orderbookData ? (
+            <OrderBookDisplay 
+              key={`orderbook-${orderbookData.symbol}-${orderbookData.timestamp}`} 
+              orderbook={orderbookData} 
+              maxRows={8} 
+            />
+          ) : (
+            <Paper p="xl" withBorder>
+              <Group justify="center" gap="md">
+                <Loader size="md" />
+                <Text>Ładowanie księgi zleceń...</Text>
+              </Group>
+            </Paper>
+          )}
+        </Grid.Col>
+      </Grid>
       
       {/* Chart Controls */}
       <Group justify="space-between">
