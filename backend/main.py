@@ -631,7 +631,16 @@ async def _start_user_stream(force: bool = False):
         raise RuntimeError("Failed to obtain listenKey")
     _user_stream_listen_key = result['listenKey']
     _user_stream_last_keepalive = asyncio.get_event_loop().time()
-    logger.info(f"USER_STREAM: started listenKey={_user_stream_listen_key}")
+    try:
+        # Log only short fingerprint for diagnostics, not the listenKey itself
+        import hashlib
+        if _user_stream_listen_key:
+            fp = hashlib.sha256(_user_stream_listen_key.encode('utf-8')).hexdigest()[:8]
+            logger.info(f"USER_STREAM: started (listenKey_fp={fp})")
+        else:
+            logger.info("USER_STREAM: started (listenKey masked)")
+    except Exception:
+        logger.info("USER_STREAM: started (listenKey masked)")
     # start keepalive task if not running
     if not _user_stream_keepalive_task or _user_stream_keepalive_task.done():
         _user_stream_keepalive_task = asyncio.create_task(_user_stream_keepalive_loop())
@@ -889,7 +898,13 @@ async def user_data_stream_listener():
                 await asyncio.sleep(reconnect_delay)
                 continue
         ws_url = base_ws_url.rstrip('/') + f"/ws/{_user_stream_listen_key}"
-        logger.info(f"USER_WS: connecting to {ws_url}")
+        # Avoid logging full listenKey/URL; log only a short fingerprint for diagnostics
+        try:
+            import hashlib
+            fp = hashlib.sha256((_user_stream_listen_key or '').encode('utf-8')).hexdigest()[:8]
+            logger.info(f"USER_WS: connecting to user stream (fp={fp})")
+        except Exception:
+            logger.info("USER_WS: connecting to user stream (listenKey masked)")
         try:
             async with websockets.connect(ws_url, ping_interval=20, ping_timeout=10) as ws:
                 logger.info("USER_WS: connected")

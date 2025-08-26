@@ -72,6 +72,8 @@ class MarketDataService {
   private subscribers: Map<string, MarketDataSubscriber> = new Map();
   private activeSubscriptions: Map<string, SubscriptionConfig> = new Map();
   private wsConnections: Map<string, string> = new Map(); // symbol -> connectionId
+  // Map subscriber -> symbol to allow precise cleanup decisions
+  private subscriberSymbols: Map<string, string> = new Map();
   
   // URLs from environment
   private binanceWsUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
@@ -97,6 +99,7 @@ class MarketDataService {
   public subscribe(config: SubscriptionConfig, subscriber: MarketDataSubscriber): string {
     this.subscribers.set(subscriber.id, subscriber);
     this.activeSubscriptions.set(config.symbol, config);
+  this.subscriberSymbols.set(subscriber.id, config.symbol);
     
     this.log(`New subscription for ${config.symbol} by ${subscriber.id}`);
     
@@ -113,19 +116,23 @@ class MarketDataService {
    * Unsubscribe from market data
    */
   public unsubscribe(subscriberId: string, symbol?: string): void {
+    // Remove subscriber
     this.subscribers.delete(subscriberId);
-    
-    if (symbol) {
-      // Check if anyone else is still subscribed to this symbol
-      const hasOtherSubscribers = Array.from(this.subscribers.values())
-        .some(sub => this.getSymbolForSubscriber(sub.id) === symbol);
-      
-      if (!hasOtherSubscribers) {
-        this.cleanupSubscription(symbol);
+    // Determine symbol to consider for cleanup
+    const mappedSymbol = this.subscriberSymbols.get(subscriberId);
+    this.subscriberSymbols.delete(subscriberId);
+    const targetSymbol = symbol || mappedSymbol || null;
+
+    if (targetSymbol) {
+      // Check if any other subscriber is still interested in this symbol
+      const hasOtherForSymbol = Array.from(this.subscriberSymbols.values())
+        .some(s => s === targetSymbol);
+      if (!hasOtherForSymbol) {
+        this.cleanupSubscription(targetSymbol);
       }
     }
-    
-    this.log(`Unsubscribed ${subscriberId} from ${symbol || 'all'}`);
+
+    this.log(`Unsubscribed ${subscriberId} from ${symbol || mappedSymbol || 'all'}`);
   }
 
   /**
@@ -273,16 +280,20 @@ class MarketDataService {
         
         // Send subscription message when connected
         if (state === ConnectionState.CONNECTED) {
+          // Backend expects shape: { type: 'subscribe', symbol: 'BTCUSDT' }
           connectionManager.send(this.backendWsUrl, {
-            method: 'subscribe',
-            params: {
-              symbol
-            }
+            type: 'subscribe',
+            symbol
           });
         }
       },
       onError: (error) => this.notifyError(`Backend WebSocket error for ${symbol}`, error)
     });
+    // If already connected, send subscribe immediately (subscribe() only notifies state; double-safety)
+    const st = connectionManager.getState(this.backendWsUrl);
+    if (st === ConnectionState.CONNECTED) {
+      connectionManager.send(this.backendWsUrl, { type: 'subscribe', symbol });
+    }
     
     this.log(`Setup backend WebSocket for ${symbol}`);
   }
@@ -356,6 +367,12 @@ class MarketDataService {
       connectionManager.unsubscribe(connectionId, `binance-${symbol}`);
       connectionManager.unsubscribe(this.backendWsUrl, `backend-${symbol}`);
       this.wsConnections.delete(symbol);
+    }
+    // Proactively inform backend to stop streaming this symbol
+    try {
+      connectionManager.send(this.backendWsUrl, { type: 'unsubscribe', symbol });
+    } catch (_) {
+      // ignore if connection not ready
     }
     
     this.activeSubscriptions.delete(symbol);
@@ -469,13 +486,7 @@ class MarketDataService {
   }
 
   // Utility methods
-  private getSymbolForSubscriber(_subscriberId: string): string | null {
-    for (const [symbol] of this.activeSubscriptions) {
-      // This is a simplified lookup - in real implementation you'd track subscriber-symbol mapping
-      return symbol;
-    }
-    return null;
-  }
+  // getSymbolForSubscriber removed (replaced by subscriberSymbols map directly)
 
   private notifySubscribers(event: MarketDataEvent): void {
     for (const subscriber of this.subscribers.values()) {

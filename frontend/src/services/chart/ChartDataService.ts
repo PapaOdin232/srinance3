@@ -12,6 +12,7 @@
  */
 
 import { marketDataService, type KlineData, type MarketDataEvent, type MarketDataSubscriber } from '../market/MarketDataService';
+import BinanceWSClient from '../binanceWSClient';
 import type { CandlestickData } from 'lightweight-charts';
 
 export interface ChartDataSubscriber {
@@ -43,6 +44,7 @@ class ChartDataService implements MarketDataSubscriber {
   private subscribers: Map<string, ChartDataSubscriber> = new Map();
   private chartCache: Map<string, ChartDataCache> = new Map();
   private activeSubscriptions: Map<string, ChartConfig> = new Map();
+  private wsClients: Map<string, BinanceWSClient> = new Map(); // key = symbol:interval
   
   // Common trading intervals in order of popularity
   private readonly commonIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
@@ -103,6 +105,12 @@ class ChartDataService implements MarketDataSubscriber {
       if (!hasSubscribers) {
         this.cleanupSubscription(config);
         this.activeSubscriptions.delete(key);
+        // Close WS client if exists
+        const ws = this.wsClients.get(key);
+        if (ws) {
+          ws.destroy();
+          this.wsClients.delete(key);
+        }
       }
     }
     
@@ -241,9 +249,33 @@ class ChartDataService implements MarketDataSubscriber {
 
   private setupRealTimeUpdates(config: ChartConfig): void {
     const { symbol, interval } = config;
-    
-    // Real-time updates are handled through the onEvent method
-    // when MarketDataService sends kline events
+    const key = this.getKey(symbol, interval);
+
+    // Avoid duplicate clients
+    if (this.wsClients.has(key)) {
+      return;
+    }
+  // Open direct Binance WS for snappy real-time klines
+    const client = new BinanceWSClient(symbol, interval);
+    client.addListener((data) => {
+      if (data && data.e === 'kline' && data.k) {
+        const kline: KlineData = {
+          symbol: symbol,
+          interval: data.k.i,
+          openTime: data.k.t,
+          closeTime: data.k.T,
+          open: parseFloat(data.k.o),
+          high: parseFloat(data.k.h),
+          low: parseFloat(data.k.l),
+          close: parseFloat(data.k.c),
+          volume: parseFloat(data.k.v),
+          timestamp: Date.now()
+        };
+        this.handleKlineUpdate(kline);
+      }
+    });
+
+    this.wsClients.set(key, client);
     this.log(`Real-time updates enabled for ${symbol} ${interval}`);
   }
 
@@ -330,8 +362,13 @@ class ChartDataService implements MarketDataSubscriber {
   private cleanupSubscription(config: ChartConfig): void {
     const key = this.getKey(config.symbol, config.interval);
     
-    // Keep cache but remove from active subscriptions
-    // Cache will be cleaned up by TTL
+    // Keep cache but remove from active subscriptions (cache cleaned by TTL)
+    // Close dedicated WS client
+    const ws = this.wsClients.get(key);
+    if (ws) {
+      ws.destroy();
+      this.wsClients.delete(key);
+    }
     
     this.log(`Cleaned up subscription for ${key}`);
   }

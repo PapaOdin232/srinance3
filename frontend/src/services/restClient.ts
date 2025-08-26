@@ -123,10 +123,57 @@ export interface OrderStatusResponse {
 }
 
 // Przykładowe funkcje API
-export async function getAccount() {
+export interface GetAccountOptions {
+  force?: boolean;
+  signal?: AbortSignal;
+}
+
+export async function getAccount(options: GetAccountOptions = {}) {
   try {
-    const res = await api.get<AccountResponse>('/account');
-    return res.data;
+    // Prosty cache + deduplikacja in-flight, aby uniknąć wielokrotnych wywołań (np. StrictMode w DEV)
+    type CacheEntry = { time: number; data: AccountResponse };
+    const g = (globalThis as any);
+    g.__ACCOUNT_CACHE = g.__ACCOUNT_CACHE || (null as CacheEntry | null);
+    g.__ACCOUNT_INFLIGHT = g.__ACCOUNT_INFLIGHT || (null as Promise<AccountResponse> | null);
+
+    const now = Date.now();
+    const TTL_MS = 4000; // 4 sekundy wystarczą, by stłumić duplikaty
+    const cache: CacheEntry | null = g.__ACCOUNT_CACHE;
+
+    // Ścieżka "force": pomiń cache/TTL i wykonaj świeże żądanie (nie nadpisuj globalnego inflight)
+    if (options.force) {
+      const cfg: any = {};
+      if (options.signal) cfg.signal = options.signal;
+      const res = await api.get<AccountResponse>('/account', cfg);
+      const data = res.data;
+      g.__ACCOUNT_CACHE = { time: Date.now(), data } as CacheEntry;
+      return data;
+    }
+
+    // Cache TTL
+    if (cache && now - cache.time < TTL_MS) {
+      return cache.data as AccountResponse;
+    }
+
+    // Deduplikuj równoczesne żądania
+    if (g.__ACCOUNT_INFLIGHT) {
+      return (await g.__ACCOUNT_INFLIGHT) as AccountResponse;
+    }
+
+  g.__ACCOUNT_INFLIGHT = (async () => {
+      try {
+    const cfg: any = {};
+    if (options.signal) cfg.signal = options.signal;
+    const res = await api.get<AccountResponse>('/account', cfg);
+        const data = res.data;
+        g.__ACCOUNT_CACHE = { time: Date.now(), data } as CacheEntry;
+        return data;
+      } finally {
+        g.__ACCOUNT_INFLIGHT = null;
+      }
+    })();
+
+    return (await g.__ACCOUNT_INFLIGHT) as AccountResponse;
   } catch (err) {
     handleError(err);
   }
@@ -163,7 +210,7 @@ export async function getAccountBalance(asset: string) {
 
 export async function getOrderbook(symbol: string) {
   try {
-    const res = await api.get<OrderbookResponse>(`/orderbook?symbol=${symbol}`);
+  const res = await api.get<OrderbookResponse>(`/orderbook?symbol=${encodeURIComponent(symbol)}`);
     return res.data;
   } catch (err) {
     handleError(err);

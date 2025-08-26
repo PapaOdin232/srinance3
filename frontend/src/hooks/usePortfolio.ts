@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getAccount } from '../services/restClient';
 import type { AccountResponse, Balance } from '../services/restClient';
 import type { PortfolioBalance, MiCAComplianceInfo } from '../types/portfolio';
@@ -59,11 +59,11 @@ export const usePortfolio = (): UsePortfolioReturn => {
     };
   }, []);
 
-  const fetchAccountData = useCallback(async () => {
+  const fetchAccountData = useCallback(async (opts?: { force?: boolean; signal?: AbortSignal }) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getAccount();
+      const data = await getAccount({ force: opts?.force, signal: opts?.signal });
       setAccountData(data);
       setLastSyncTime(Date.now());
     } catch (err) {
@@ -73,9 +73,12 @@ export const usePortfolio = (): UsePortfolioReturn => {
     }
   }, []);
 
-  // Initial fetch
+  // Initial fetch (guarded for React.StrictMode double-invoke in DEV)
+  const didInitRef = useRef(false);
   useEffect(() => {
-    fetchAccountData();
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+  fetchAccountData();
   }, [fetchAccountData]);
 
   // Fiat currencies that need special handling (inverted USD pairs)
@@ -218,8 +221,8 @@ export const usePortfolio = (): UsePortfolioReturn => {
     balances,
     loading,
     error,
-    accountData,
-    refetch: fetchAccountData,
+  accountData,
+  refetch: () => fetchAccountData({ force: true }),
     totalValue: throttledTotalValue,
     totalChange24h,
     isConnected,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo, useEffect } from 'react';
+import React, { useState, useMemo, memo, useEffect, useRef, useCallback } from 'react';
 import {
   Table,
   TextInput,
@@ -85,6 +85,18 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
   // Hook do animacji zmian cen bazujący na faktycznie renderowanych wierszach
   const priceChanges = usePriceChangeAnimation(displayAssets);
 
+  // Debounce wybór aktywa, aby nie spamować subskrypcjami WS (wymóg: 250ms)
+  const selectDebounceRef = useRef<number | null>(null);
+  const handleAssetSelectDebounced = useCallback((asset: Asset) => {
+    if (selectDebounceRef.current) {
+      clearTimeout(selectDebounceRef.current);
+      selectDebounceRef.current = null;
+    }
+    selectDebounceRef.current = window.setTimeout(() => {
+      onAssetSelect(asset);
+    }, 250);
+  }, [onAssetSelect]);
+
   // Definicja kolumn dla tabeli
   const columns = useMemo(
     () => [
@@ -160,7 +172,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
           <Button
             size="xs"
             variant={selectedAsset === info.row.original.symbol ? 'filled' : 'outline'}
-            onClick={() => onAssetSelect(info.row.original)}
+            onClick={() => handleAssetSelectDebounced(info.row.original)}
           >
             {selectedAsset === info.row.original.symbol ? 'Wybrano' : 'Wybierz'}
           </Button>

@@ -30,17 +30,21 @@ class BinanceRESTClient:
         self._ticker24_all_cache_time = None
         self._ticker24_all_cache_ttl = 5  # 5 seconds TTL
 
-        def _mask(s: str, show: int = 4):
-            if not s:
-                return "(empty)"
-            if len(s) <= show * 2:
-                return s[0] + "***" + s[-1]
-            return s[:show] + "***" + s[-show:]
-
-        # Use module logger instead of print
+        # Use module logger instead of print; do NOT log secrets
         logger = logging.getLogger(__name__)
-        logger.debug("[BinanceRESTClient] BINANCE_API_KEY: %s", _mask(self.api_key))
-        logger.debug("[BinanceRESTClient] BINANCE_API_SECRET: %s", _mask(self.api_secret))
+        try:
+            import hashlib
+            def _fingerprint(s: str) -> str:
+                if not s:
+                    return "none"
+                return hashlib.sha256(s.encode("utf-8")).hexdigest()[:8]
+            logger.debug(
+                "[BinanceRESTClient] API credentials loaded: key=%s secret=%s (key_fp=%s)",
+                bool(self.api_key), bool(self.api_secret), _fingerprint(self.api_key)
+            )
+        except Exception:
+            # Ensure initialization never fails because of logging
+            logger.debug("[BinanceRESTClient] API credentials loaded")
 
     def get_orderbook(self, symbol, limit=10):
         endpoint = "/v3/depth"
