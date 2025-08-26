@@ -19,36 +19,25 @@ import {
   Alert,
   Loader,
   Button,
-  Grid,
   Box,
 } from '@mantine/core';
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { marketDataService, type MarketDataEvent } from '../services/market/MarketDataService';
 import { chartDataService, type ChartDataSubscriber } from '../services/chart/ChartDataService';
 import useLightweightChart from '../hooks/useLightweightChart';
-import { useThrottledState } from '../hooks/useThrottledState';
-import { useThrottledCallback } from '../hooks/useThrottledCallback';
+// useThrottledState removed (ticker UI removed)
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
-import PriceDisplay from './PriceDisplay';
+// PriceDisplay and OrderBook removed per user request
 import IntervalSelector, { type TimeInterval } from './IntervalSelector';
 import IndicatorPanel from './IndicatorPanel';
 import { useAssets } from '../hooks/useAssets';
 import type { Asset } from '../types/asset';
 
 // UI types for display
-interface TickerData {
-  symbol: string;
-  price: string;
-  change: string;
-  changePercent: string;
-}
+// Ticker UI removed
 
-interface OrderBookData {
-  symbol: string;
-  bids: [string, string][];
-  asks: [string, string][];
-}
+// OrderBook UI removed; OrderBookData type omitted
 
 // Connection state for UI
 interface ConnectionStatus {
@@ -58,13 +47,14 @@ interface ConnectionStatus {
 }
 
 const MarketPanel: React.FC = () => {
-  const [ticker, setTicker] = useThrottledState<TickerData | null>(null, 150);
-  const [orderBook, setOrderBook] = useState<OrderBookData | null>(null);
+  // ticker state removed (UI removed)
+  // OrderBook state removed
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
-  const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('1m');
+  const [selectedInterval, setSelectedInterval] = useState<TimeInterval>('5m');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [candlestickData, setCandlestickData] = useState<CandlestickData[]>([]);
+  // debug counter removed
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     ticker: false,
     orderbook: false,
@@ -80,10 +70,7 @@ const MarketPanel: React.FC = () => {
   const selectedSymbolRef = useRef<string>(selectedSymbol);
   const chartDataSubscriberRef = useRef<ChartDataSubscriber | null>(null);
 
-  // Throttled orderbook updates to prevent excessive re-renders
-  const setOrderBookThrottled = useThrottledCallback((newOrderBook: OrderBookData | null) => {
-    setOrderBook(newOrderBook);
-  }, 100);
+  // OrderBook throttling removed
 
   // Keep selectedSymbolRef in sync
   useEffect(() => {
@@ -130,31 +117,18 @@ const MarketPanel: React.FC = () => {
 
   // Market data event handler
   const handleMarketDataEvent = useCallback((event: MarketDataEvent) => {
+  // debug logging removed
     const currentSymbol = selectedSymbolRef.current;
     
     switch (event.type) {
       case 'ticker':
         if (event.data.symbol === currentSymbol) {
-          setTicker({
-            symbol: event.data.symbol,
-            price: event.data.price.toString(),
-            change: event.data.change.toString(),
-            changePercent: `${event.data.changePercent.toFixed(2)}%`
-          });
+          // ticker UI removed — just update connection status
           setConnectionStatus(prev => ({ ...prev, ticker: true }));
         }
         break;
         
-      case 'orderbook':
-        if (event.data.symbol === currentSymbol) {
-          setOrderBookThrottled({
-            symbol: event.data.symbol,
-            bids: event.data.bids.map(([price, qty]) => [price.toString(), qty.toString()]),
-            asks: event.data.asks.map(([price, qty]) => [price.toString(), qty.toString()])
-          });
-          setConnectionStatus(prev => ({ ...prev, orderbook: true }));
-        }
-        break;
+  // orderbook events intentionally ignored (UI removed)
         
       case 'connection':
         console.log(`[MarketPanel] Connection state changed: ${event.state} for ${event.url}`);
@@ -165,7 +139,7 @@ const MarketPanel: React.FC = () => {
         setError(`Błąd danych rynkowych: ${event.context}`);
         break;
     }
-  }, [setTicker, setOrderBookThrottled]);
+  }, []);
 
   // Setup market data subscription
   const setupMarketDataSubscription = useCallback(async (symbol: string) => {
@@ -183,9 +157,9 @@ const MarketPanel: React.FC = () => {
       
       console.log(`[MarketPanel] Setting up market data subscription for ${symbol}`);
       
-      // Clean up previous subscription
+      // Clean up previous subscription (let service resolve symbol from subscriber id)
       if (marketDataSubscriptionRef.current) {
-        marketDataService.unsubscribe(marketDataSubscriptionRef.current, selectedSymbolRef.current);
+        marketDataService.unsubscribe(marketDataSubscriptionRef.current);
       }
       
       // Create new subscription
@@ -193,9 +167,8 @@ const MarketPanel: React.FC = () => {
         {
           symbol,
           includeTicker: true,
-          includeOrderbook: true,
+          includeOrderbook: false, // orderbook UI removed, backend subscription disabled
           includeKlines: false, // Chart data is handled separately
-          orderbookLimit: 100
         },
         {
           id: `market-panel-${symbol}`,
@@ -205,30 +178,12 @@ const MarketPanel: React.FC = () => {
       
       marketDataSubscriptionRef.current = subscriptionId;
       
-      // Load initial data
-      const [tickerData, orderbookData] = await Promise.all([
-        marketDataService.getTicker(symbol),
-        marketDataService.getOrderBook(symbol)
-      ]);
+  // Load initial data (ticker only)
+  const tickerData = await marketDataService.getTicker(symbol);
       
-      if (tickerData) {
-        setTicker({
-          symbol: tickerData.symbol,
-          price: tickerData.price.toString(),
-          change: tickerData.change.toString(),
-          changePercent: `${tickerData.changePercent.toFixed(2)}%`
-        });
-  setConnectionStatus(prev => ({ ...prev, ticker: true }));
-      }
-      
-      if (orderbookData) {
-        setOrderBook({
-          symbol: orderbookData.symbol,
-          bids: orderbookData.bids.map(([price, qty]) => [price.toString(), qty.toString()]),
-          asks: orderbookData.asks.map(([price, qty]) => [price.toString(), qty.toString()])
-        });
-  setConnectionStatus(prev => ({ ...prev, orderbook: true }));
-      }
+  if (tickerData) {
+    setConnectionStatus(prev => ({ ...prev, ticker: true }));
+  }
       
     } catch (error) {
       console.error(`[MarketPanel] Failed to setup market data for ${symbol}:`, error);
@@ -236,17 +191,12 @@ const MarketPanel: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [handleMarketDataEvent, setTicker]);
+  }, [handleMarketDataEvent]);
 
   // Setup chart data subscription  
   const setupChartDataSubscription = useCallback(async (symbol: string, interval: TimeInterval) => {
     if (!symbol) {
       console.warn('[MarketPanel] Skipping chart subscription: empty symbol');
-      return;
-    }
-    const existingId = chartDataSubscriptionRef.current;
-    if (existingId && chartDataSubscriberRef.current && chartDataSubscriberRef.current.id === existingId) {
-      // Already subscribed with current subscriber
       return;
     }
     try {
@@ -262,13 +212,13 @@ const MarketPanel: React.FC = () => {
       setCandlestickData([]);
       
       // Create new subscription
-      await chartDataService.subscribe(
+    await chartDataService.subscribe(
         {
           symbol,
           interval,
           historicalLimit: 500,
           enableRealTime: true,
-          preloadIntervals: ['1m', '5m', '15m', '1h'] // Preload common intervals
+      // No preloading of other intervals at init to reduce REST load
         },
         chartDataSubscriberRef.current!
       );
@@ -296,7 +246,7 @@ const MarketPanel: React.FC = () => {
     return () => {
       console.log('[MarketPanel] Cleaning up subscriptions');
       if (marketDataSubscriptionRef.current) {
-        marketDataService.unsubscribe(marketDataSubscriptionRef.current, selectedSymbol);
+        marketDataService.unsubscribe(marketDataSubscriptionRef.current);
       }
       if (chartDataSubscriptionRef.current) {
         chartDataService.unsubscribe(chartDataSubscriptionRef.current);
@@ -306,12 +256,10 @@ const MarketPanel: React.FC = () => {
 
   const handleSymbolChange = useCallback((newSymbol: string) => {
     console.log(`[MarketPanel] Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
-    setSelectedSymbol(newSymbol);
-    setTicker(null);
-    setOrderBook(null);
+  setSelectedSymbol(newSymbol);
     setError(null);
     setConnectionStatus({ ticker: false, orderbook: false, chart: false });
-  }, [setTicker]); // Remove selectedSymbol dependency to prevent cycle
+  }, []); // Remove selectedSymbol dependency to prevent cycle
 
   const handleIntervalChange = useCallback((newInterval: TimeInterval) => {
     console.log(`[MarketPanel] Interval changed: ${selectedSymbolRef.current} -> ${newInterval}`);
@@ -448,10 +396,7 @@ const MarketPanel: React.FC = () => {
         </Paper>
       )}
       
-      {/* Price Display */}
-      {ticker && (
-        <PriceDisplay ticker={ticker} />
-      )}
+  {/* Price Display removed */}
       
       {/* Chart Controls */}
       <Group justify="space-between">
@@ -498,72 +443,9 @@ const MarketPanel: React.FC = () => {
         historicalData={candlestickData}
       />
       
-      {/* Order Book */}
-      {orderBook && (
-        <Paper p="md" withBorder>
-          <Stack gap="md">
-            <Group justify="space-between" align="center">
-              <Title order={3}>Księga Zleceń - {orderBook.symbol}</Title>
-              <Badge 
-                variant="light" 
-                color={connectionStatus.orderbook ? 'teal' : 'red'} 
-                size="sm"
-              >
-                {connectionStatus.orderbook ? 'LIVE' : 'OFFLINE'}
-              </Badge>
-            </Group>
-            <Grid>
-              <Grid.Col span={6}>
-                <Stack gap="xs">
-                  <Text fw={600} c="red">Asks (Sprzedaż)</Text>
-                  <Stack gap={2}>
-                    {(orderBook.asks || []).slice(0, 10).map((ask, i) => (
-                      <Group key={i} justify="space-between">
-                        <Text size="sm" ff="monospace" c="red" fw={600}>
-                          {parseFloat(ask[0]).toFixed(2)}
-                        </Text>
-                        <Text size="sm" ff="monospace">
-                          {parseFloat(ask[1]).toFixed(6)}
-                        </Text>
-                      </Group>
-                    ))}
-                  </Stack>
-                </Stack>
-              </Grid.Col>
-              <Grid.Col span={6}>
-                <Stack gap="xs">
-                  <Text fw={600} c="teal">Bids (Kupno)</Text>
-                  <Stack gap={2}>
-                    {(orderBook.bids || []).slice(0, 10).map((bid, i) => (
-                      <Group key={i} justify="space-between">
-                        <Text size="sm" ff="monospace" c="teal" fw={600}>
-                          {parseFloat(bid[0]).toFixed(2)}
-                        </Text>
-                        <Text size="sm" ff="monospace">
-                          {parseFloat(bid[1]).toFixed(6)}
-                        </Text>
-                      </Group>
-                    ))}
-                  </Stack>
-                </Stack>
-              </Grid.Col>
-            </Grid>
-          </Stack>
-        </Paper>
-      )}
+  {/* Order Book removed */}
       
-      {/* Debug Info in Development */}
-      {import.meta.env.DEV && (
-        <Paper p="sm" withBorder bg="gray.0">
-          <Text size="xs" c="dimmed">
-            Debug: Market={marketDataSubscriptionRef.current} | 
-            Chart={chartDataSubscriptionRef.current} | 
-            Connections: T={connectionStatus.ticker ? '✓' : '✗'} 
-            O={connectionStatus.orderbook ? '✓' : '✗'} 
-            C={connectionStatus.chart ? '✓' : '✗'}
-          </Text>
-        </Paper>
-      )}
+  {/* Debug removed */}
     </Stack>
   );
 };
