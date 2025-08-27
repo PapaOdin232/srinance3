@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
-import type { IChartApi, CandlestickData } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
 import { createDebugLogger } from '../utils/debugLogger';
 
 const logger = createDebugLogger('SimpleChart');
@@ -22,10 +22,12 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<any>(null);
+  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // keep last applied history fingerprint to avoid redundant setData
   const lastHistoryFingerprintRef = useRef<string | null>(null);
+  // track if fitContent was called to avoid redundant calls
+  const fittedRef = useRef(false);
 
   useEffect(() => {
     // Cleanup function to prevent memory leaks
@@ -41,113 +43,100 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
     };
   }, []);
 
-  // Separate useEffect for chart creation to avoid re-creation on data changes
-  useEffect(() => {
-    if (!containerRef.current || chartRef.current) return;
+  // Separate useLayoutEffect for chart creation to avoid re-creation on data changes
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
 
-    // Use setTimeout to ensure container is in the DOM and has dimensions
-    const timerId = setTimeout(() => {
-      const container = containerRef.current;
-      if (!container || chartRef.current) return; // Double check to avoid duplicate creation
+    const container = containerRef.current;
+    const width = Math.max(300, container.clientWidth || 600);
+    const height = Math.max(300, container.clientHeight || 400);
 
-      // Log container dimensions for debugging
-      const rect = container.getBoundingClientRect();
-      logger.log('Container dimensions before chart creation:', {
-        width: rect.width,
-        height: rect.height
+    try {
+      // Create chart with explicit dimensions
+      const chart = createChart(container, {
+        width,
+        height,
+        layout: {
+          background: { color: '#0D1117' },
+          textColor: '#F0F6FC',
+        },
+        grid: {
+          vertLines: { color: 'rgba(56, 139, 253, 0.08)' },
+          horzLines: { color: 'rgba(56, 139, 253, 0.08)' },
+        },
+        timeScale: {
+          timeVisible: true,
+          borderColor: '#30363D',
+        },
+        rightPriceScale: {
+          borderColor: '#30363D',
+        }
       });
 
-      // Force minimum dimensions if needed
-      if (rect.width === 0) {
-        container.style.width = '100%';
+      // Add candlestick series
+      const series = chart.addSeries(CandlestickSeries, {
+        upColor: '#26A69A',
+        downColor: '#EF5350',
+        wickUpColor: '#26A69A',
+        wickDownColor: '#EF5350',
+      });
+
+      // Store refs
+      chartRef.current = chart;
+      seriesRef.current = series;
+
+      // Set data after chart is created
+      if (data.length > 0) {
+        series.setData(data);
+        chart.timeScale().fitContent();
+        fittedRef.current = true;
       }
-      if (rect.height === 0) {
-        container.style.height = '400px';
-      }
 
-      try {
-        // Create chart with explicit dimensions
-        const chart = createChart(container, {
-          width: Math.max(300, rect.width || 600),
-          height: Math.max(300, rect.height || 400),
-          layout: {
-            background: { color: '#0D1117' },
-            textColor: '#F0F6FC',
-          },
-          grid: {
-            vertLines: { color: 'rgba(56, 139, 253, 0.08)' },
-            horzLines: { color: 'rgba(56, 139, 253, 0.08)' },
-          },
-          timeScale: {
-            timeVisible: true,
-            borderColor: '#30363D',
-          },
-          rightPriceScale: {
-            borderColor: '#30363D',
-          }
-        });
+      // Hide loading indicator
+      setIsLoading(false);
 
-        // Add candlestick series
-        const series = chart.addSeries(CandlestickSeries, {
-          upColor: '#26A69A',
-          downColor: '#EF5350',
-          wickUpColor: '#26A69A',
-          wickDownColor: '#EF5350',
-        });
+      // Setup resize handler
+      const handleResize = () => {
+        if (!chartRef.current || !container) return;
 
-        // Store refs
-        chartRef.current = chart;
-        seriesRef.current = series;
+        const rect = container.getBoundingClientRect();
+        const width = Math.floor(rect.width);
+        const height = Math.floor(rect.height);
 
-        // Set data after chart is created
-        if (data.length > 0) {
-          series.setData(data);
-          chart.timeScale().fitContent();
+        if (width > 0 && height > 0) {
+          chartRef.current.resize(width, height);
         }
+      };
 
-        // Hide loading indicator
-        setIsLoading(false);
+      // Use ResizeObserver if available
+      if (typeof ResizeObserver !== 'undefined') {
+        const resizeObserver = new ResizeObserver(() => {
+          window.requestAnimationFrame(handleResize);
+        });
+        resizeObserver.observe(container);
 
-        // Setup resize handler
-        const handleResize = () => {
-          if (!chartRef.current || !container) return;
-
-          const rect = container.getBoundingClientRect();
-          const width = Math.floor(rect.width);
-          const height = Math.floor(rect.height);
-
-          if (width > 0 && height > 0) {
-            chartRef.current.resize(width, height);
+        // Return cleanup function
+        return () => {
+          resizeObserver.disconnect();
+          if (chartRef.current) {
+            chartRef.current.remove();
+            chartRef.current = null;
+          }
+          if (seriesRef.current) {
+            seriesRef.current = null;
           }
         };
-
-        // Use ResizeObserver if available
-        if (typeof ResizeObserver !== 'undefined') {
-          const resizeObserver = new ResizeObserver(() => {
-            window.requestAnimationFrame(handleResize);
-          });
-          resizeObserver.observe(container);
-
-          // Return cleanup function
-          return () => {
-            resizeObserver.disconnect();
-          };
-        }
-
-        // Notify parent component only once after everything is ready
-        setTimeout(() => {
-          if (onChartReady && chartRef.current) {
-            onChartReady(chartRef.current);
-          }
-        }, 100); // Small delay to ensure everything is rendered
-        
-      } catch (error) {
-        logger.error('Error creating chart:', error);
-        setIsLoading(false);
       }
-    }, 100);
 
-    return () => clearTimeout(timerId);
+      // Notify parent component only once after everything is ready
+      if (onChartReady && chartRef.current) {
+        onChartReady(chartRef.current);
+      }
+      
+    } catch (error) {
+      logger.error('Error creating chart:', error);
+      setIsLoading(false);
+    }
   }, []); // Empty dependency array - only run once
 
   // Effect: apply full history when `data` prop changes, but dedupe using fingerprint
@@ -164,7 +153,10 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
 
     try {
       seriesRef.current.setData(data);
-      chartRef.current.timeScale().fitContent();
+      if (!fittedRef.current) {
+        chartRef.current.timeScale().fitContent();
+        fittedRef.current = true;
+      }
       lastHistoryFingerprintRef.current = fingerprint;
       logger.log(`Updated chart with ${data.length} data points (fingerprint=${fingerprint})`);
     } catch (error) {
