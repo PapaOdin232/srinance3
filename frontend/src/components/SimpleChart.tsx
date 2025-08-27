@@ -5,6 +5,68 @@ import { createDebugLogger } from '../utils/debugLogger';
 
 const logger = createDebugLogger('SimpleChart');
 
+// Color schemes definition
+const colorSchemes = {
+  default: {
+    upColor: '#26A69A',
+    downColor: '#EF5350',
+    wickUpColor: '#26A69A',
+    wickDownColor: '#EF5350',
+    borderUpColor: '#26A69A',
+    borderDownColor: '#EF5350'
+  },
+  classic: {
+    upColor: '#00C851',
+    downColor: '#FF4444',
+    wickUpColor: '#00C851',
+    wickDownColor: '#FF4444',
+    borderUpColor: '#00C851',
+    borderDownColor: '#FF4444'
+  },
+  modern: {
+    upColor: '#10B981',
+    downColor: '#F59E0B',
+    wickUpColor: '#10B981',
+    wickDownColor: '#F59E0B',
+    borderUpColor: '#10B981',
+    borderDownColor: '#F59E0B'
+  },
+  minimal: {
+    upColor: '#4ADE80',
+    downColor: '#F87171',
+    wickUpColor: '#4ADE80',
+    wickDownColor: '#F87171',
+    borderUpColor: '#4ADE80',
+    borderDownColor: '#F87171'
+  }
+} as const;
+
+// Theme configurations
+const getThemeConfig = (isDarkTheme: boolean) => ({
+  layout: {
+    background: { color: isDarkTheme ? '#0D1117' : '#FFFFFF' },
+    textColor: isDarkTheme ? '#F0F6FC' : '#24292F',
+  },
+  grid: {
+    vertLines: { color: isDarkTheme ? 'rgba(56, 139, 253, 0.08)' : 'rgba(56, 139, 253, 0.15)' },
+    horzLines: { color: isDarkTheme ? 'rgba(56, 139, 253, 0.08)' : 'rgba(56, 139, 253, 0.15)' },
+  },
+  timeScale: {
+    timeVisible: true,
+    borderColor: isDarkTheme ? '#30363D' : '#D0D7DE',
+    rightBarStaysOnScroll: true,
+    rightOffset: 5,
+  },
+  rightPriceScale: {
+    borderColor: isDarkTheme ? '#30363D' : '#D0D7DE',
+  },
+  crosshair: {
+    mode: 1 as const,
+    vertLine: { color: 'rgba(56, 139, 253, 0.5)', width: 1 as const, style: 1 as const },
+    horzLine: { color: 'rgba(56, 139, 253, 0.5)', width: 1 as const, style: 1 as const },
+  },
+});
+
 interface ExtendedCandlestickData extends CandlestickData {
   isClosed?: boolean;  // odpowiednik pola 'x' z Binance WebSocket
   volume?: number;     // opcjonalne pole wolumenu
@@ -22,6 +84,10 @@ interface SimpleChartProps {
     firstCandleTime: CandlestickData['time']
   ) => Promise<CandlestickData[]>;
   onChartReady?: (chart: IChartApi) => void;
+  // Chart appearance settings
+  isDarkTheme?: boolean;
+  colorScheme?: 'default' | 'classic' | 'modern' | 'minimal';
+  showVolume?: boolean;
 }
 
 export const SimpleChart: React.FC<SimpleChartProps> = ({
@@ -31,7 +97,10 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   height = '400px',
   visibleCandlesCount = 100,
   onLoadMoreHistory,
-  onChartReady
+  onChartReady,
+  isDarkTheme = true,
+  colorScheme = 'default',
+  showVolume = true
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -104,40 +173,42 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
     const height = Math.max(300, container.clientHeight || 400);
 
     try {
-      // Create chart with explicit dimensions
+      // Create chart with dynamic theme configuration
+      const themeConfig = getThemeConfig(isDarkTheme);
       const chart = createChart(container, {
         width,
         height,
-        layout: {
-          background: { color: '#0D1117' },
-          textColor: '#F0F6FC',
-        },
-        grid: {
-          vertLines: { color: 'rgba(56, 139, 253, 0.08)' },
-          horzLines: { color: 'rgba(56, 139, 253, 0.08)' },
-        },
-        timeScale: {
-          timeVisible: true,
-          borderColor: '#30363D',
-          rightBarStaysOnScroll: true,
-          rightOffset: 5,
-        },
-        rightPriceScale: {
-          borderColor: '#30363D',
-        },
-        crosshair: {
-          mode: 1,
-          vertLine: { color: 'rgba(56, 139, 253, 0.5)', width: 1, style: 1 },
-          horzLine: { color: 'rgba(56, 139, 253, 0.5)', width: 1, style: 1 },
-        },
+        ...themeConfig,
       });
 
-  // Add candlestick series using standard API
-  const series = chart.addSeries(CandlestickSeries, {} as any);
+      // Add candlestick series with dynamic colors
+      // Disable automatic lastValue label because we create a manual price line (createPriceLine)
+      // to avoid duplicate labels (one from series, one from priceLine)
+      const currentColors = colorSchemes[colorScheme];
+      const series = chart.addSeries(CandlestickSeries, { 
+        lastValueVisible: false,
+        upColor: currentColors.upColor,
+        downColor: currentColors.downColor,
+        wickUpColor: currentColors.wickUpColor,
+        wickDownColor: currentColors.wickDownColor,
+        borderUpColor: currentColors.borderUpColor,
+        borderDownColor: currentColors.borderDownColor,
+      } as any);
 
-  // Add volume histogram series and configure price scale for volume
-  const volumeSeries = chart.addSeries(HistogramSeries, { priceScaleId: 'volume', priceFormat: { type: 'volume' } } as any);
-      chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.7, bottom: 0 }, visible: true, alignLabels: false });
+      // Add volume histogram series and configure price scale for volume
+      const volumeSeries = chart.addSeries(HistogramSeries, { 
+        priceScaleId: 'volume', 
+        priceFormat: { type: 'volume' },
+        lastValueVisible: false, // Disable price line on volume series to avoid duplication
+        priceLineVisible: false,  // Also disable price line explicitly
+        crosshairMarkerVisible: false,  // Disable crosshair marker on volume series
+        visible: showVolume, // Control volume visibility
+      } as any);
+      chart.priceScale('volume').applyOptions({ 
+        scaleMargins: { top: 0.7, bottom: 0 }, 
+        visible: false,  // Hide the volume price scale labels completely
+        alignLabels: false 
+      });
 
       // Store refs
       chartRef.current = chart;
@@ -289,6 +360,37 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
       setIsLoading(false);
     }
   }, []); // Empty dependency array - only run once
+
+  // Effect: Apply theme and color scheme changes
+  useEffect(() => {
+    if (!chartRef.current || !seriesRef.current || !volumeSeriesRef.current) return;
+
+    try {
+      // Update chart theme
+      const themeConfig = getThemeConfig(isDarkTheme);
+      chartRef.current.applyOptions(themeConfig);
+
+      // Update candlestick colors
+      const currentColors = colorSchemes[colorScheme];
+      seriesRef.current.applyOptions({
+        upColor: currentColors.upColor,
+        downColor: currentColors.downColor,
+        wickUpColor: currentColors.wickUpColor,
+        wickDownColor: currentColors.wickDownColor,
+        borderUpColor: currentColors.borderUpColor,
+        borderDownColor: currentColors.borderDownColor,
+      });
+
+      // Update volume visibility
+      volumeSeriesRef.current.applyOptions({
+        visible: showVolume,
+      });
+
+      logger.log(`Applied chart settings: theme=${isDarkTheme ? 'dark' : 'light'}, colorScheme=${colorScheme}, showVolume=${showVolume}`);
+    } catch (error) {
+      logger.error('Error applying chart settings:', error);
+    }
+  }, [isDarkTheme, colorScheme, showVolume, logger]);
 
   // Effect: apply full history when `data` prop changes, but dedupe using fingerprint
   useEffect(() => {

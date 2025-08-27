@@ -87,7 +87,7 @@ const MarketPanel: React.FC = () => {
   // Chart settings state
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [colorScheme, setColorSchemeState] = useState<'default' | 'classic' | 'modern' | 'minimal'>('default');
-  const [showVolume, setShowVolume] = useState(false);
+  const [showVolume, setShowVolume] = useState(true);
   
   // Hook do zarządzania aktywami z Binance API (keeping existing assets functionality)
   const { assets, loading: assetsLoading, error: assetsError, refetch: refetchAssets, isConnected } = useAssets();
@@ -335,22 +335,19 @@ const MarketPanel: React.FC = () => {
     }
   }, [logger]); // Remove chartDataSubscriber dependency
 
-  // Chart settings handlers - temporarily disabled for SimpleChart
+  // Chart settings handlers
   const handleThemeChange = useCallback((isDark: boolean) => {
     setIsDarkTheme(isDark);
-    // setTheme(isDark); // TODO: Implement in SimpleChart
     logger.log(`Theme changed to: ${isDark ? 'dark' : 'light'}`);
   }, [logger]);
 
   const handleColorSchemeChange = useCallback((scheme: 'default' | 'classic' | 'modern' | 'minimal') => {
     setColorSchemeState(scheme);
-    // setColorScheme(scheme); // TODO: Implement in SimpleChart
     logger.log(`Color scheme changed to: ${scheme}`);
   }, [logger]);
 
   const handleVolumeToggle = useCallback((show: boolean) => {
     setShowVolume(show);
-    // toggleVolumeDisplay(show); // TODO: Implement in SimpleChart
     logger.log(`Volume display toggled: ${show}`);
   }, [logger]);
 
@@ -687,6 +684,9 @@ const MarketPanel: React.FC = () => {
             width="100%"
             height="400px"
             visibleCandlesCount={120}
+            isDarkTheme={isDarkTheme}
+            colorScheme={colorScheme}
+            showVolume={showVolume}
             onLoadMoreHistory={async (firstCandleTime) => {
               try {
                 // firstCandleTime from lightweight-charts is seconds or BusinessDay; assume seconds number here
