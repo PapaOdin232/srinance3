@@ -1,5 +1,21 @@
 import '@testing-library/jest-dom';
 
+// Setup import.meta for Vite environment in tests
+(global as any).import = {
+  meta: {
+    env: {
+      DEV: true,
+      PROD: false,
+      VITE_WS_URL: 'ws://localhost:8080',
+      VITE_API_URL: 'http://localhost:3000',
+      VITE_LOG_LEVEL: 'debug',
+      VITE_ENABLE_BINANCE_STREAMS: 'false',
+      VITE_MARKET_QUOTES: 'USDT,BTC,ETH,BNB',
+      VITE_MAX_TICKER_SUBS: '100'
+    }
+  }
+};
+
 // Mock dla HTMLCanvasElement.getContext (Chart.js)
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   value: () => {

@@ -44,6 +44,7 @@ class ChartDataService implements MarketDataSubscriber {
   private subscribers: Map<string, ChartDataSubscriber> = new Map();
   private chartCache: Map<string, ChartDataCache> = new Map();
   private activeSubscriptions: Map<string, ChartConfig> = new Map();
+  private subscriberKeyMap: Map<string, string> = new Map(); // subscriberId -> symbol:interval
   private wsClients: Map<string, BinanceWSClient> = new Map(); // key = symbol:interval
   
   // Common trading intervals in order of popularity
@@ -67,10 +68,14 @@ class ChartDataService implements MarketDataSubscriber {
   public async subscribe(config: ChartConfig, subscriber: ChartDataSubscriber): Promise<void> {
     const key = this.getKey(config.symbol, config.interval);
     
+    this.log(`🔥 SUBSCRIBE CALLED: ${config.symbol} ${config.interval} by ${subscriber.id}`);
+    
     this.subscribers.set(subscriber.id, subscriber);
+    this.subscriberKeyMap.set(subscriber.id, key); // Map subscriber to key
     this.activeSubscriptions.set(key, config);
     
     this.log(`New chart subscription: ${config.symbol} ${config.interval} by ${subscriber.id}`);
+    this.log(`📊 Current subscribers: ${this.subscribers.size}, keys: ${Array.from(this.subscriberKeyMap.entries())}`);
     
     try {
       // Load historical data
@@ -87,6 +92,7 @@ class ChartDataService implements MarketDataSubscriber {
       }
       
     } catch (error) {
+      this.log(`❌ Error in subscribe:`, error);
       this.notifyError(subscriber, `Failed to setup chart for ${config.symbol}`, error as Error);
     }
   }
@@ -95,21 +101,26 @@ class ChartDataService implements MarketDataSubscriber {
    * Unsubscribe from chart data
    */
   public unsubscribe(subscriberId: string): void {
+    const subscriberKey = this.subscriberKeyMap.get(subscriberId);
     this.subscribers.delete(subscriberId);
+    this.subscriberKeyMap.delete(subscriberId);
     
-    // Clean up if no more subscribers for this config
-    for (const [key, config] of this.activeSubscriptions.entries()) {
-      const hasSubscribers = Array.from(this.subscribers.values())
-        .some(sub => this.getSubscriberKey(sub.id) === key);
+    if (subscriberKey) {
+      // Clean up if no more subscribers for this config
+      const hasSubscribers = Array.from(this.subscriberKeyMap.values())
+        .some(key => key === subscriberKey);
       
       if (!hasSubscribers) {
-        this.cleanupSubscription(config);
-        this.activeSubscriptions.delete(key);
-        // Close WS client if exists
-        const ws = this.wsClients.get(key);
-        if (ws) {
-          ws.destroy();
-          this.wsClients.delete(key);
+        const config = this.activeSubscriptions.get(subscriberKey);
+        if (config) {
+          this.cleanupSubscription(config);
+          this.activeSubscriptions.delete(subscriberKey);
+          // Close WS client if exists
+          const ws = this.wsClients.get(subscriberKey);
+          if (ws) {
+            ws.destroy();
+            this.wsClients.delete(subscriberKey);
+          }
         }
       }
     }
@@ -214,10 +225,13 @@ class ChartDataService implements MarketDataSubscriber {
     const { symbol, interval, historicalLimit = 500 } = config;
     const key = this.getKey(symbol, interval);
     
+    this.log(`🔍 LOAD HISTORICAL DATA: ${symbol} ${interval} (limit: ${historicalLimit}, forceRefresh: ${forceRefresh})`);
+    
     // Check cache first (unless forcing refresh)
     if (!forceRefresh) {
       const cached = this.chartCache.get(key);
       if (cached && this.isCacheValid(cached)) {
+        this.log(`📋 Using cached data for ${symbol} ${interval}: ${cached.data.length} points`);
         this.notifyHistoricalData(key, cached.data);
         return;
       }
@@ -227,7 +241,10 @@ class ChartDataService implements MarketDataSubscriber {
     
     try {
       const klineData = await marketDataService.getKlines(symbol, interval, historicalLimit);
+      this.log(`🔥 GOT KLINE DATA: ${klineData.length} points for ${symbol} ${interval}`);
+      
       const chartData = this.convertToChartData(klineData);
+      this.log(`📊 CONVERTED TO CHART DATA: ${chartData.length} points`);
       
       // Cache the data
       this.chartCache.set(key, {
@@ -238,6 +255,7 @@ class ChartDataService implements MarketDataSubscriber {
       });
       
       // Notify subscribers
+      this.log(`🔔 NOTIFYING SUBSCRIBERS for key: ${key}`);
       this.notifyHistoricalData(key, chartData);
       
       this.log(`Loaded ${chartData.length} data points for ${symbol} ${interval}`);
@@ -354,9 +372,8 @@ class ChartDataService implements MarketDataSubscriber {
     return `${symbol}:${interval}`;
   }
 
-  private getSubscriberKey(_subscriberId: string): string {
-    // Simplified - in real implementation you'd track subscriber-key mapping
-    return Array.from(this.activeSubscriptions.keys())[0] || '';
+  private getSubscriberKey(subscriberId: string): string {
+    return this.subscriberKeyMap.get(subscriberId) || '';
   }
 
   private cleanupSubscription(config: ChartConfig): void {
@@ -374,15 +391,27 @@ class ChartDataService implements MarketDataSubscriber {
   }
 
   private notifyHistoricalData(key: string, data: CandlestickData[]): void {
-    for (const subscriber of this.subscribers.values()) {
-      if (this.getSubscriberKey(subscriber.id) === key) {
+    this.log(`🔔 NOTIFY HISTORICAL DATA: key=${key}, dataLength=${data.length}`);
+    this.log(`📋 Available subscribers: ${Array.from(this.subscribers.keys())}`);
+    this.log(`🗺️ Subscriber key mappings: ${Array.from(this.subscriberKeyMap.entries())}`);
+    
+    let notifiedCount = 0;
+    for (const [subscriberId, subscriber] of this.subscribers.entries()) {
+      const subscriberKey = this.getSubscriberKey(subscriberId);
+      this.log(`🔍 Checking subscriber ${subscriberId}: subscriberKey=${subscriberKey}, targetKey=${key}, match=${subscriberKey === key}`);
+      
+      if (subscriberKey === key) {
         try {
+          this.log(`✅ NOTIFYING subscriber ${subscriberId} with ${data.length} historical data points`);
           subscriber.onHistoricalData(data);
+          notifiedCount++;
         } catch (error) {
-          this.log(`Error notifying subscriber ${subscriber.id} historical data:`, error);
+          this.log(`Error notifying subscriber ${subscriberId} historical data:`, error);
         }
       }
     }
+    
+    this.log(`🎯 Notified ${notifiedCount} subscribers for key ${key}`);
   }
 
   private notifyUpdate(key: string, data: CandlestickData): void {

@@ -25,8 +25,10 @@ import {
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { marketDataService, type MarketDataEvent } from '../services/market/MarketDataService';
 import { chartDataService, type ChartDataSubscriber } from '../services/chart/ChartDataService';
-import useLightweightChart from '../hooks/useLightweightChart';
+import SimpleChart from './SimpleChart';
+import ChartSettings from './ChartSettings';
 import { createDebugLogger } from '../utils/debugLogger';
+import '../styles/chart.css';
 // useThrottledState removed (ticker UI removed)
 import type { CandlestickData } from 'lightweight-charts';
 import AssetSelector from './AssetSelector';
@@ -35,6 +37,7 @@ import OrderBookDisplay from './OrderBookDisplay';
 import IntervalSelector, { type TimeInterval } from './IntervalSelector';
 import IndicatorPanel from './IndicatorPanel';
 import { useAssets } from '../hooks/useAssets';
+import useDevToolsDetection from '../hooks/useDevToolsDetection';
 import type { Asset } from '../types/asset';
 
 // UI types for display
@@ -79,8 +82,16 @@ const MarketPanel: React.FC = () => {
     chart: false
   });
   
+  // Chart settings state
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [colorScheme, setColorSchemeState] = useState<'default' | 'classic' | 'modern' | 'minimal'>('default');
+  const [showVolume, setShowVolume] = useState(false);
+  
   // Hook do zarządzania aktywami z Binance API (keeping existing assets functionality)
   const { assets, loading: assetsLoading, error: assetsError, refetch: refetchAssets, isConnected } = useAssets();
+  
+  // DevTools detection for responsive UI adjustments
+  const isDevToolsOpen = useDevToolsDetection();
   
   // Refs for cleanup
   const marketDataSubscriptionRef = useRef<string | null>(null);
@@ -88,15 +99,24 @@ const MarketPanel: React.FC = () => {
   const selectedSymbolRef = useRef<string>(selectedSymbol);
   const chartDataSubscriberRef = useRef<ChartDataSubscriber | null>(null);
 
-  // OrderBook throttling removed
+  // Simple chart state
+  const [chartInstance, setChartInstance] = useState<any>(null);
 
-  // Keep selectedSymbolRef in sync
+  // Ensure historical data is applied when chart instance is ready.
   useEffect(() => {
-    selectedSymbolRef.current = selectedSymbol;
-  }, [selectedSymbol]);
-
-  // Use lightweight charts hook
-  const { chartContainerRef, chartInstance, setHistoricalData, updateCandlestick, fitContent } = useLightweightChart();
+    if (chartInstance && candlestickData.length > 0) {
+      logger.log(`Chart instance ready - applying ${candlestickData.length} historical points`);
+      try {
+        // Chart data will be handled by SimpleChart component
+        // Use setTimeout to break the synchronous update cycle
+        setTimeout(() => {
+          setConnectionStatus(prev => ({ ...prev, chart: true }));
+        }, 0);
+      } catch (e) {
+        logger.error('Failed to apply historical data to chart instance', e);
+      }
+    }
+  }, [candlestickData.length, logger]); // Remove chartInstance from dependencies
 
   // Initialize chart data subscriber once
   useEffect(() => {
@@ -105,14 +125,11 @@ const MarketPanel: React.FC = () => {
         id: `market-panel-chart-${Date.now()}`,
         onHistoricalData: (data: CandlestickData[]) => {
           logger.log(`Received ${data.length} historical data points`);
-          setHistoricalData(data);
           setCandlestickData(data);
-          fitContent();
           setConnectionStatus(prev => ({ ...prev, chart: true }));
         },
         onUpdate: (data: CandlestickData) => {
           logger.log(`Chart update - Price: ${data.close}`);
-          updateCandlestick(data);
           setCandlestickData(prev => {
             const updated = [...prev];
             const existingIndex = updated.findIndex(item => item.time === data.time);
@@ -131,7 +148,7 @@ const MarketPanel: React.FC = () => {
         }
       };
     }
-  }, [setHistoricalData, fitContent, updateCandlestick]);
+  }, [logger]);
 
   // Market data event handler
   const handleMarketDataEvent = useCallback((event: MarketDataEvent) => {
@@ -275,6 +292,13 @@ const MarketPanel: React.FC = () => {
       logger.warn('Skipping chart subscription: empty symbol');
       return;
     }
+    
+    // Wait for chartDataSubscriberRef to be initialized
+    if (!chartDataSubscriberRef.current) {
+      logger.warn('Skipping chart subscription: subscriber not initialized yet');
+      return;
+    }
+    
     try {
       logger.log(`Setting up chart subscription for ${symbol} ${interval}`);
       
@@ -284,7 +308,6 @@ const MarketPanel: React.FC = () => {
       }
       
       // Clear existing chart data
-      setHistoricalData([]);
       setCandlestickData([]);
       
       // Create new subscription
@@ -305,16 +328,49 @@ const MarketPanel: React.FC = () => {
       logger.error(`Failed to setup chart data for ${symbol} ${interval}:`, error);
       setError(`Nie udało się załadować wykresu dla ${symbol}`);
     }
-  }, [setHistoricalData, logger]); // Remove chartDataSubscriber dependency
+  }, [logger]); // Remove chartDataSubscriber dependency
+
+  // Chart settings handlers - temporarily disabled for SimpleChart
+  const handleThemeChange = useCallback((isDark: boolean) => {
+    setIsDarkTheme(isDark);
+    // setTheme(isDark); // TODO: Implement in SimpleChart
+    logger.log(`Theme changed to: ${isDark ? 'dark' : 'light'}`);
+  }, [logger]);
+
+  const handleColorSchemeChange = useCallback((scheme: 'default' | 'classic' | 'modern' | 'minimal') => {
+    setColorSchemeState(scheme);
+    // setColorScheme(scheme); // TODO: Implement in SimpleChart
+    logger.log(`Color scheme changed to: ${scheme}`);
+  }, [logger]);
+
+  const handleVolumeToggle = useCallback((show: boolean) => {
+    setShowVolume(show);
+    // toggleVolumeDisplay(show); // TODO: Implement in SimpleChart
+    logger.log(`Volume display toggled: ${show}`);
+  }, [logger]);
 
   // Handle symbol changes
   useEffect(() => {
     setupMarketDataSubscription(selectedSymbol);
   }, [selectedSymbol]); // Remove setupMarketDataSubscription from deps to prevent cycle
 
-  // Handle interval changes
+  // Handle interval changes - runs after subscriber initialization
   useEffect(() => {
-    setupChartDataSubscription(selectedSymbol, selectedInterval);
+    // Delay to ensure subscriber is ready
+    const setupChart = async () => {
+      if (chartDataSubscriberRef.current) {
+        await setupChartDataSubscription(selectedSymbol, selectedInterval);
+      } else {
+        // Retry after a short delay if subscriber not ready
+        setTimeout(() => {
+          if (chartDataSubscriberRef.current) {
+            setupChartDataSubscription(selectedSymbol, selectedInterval);
+          }
+        }, 100);
+      }
+    };
+    
+    setupChart();
   }, [selectedSymbol, selectedInterval]); // Remove setupChartDataSubscription from deps to prevent cycle
 
   // Cleanup on unmount
@@ -407,6 +463,38 @@ const MarketPanel: React.FC = () => {
     renderTime: new Date().toISOString()
   });
 
+  // Loading state to prevent chaotic rendering during initialization
+  const isInitializing = !tickerData || !orderbookData || candlestickData.length === 0;
+  
+  // Always render the chart container so the chart hook can initialize
+  // even while other data (ticker/orderbook) is still loading.
+  if (isInitializing) {
+    return (
+      <Paper p="xl" withBorder>
+        <Stack align="center" gap="md" style={{ minHeight: 400, position: 'relative' }}>
+          <Loader size="lg" />
+          <Text size="lg" fw={500}>Łączenie z rynkiem...</Text>
+          <Text size="sm" c="dimmed">Ładowanie danych {selectedSymbol}</Text>
+
+          {/* Ensure the chart container exists in DOM so the chart hook can attach the chart */}
+          <Box
+            className="chart-container"
+            style={{
+              width: '100%',
+              height: '300px',
+              minHeight: '300px',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 0
+            }}
+          />
+        </Stack>
+      </Paper>
+    );
+  }
+
   return (
     <Stack gap="md" p="md">
       <Title order={2}>Panel Rynkowy</Title>
@@ -429,6 +517,12 @@ const MarketPanel: React.FC = () => {
               <Badge size="xs" variant="light" color={connectionStatus.chart ? 'teal' : 'red'}>
                 Chart
               </Badge>
+              {/* DevTools detection indicator */}
+              {isDevToolsOpen && (
+                <Badge size="xs" variant="light" color="orange">
+                  DevTools
+                </Badge>
+              )}
             </Group>
           </Group>
           
@@ -553,9 +647,19 @@ const MarketPanel: React.FC = () => {
         </Button>
       </Group>
       
+      {/* Chart Settings */}
+      <ChartSettings
+        onThemeChange={handleThemeChange}
+        onColorSchemeChange={handleColorSchemeChange}
+        onVolumeToggle={handleVolumeToggle}
+        currentTheme={isDarkTheme}
+        currentColorScheme={colorScheme}
+        showVolume={showVolume}
+      />
+      
       {/* Price Chart */}
-      <Paper p="md" withBorder>
-        <Stack gap="md">
+      <Paper p="xs" withBorder style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
+        <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
           <Group justify="space-between" align="center">
             <Title order={3}>Wykres Cen</Title>
             <Group gap="xs">
@@ -571,7 +675,19 @@ const MarketPanel: React.FC = () => {
               </Badge>
             </Group>
           </Group>
-          <Box ref={chartContainerRef} style={{ width: '100%', height: '500px', borderRadius: '8px' }} />
+          {/* Chart container - using SimpleChart component */}
+          <SimpleChart
+            data={candlestickData}
+            width="100%"
+            height="400px"
+            onChartReady={(chart) => {
+              logger.log('Chart ready:', chart);
+              // Use callback ref to avoid infinite loops
+              if (chart !== chartInstance) {
+                setChartInstance(chart);
+              }
+            }}
+          />
         </Stack>
       </Paper>
       

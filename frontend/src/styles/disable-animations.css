@@ -1,0 +1,80 @@
+/* 
+ * CRITICAL: Global animation disabler for preventing layout stretching
+ * This CSS is loaded first and completely disables ALL animations
+ * during application initialization to prevent UI stretching effects
+ */
+
+/* ULTRA AGGRESSIVE: Kill ALL animations, transitions, and transforms */
+*,
+*::before,
+*::after,
+html,
+body,
+#root,
+.logo,
+button,
+.mantine-Table-tr,
+.price-change-animation {
+  /* Completely disable animations */
+  transition: none !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  animation: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-fill-mode: none !important;
+  animation-play-state: paused !important;
+  
+  /* Disable transforms */
+  transform: none !important;
+  transform-style: flat !important;
+  
+  /* Disable any motion or scroll animations */
+  scroll-behavior: auto !important;
+  
+  /* Reset will-change to prevent layer creation */
+  will-change: auto !important;
+  
+  /* Prevent hardware acceleration issues */
+  backface-visibility: visible !important;
+}
+
+/* Override specific problematic animations */
+@keyframes logo-spin {
+  from { transform: none !important; }
+  to { transform: none !important; }
+}
+
+/* Disable hover transitions */
+button:hover,
+.mantine-Table-tr:hover,
+a:hover {
+  transition: none !important;
+  transition-duration: 0s !important;
+}
+
+/* Specific overrides for all Mantine components */
+[class*="mantine-"] {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Force static positioning to prevent layout shifts */
+.chart-container,
+.mantine-AppShell-root,
+.mantine-Paper-root,
+.mantine-Stack-root,
+.mantine-Box-root {
+  contain: layout style paint !important;
+}
+
+/* Disable CSS Grid and Flexbox animations */
+[style*="grid"],
+[style*="flex"],
+.mantine-Group-root,
+.mantine-Flex-root {
+  transition: none !important;
+  animation: none !important;
+}

@@ -30,5 +30,9 @@ export default {
     // Support ESM TS path imports that end with .js in transpiled code
   '^(\\.{1,2}/.*)\\.js$': '$1',
   '^lightweight-charts$': '<rootDir>/src/__mocks__/lightweight-charts.ts'
-  }
+  },
+  // Force transformation of modules that use import.meta
+  transformIgnorePatterns: [
+    'node_modules/(?!(lightweight-charts|@mantine|@tabler)/)'
+  ]
 };

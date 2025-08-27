@@ -1,0 +1,264 @@
+/**
+ * Enhanced Chart Styles - Dodatkowe style dla wykresu świecowego
+ * 
+ * Zawiera style dla:
+ * - Animacje hover i interakcje
+ * - Lepszy wygląd komponentów wykresu
+ * - Responsywne zachowanie
+ */
+
+/* Kontener wykresu */
+.chart-container {
+  position: relative;
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #0D1117 0%, #161B22 100%);
+  border: 1px solid rgba(56, 139, 253, 0.12);
+  height: 400px; /* Fixed height for consistent display */
+  min-height: 400px; /* Ensure minimum height */
+}
+
+/* DevTools responsive adjustments */
+@media (max-width: 1400px) {
+  .chart-container {
+    max-height: calc(100vh - 180px); /* More space when DevTools reduce available width */
+  }
+  
+  /* Compact mode when DevTools are likely open */
+  .mantine-Stack-root[data-gap="md"] {
+    gap: 8px !important; /* Reduce gaps to save space */
+  }
+  
+  .mantine-Paper-root[data-paper="true"] {
+    padding: 8px !important; /* Reduce padding when space is limited */
+  }
+}
+
+@media (max-width: 1200px) {
+  .chart-container {
+    max-height: calc(100vh - 160px); /* Even more compact */
+  }
+  
+  /* Hide some UI elements to save space */
+  .status-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    border-radius: 8px;
+  }
+}
+
+/* No fixed large-screen min-height to keep chart flexible */
+
+.chart-container:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(56, 139, 253, 0.2);
+  /* only animate non-layout properties to prevent reflow on hover */
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Animacje dla przycisków ustawień */
+.chart-settings-button {
+  /* animate only non-layout properties to avoid causing reflow */
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+  min-height: 36px;
+}
+
+.chart-settings-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(56, 139, 253, 0.1);
+  transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.chart-settings-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.chart-settings-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.chart-settings-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Przyciski schematów kolorów */
+.color-scheme-button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.color-scheme-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.color-scheme-button.active {
+  box-shadow: 0 0 0 2px rgba(56, 139, 253, 0.5);
+  background: rgba(56, 139, 253, 0.1) !important;
+}
+
+/* Podgląd kolorów */
+.color-swatch-preview {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.color-swatch-preview:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Przełączniki */
+.theme-switch {
+  position: relative;
+}
+
+.theme-switch .mantine-Switch-track {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.theme-switch .mantine-Switch-thumb {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Animacje dla podglądu wykresu */
+.chart-preview-container {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-preview-container:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chart-preview-candle {
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.chart-preview-candle:hover {
+  transform: scaleY(1.1);
+  filter: brightness(1.1);
+}
+
+/* Responsywne zachowanie */
+@media (max-width: 768px) {
+  .chart-container {
+    border-radius: 8px;
+  }
+  
+  .color-scheme-button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .chart-preview-container {
+    height: 40px;
+  }
+}
+
+/* Animacje ładowania */
+@keyframes chartPulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.chart-loading {
+  animation: chartPulse 2s ease-in-out infinite;
+}
+
+/* Style dla różnych schematów kolorów - podgląd w ustawieniach */
+.color-scheme-default {
+  background: linear-gradient(135deg, #26A69A 0%, #EF5350 100%);
+}
+
+.color-scheme-classic {
+  background: linear-gradient(135deg, #00C851 0%, #FF4444 100%);
+}
+
+.color-scheme-modern {
+  background: linear-gradient(135deg, #10B981 0%, #F59E0B 100%);
+}
+
+.color-scheme-minimal {
+  background: linear-gradient(135deg, #4ADE80 0%, #F87171 100%);
+}
+
+/* Lepsze style dla badge'y statusu */
+.status-badge {
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.live {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Udoskonalony crosshair dla wykresu */
+.tv-lightweight-charts {
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Smooth scroll dla kontenerów wykresów */
+.chart-container, .chart-preview-container {
+  scroll-behavior: smooth;
+}
+
+/* Poprawione style dla tooltipów i etykiet */
+.chart-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  border-radius: 6px;
+  color: #F0F6FC;
+  font-size: 12px;
+  padding: 8px 12px;
+  backdrop-filter: blur(8px);
+}

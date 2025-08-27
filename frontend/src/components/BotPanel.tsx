@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createDebugLogger } from '../utils/debugLogger';
 import {
   Paper,
