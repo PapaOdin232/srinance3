@@ -1,0 +1,590 @@
+[vite] connecting...
+client:826 [vite] connected.
+react-dom_client.js?v=26b51a4f:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+scrollPerformanceMonitor.ts:35 [ScrollMonitor] Performance monitoring started
+passiveListeners.ts:95 [PassiveListeners] Global passive listeners setup completed
+userStream.tsx:174 [UserStream] Connecting to ws://localhost:8001/ws/user (raw base: ws://localhost:8001/ws )
+browser-polyfill.js:1 Returning a Promise is the preferred way to send a reply from an onMessage/onMessageExternal listener, as the sendResponse will be removed from the specs (See https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage) Error
+    at n (chrome-extension://dacdinoicboceafielngnmjjplncljhj/lib/js/browser-polyfill.js:1:8113)
+n @ browser-polyfill.js:1
+Promise.then
+(anonymous) @ content.js:334
+(anonymous) @ content.js:334
+x.reject @ browser-polyfill.js:1Understand this warning
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.766Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.766Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.820Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.820Z'}
+debugLogger.ts:37 [MarketPanel] setupMarketDataSubscription called for BTCUSDT, current: BTCUSDT, ref: null
+debugLogger.ts:37 [MarketPanel] Setting up market data subscription for BTCUSDT
+MarketDataService.ts:540 [MarketDataService] New subscription for BTCUSDT by market-panel-BTCUSDT
+ConnectionManager.ts:350 [WebSocketManager] Creating new connection for ws://localhost:8001/ws/market
+ConnectionManager.ts:350 [WebSocketManager] Subscriber backend-BTCUSDT added to ws://localhost:8001/ws/market. Total: 1
+debugLogger.ts:37 [MarketDataService] notifySubscribers: {type: 'connection', subscriberCount: 1}
+debugLogger.ts:37 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketPanel] handleMarketDataEvent: {eventType: 'connection', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+debugLogger.ts:64 [MarketPanel] Connection state changed: CONNECTING for ws://localhost:8001/ws/market
+debugLogger.ts:37 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+MarketDataService.ts:540 [MarketDataService] Setup backend WebSocket for BTCUSDT
+ApiCacheManager.ts:359 [ApiCacheManager] Cache MISS for ticker:btcusdt, fetching...
+ApiCacheManager.ts:359 [ApiCacheManager] Cache MISS for orderbook:btcusdt:100, fetching...
+ApiCacheManager.ts:359 [ApiCacheManager] Request already pending for ticker:btcusdt, waiting...
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 5m
+ChartDataService.ts:441 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 5m by market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] New chart subscription: BTCUSDT 5m by market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756281882910,BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 5m (limit: 500, forceRefresh: false)
+ChartDataService.ts:441 [ChartDataService] Loading historical data for BTCUSDT 5m (limit: 500)
+ApiCacheManager.ts:359 [ApiCacheManager] Cache MISS for klines:btcusdt:5m:500, fetching...
+debugLogger.ts:37 [MarketPanel] Skipping cleanup in development mode (StrictMode protection)
+debugLogger.ts:37 [MarketPanel] setupMarketDataSubscription called for BTCUSDT, current: BTCUSDT, ref: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketPanel] Already subscribed to this symbol, skipping
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 5m
+ChartDataService.ts:441 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 5m by market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] New chart subscription: BTCUSDT 5m by market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756281882910,BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 5m (limit: 500, forceRefresh: false)
+ChartDataService.ts:441 [ChartDataService] Loading historical data for BTCUSDT 5m (limit: 500)
+ApiCacheManager.ts:359 [ApiCacheManager] Request already pending for klines:btcusdt:5m:500, waiting...
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.922Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: null, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:42.922Z'}
+[Violation] 'setTimeout' handler took 110ms
+ConnectionManager.ts:350 [WebSocketManager] WebSocket connected: ws://localhost:8001/ws/market
+debugLogger.ts:37 [MarketDataService] notifySubscribers: {type: 'connection', subscriberCount: 1}
+debugLogger.ts:37 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketPanel] handleMarketDataEvent: {eventType: 'connection', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+debugLogger.ts:64 [MarketPanel] Connection state changed: CONNECTED for ws://localhost:8001/ws/market
+debugLogger.ts:37 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+ConnectionManager.ts:350 [WebSocketManager] Message sent to ws://localhost:8001/ws/market: {type: 'subscribe', symbol: 'BTCUSDT'}
+20[Violation] 'message' handler took <N>ms
+debugLogger.ts:37 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+debugLogger.ts:37 [MarketDataService] Processing message type: welcome
+BotConfigPanel.tsx:80 Bot config response: {config: {…}, state: {…}, position: {…}, daily_stats: {…}}
+BotConfigPanel.tsx:96 Strategies response: {strategies: {…}}
+BotConfigPanel.tsx:80 Bot config response: {config: {…}, state: {…}, position: {…}, daily_stats: {…}}
+BotConfigPanel.tsx:96 Strategies response: {strategies: {…}}
+debugLogger.ts:37 [BotPanel] Unknown message type: {type: 'welcome', message: 'Connected to bot stream (connection #1)', timestamp: 6371.816957958}
+debugLogger.ts:37 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+debugLogger.ts:37 [MarketDataService] Processing message type: ticker
+debugLogger.ts:37 [MarketDataService] Ticker event - includeTicker: true symbol match: true
+debugLogger.ts:37 [MarketDataService] Normalized ticker: {symbol: 'BTCUSDT', price: 110760, change: 505.96, changePercent: 0.459, volume: 0, …}
+debugLogger.ts:37 [MarketDataService] notifySubscribers: {type: 'ticker', subscriberCount: 1}
+debugLogger.ts:37 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketPanel] handleMarketDataEvent: {eventType: 'ticker', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+debugLogger.ts:37 [MarketPanel] Setting ticker data: {type: 'ticker', data: {…}}
+debugLogger.ts:37 [MarketPanel] NEW TICKER STATE: {symbol: 'BTCUSDT', price: 110760, change: 505.96, changePercent: 0.459}
+debugLogger.ts:37 [MarketPanel] STATE UPDATED! tickerData set to: {symbol: 'BTCUSDT', price: '110760', change: '505.96', changePercent: '0.459'}
+debugLogger.ts:37 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketDataService] Notified 1 subscribers
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.553Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: null, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.553Z'}
+ApiCacheManager.ts:359 [ApiCacheManager] Request already pending for orderbook:btcusdt:100, waiting...
+MarketDataService.ts:540 [MarketDataService] Initial data loaded for BTCUSDT
+ChartDataService.ts:441 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 5m
+ChartDataService.ts:441 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:441 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:5m, dataLength=500
+ChartDataService.ts:441 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756281882910,BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756281882910: subscriberKey=BTCUSDT:5m, targetKey=BTCUSDT:5m, match=true
+ChartDataService.ts:441 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756281882910 with 500 historical data points
+debugLogger.ts:37 [MarketPanel] Received 500 historical data points
+ChartDataService.ts:441 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] Loaded 500 data points for BTCUSDT 5m
+ChartDataService.ts:441 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 5m
+ChartDataService.ts:441 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:441 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:5m, dataLength=500
+ChartDataService.ts:441 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756281882910
+ChartDataService.ts:441 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756281882910,BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756281882910: subscriberKey=BTCUSDT:5m, targetKey=BTCUSDT:5m, match=true
+ChartDataService.ts:441 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756281882910 with 500 historical data points
+debugLogger.ts:37 [MarketPanel] Received 500 historical data points
+ChartDataService.ts:441 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:5m
+ChartDataService.ts:441 [ChartDataService] Loaded 500 data points for BTCUSDT 5m
+binanceWSClient.ts:56 [BinanceWSClient] Connecting to wss://data-stream.binance.vision/ws/btcusdt@kline_5m
+binanceWSClient.ts:57 [BinanceWSClient] Using data-stream.binance.vision (optimized for market data)
+binanceWSClient.ts:145 [BinanceWSClient] Added listener, total: 1
+ChartDataService.ts:441 [ChartDataService] Real-time updates enabled for BTCUSDT 5m
+debugLogger.ts:37 [BotPanel] Received bot_status: {type: 'bot_status', running: false, status: {…}}
+debugLogger.ts:37 [BotPanel] Received bot_status: {type: 'bot_status', running: false, status: {…}}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.577Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.578Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883575 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883575 
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.674Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.674Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883575 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883575 
+debugLogger.ts:37 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+debugLogger.ts:37 [MarketDataService] Processing message type: orderbook
+debugLogger.ts:37 [MarketDataService] Orderbook event - includeOrderbook: true symbol match: true
+debugLogger.ts:37 [MarketDataService] Normalized orderbook: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756281883959}
+debugLogger.ts:37 [MarketDataService] notifySubscribers: {type: 'orderbook', subscriberCount: 1}
+debugLogger.ts:37 [MarketDataService] Notifying subscriber: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketPanel] handleMarketDataEvent: {eventType: 'orderbook', currentSymbol: 'BTCUSDT', fullEvent: {…}}
+debugLogger.ts:37 [MarketPanel] Setting orderbook data: {type: 'orderbook', data: {…}}
+debugLogger.ts:37 [MarketPanel] NEW ORDERBOOK STATE: {symbol: 'BTCUSDT', bidsCount: 10, asksCount: 10, timestamp: 1756281883959}
+debugLogger.ts:37 [MarketPanel] STATE UPDATED! orderbookData set to: {symbol: 'BTCUSDT', bids: Array(10), asks: Array(10), timestamp: 1756281883959}
+debugLogger.ts:37 [MarketDataService] Successfully notified: market-panel-BTCUSDT
+debugLogger.ts:37 [MarketDataService] Notified 1 subscribers
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.960Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:43.961Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [SimpleChart] Container dimensions before chart creation: {width: 911.703125, height: 400}
+debugLogger.ts:37 [MarketPanel] Chart ready: ChartApi {_private__seriesMap: Map(1), _private__seriesMapReversed: Map(1), _private__clickedDelegate: Delegate, _private__dblClickedDelegate: Delegate, _private__crosshairMovedDelegate: Delegate, …}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.030Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.030Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.053Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.054Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.078Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.078Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.102Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.102Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.123Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.123Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.145Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.147Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.313Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.316Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.481Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.483Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.590Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.591Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.612Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.613Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.634Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.634Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.660Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.660Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.682Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.682Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.705Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.705Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.728Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.728Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.751Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.751Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.772Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.772Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.793Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.793Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.814Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.814Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.835Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.835Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.856Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.856Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.875Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.875Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.896Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.896Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.916Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.916Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.945Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.945Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.966Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.966Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.989Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:44.989Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.010Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.010Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.032Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.032Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.053Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.053Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.078Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.078Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.100Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.100Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.122Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.122Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.145Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.145Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.170Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.172Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.353Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.356Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.521Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.523Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.629Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.629Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.650Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.650Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.673Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.673Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.694Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.694Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.715Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.715Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.737Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.737Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.760Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.761Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.781Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.781Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.803Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.803Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.826Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.826Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.849Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.850Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.871Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.871Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.893Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.893Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.917Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.917Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.938Z'}
+debugLogger.ts:58 [MarketPanel] RENDER: RENDER: {tickerData: {…}, orderbookData: {…}, connectionStatus: {…}, selectedSymbol: 'BTCUSDT', renderTime: '2025-08-27T08:04:45.939Z'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [PriceDisplay] RENDER: Rendering with ticker: {symbol: 'BTCUSDT', price: '110771.96', change: '510.03', changePercent: '0.463%'}
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:58 [OrderBookDisplay] RENDER: Rendering with orderbook: BTCUSDT 1756281883959 
+debugLogger.ts:37 [MarketPanel] Chart instance ready - applying 500 historical points
+react-dom_client.js?v=26b51a4f:6264 Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (react-dom_client.js?v=26b51a4f:3001:128)
+    at enqueueConcurrentHookUpdate (react-dom_client.js?v=26b51a4f:2985:16)
+    at dispatchSetStateInternal (react-dom_client.js?v=26b51a4f:5350:20)
+    at dispatchSetState (react-dom_client.js?v=26b51a4f:5321:9)
+    at assignRef2 (@mantine_core.js?v=26b51a4f:1720:12)
+    at @mantine_core.js?v=26b51a4f:1729:24
+    at Array.forEach (<anonymous>)
+    at @mantine_core.js?v=26b51a4f:1728:10
+    at assignRef2 (@mantine_core.js?v=26b51a4f:1720:12)
+    at @mantine_core.js?v=26b51a4f:1729:24
+
+The above error occurred in the <div> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+defaultOnCaughtError @ react-dom_client.js?v=26b51a4f:6264
+logCaughtError @ react-dom_client.js?v=26b51a4f:6296
+runWithFiberInDEV @ react-dom_client.js?v=26b51a4f:1485
+inst.componentDidCatch.update.callback @ react-dom_client.js?v=26b51a4f:6341
+callCallback @ react-dom_client.js?v=26b51a4f:4097
+commitCallbacks @ react-dom_client.js?v=26b51a4f:4109
+runWithFiberInDEV @ react-dom_client.js?v=26b51a4f:1485
+commitClassCallbacks @ react-dom_client.js?v=26b51a4f:8543
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9011
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9045
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9045
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9045
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:8956
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9096
+recursivelyTraverseLayoutEffects @ react-dom_client.js?v=26b51a4f:9682
+commitLayoutEffectOnFiber @ react-dom_client.js?v=26b51a4f:9016
+flushLayoutEffects @ react-dom_client.js?v=26b51a4f:11174
+commitRoot @ react-dom_client.js?v=26b51a4f:11080
+commitRootWhenReady @ react-dom_client.js?v=26b51a4f:10512
+performWorkOnRoot @ react-dom_client.js?v=26b51a4f:10457
+performSyncWorkOnRoot @ react-dom_client.js?v=26b51a4f:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=26b51a4f:11536
+flushSpawnedWork @ react-dom_client.js?v=26b51a4f:11254
+commitRoot @ react-dom_client.js?v=26b51a4f:11081
+commitRootWhenReady @ react-dom_client.js?v=26b51a4f:10512
+performWorkOnRoot @ react-dom_client.js?v=26b51a4f:10457
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=26b51a4f:11623
+performWorkUntilDeadline @ react-dom_client.js?v=26b51a4f:36Understand this error
+debugLogger.ts:37 [MarketPanel] Skipping cleanup in development mode (StrictMode protection)
+debugLogger.ts:37 [MarketDataService] handleBackendMessage: {data: {…}, symbol: 'BTCUSDT', subscribers: 1}
+debugLogger.ts:37 

@@ -6,7 +6,8 @@ import { createDebugLogger } from '../utils/debugLogger';
 const logger = createDebugLogger('SimpleChart');
 
 interface SimpleChartProps {
-  data: CandlestickData[];
+  data: CandlestickData[];                 // history (initial)
+  realtimeCandle?: CandlestickData | null; // incremental update
   width?: string;
   height?: string;
   onChartReady?: (chart: IChartApi) => void;
@@ -14,6 +15,7 @@ interface SimpleChartProps {
 
 export const SimpleChart: React.FC<SimpleChartProps> = ({
   data = [],
+  realtimeCandle = null,
   width = '100%',
   height = '400px',
   onChartReady
@@ -22,6 +24,8 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // keep last applied history fingerprint to avoid redundant setData
+  const lastHistoryFingerprintRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Cleanup function to prevent memory leaks
@@ -146,18 +150,47 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
     return () => clearTimeout(timerId);
   }, []); // Empty dependency array - only run once
 
-  // Update data when it changes
+  // Effect: apply full history when `data` prop changes, but dedupe using fingerprint
   useEffect(() => {
-    if (!seriesRef.current || !chartRef.current || data.length === 0) return;
+    if (!seriesRef.current || !chartRef.current) return;
+    if (!data || data.length === 0) return;
+
+    const lastTimestamp = data.length ? String(data[data.length - 1].time) : '';
+    const fingerprint = `${data.length}:${lastTimestamp}`;
+    if (fingerprint === lastHistoryFingerprintRef.current) {
+      logger.log('History unchanged — skipping setData');
+      return;
+    }
 
     try {
       seriesRef.current.setData(data);
       chartRef.current.timeScale().fitContent();
-      logger.log(`Updated chart with ${data.length} data points`);
+      lastHistoryFingerprintRef.current = fingerprint;
+      logger.log(`Updated chart with ${data.length} data points (fingerprint=${fingerprint})`);
     } catch (error) {
       logger.error('Error updating chart data:', error);
     }
   }, [data]);
+
+  // Effect: incremental realtime update (single candlestick) — efficient series.update()
+  useEffect(() => {
+    if (!realtimeCandle || !seriesRef.current || !chartRef.current) return;
+
+    try {
+      seriesRef.current.update(realtimeCandle);
+      // update fingerprint for history to avoid next full setData re-applying same data
+      const lastFingerprint = lastHistoryFingerprintRef.current;
+      if (lastFingerprint) {
+        const parts = lastFingerprint.split(':');
+        const length = Number(parts[0] || 0);
+        const ts = String(realtimeCandle.time);
+        lastHistoryFingerprintRef.current = `${length}:${ts}`;
+      }
+      logger.log('Applied realtime candle update', realtimeCandle);
+    } catch (error) {
+      logger.error('Error applying realtime candle update:', error);
+    }
+  }, [realtimeCandle]);
 
   return (
     <div style={{ position: 'relative', width, height }}>

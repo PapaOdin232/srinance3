@@ -75,6 +75,7 @@ const MarketPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [candlestickData, setCandlestickData] = useState<CandlestickData[]>([]);
+  const [realtimeCandle, setRealtimeCandle] = useState<CandlestickData | null>(null);
   // debug counter removed
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     ticker: false,
@@ -130,6 +131,7 @@ const MarketPanel: React.FC = () => {
         },
         onUpdate: (data: CandlestickData) => {
           logger.log(`Chart update - Price: ${data.close}`);
+          // update local cache but only set realtimeCandle for chart incremental update
           setCandlestickData(prev => {
             const updated = [...prev];
             const existingIndex = updated.findIndex(item => item.time === data.time);
@@ -140,6 +142,8 @@ const MarketPanel: React.FC = () => {
             }
             return updated.slice(-1000);
           });
+          // set incremental candle for SimpleChart to apply via series.update
+          setRealtimeCandle(data);
         },
         onError: (error: Error) => {
           logger.error(`Chart error:`, error);
@@ -678,6 +682,7 @@ const MarketPanel: React.FC = () => {
           {/* Chart container - using SimpleChart component */}
           <SimpleChart
             data={candlestickData}
+            realtimeCandle={realtimeCandle}
             width="100%"
             height="400px"
             onChartReady={(chart) => {
