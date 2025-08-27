@@ -95,6 +95,56 @@ export async function fetchBinanceKlines(
 }
 
 /**
+ * Fetch historical klines that end before a given time (openTime) using Binance endTime parameter
+ * Useful for lazy-loading older candles when scrolling chart to the past.
+ * @param symbol Trading pair symbol (e.g., 'BTCUSDT')
+ * @param interval Kline interval (e.g., '1m', '5m', '1h', '1d')
+ * @param beforeOpenTimeMs Fetch klines that close before this time (milliseconds)
+ * @param limit Number of klines to retrieve (max 1000, default 200)
+ */
+export async function fetchBinanceKlinesBefore(
+  symbol: string,
+  interval: string,
+  beforeOpenTimeMs: number,
+  limit: number = 200
+): Promise<BinanceKlineData[]> {
+  const logger = createLogger('binance:api');
+  try {
+    logger.debug('fetch-klines-before', { symbol, interval, beforeOpenTimeMs, limit });
+
+    const response = await axios.get<BinanceKlineRaw[]>(`${BINANCE_API_BASE}/klines`, {
+      params: {
+        symbol: symbol.toUpperCase(),
+        interval,
+        endTime: Math.max(0, Math.floor(beforeOpenTimeMs - 1)),
+        limit: Math.min(limit, 1000)
+      },
+      timeout: 10000
+    });
+
+    const klines: BinanceKlineData[] = response.data.map(raw => ({
+      openTime: raw[0],
+      open: raw[1],
+      high: raw[2],
+      low: raw[3],
+      close: raw[4],
+      volume: raw[5],
+      closeTime: raw[6],
+      quoteAssetVolume: raw[7],
+      numberOfTrades: raw[8],
+      takerBuyBaseAssetVolume: raw[9],
+      takerBuyQuoteAssetVolume: raw[10]
+    }));
+
+    logger.trace('klines-before-fetched', klines.length);
+    return klines;
+  } catch (error) {
+    logger.error('klines-before-error', error as any);
+    throw new Error(`Failed to fetch klines before ${beforeOpenTimeMs} for ${symbol}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Convert Binance klines to lightweight-charts format
  * @param klines Array of Binance kline data
  * @returns Array in lightweight-charts candlestick format
@@ -125,10 +175,25 @@ export async function fetchLightweightChartsKlines(
   return convertToLightweightChartsFormat(klines);
 }
 
+/**
+ * Fetch klines before a given openTime and convert to lightweight-charts format
+ */
+export async function fetchLightweightChartsKlinesBefore(
+  symbol: string,
+  interval: string,
+  beforeOpenTimeMs: number,
+  limit: number = 200
+): Promise<LightweightChartsKline[]> {
+  const klines = await fetchBinanceKlinesBefore(symbol, interval, beforeOpenTimeMs, limit);
+  return convertToLightweightChartsFormat(klines);
+}
+
 export default {
   fetchBinanceKlines,
   convertToLightweightChartsFormat,
   fetchLightweightChartsKlines,
+  fetchBinanceKlinesBefore,
+  fetchLightweightChartsKlinesBefore,
   fetchAllTradingPairs
 };
 

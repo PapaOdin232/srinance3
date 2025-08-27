@@ -31,6 +31,7 @@ import { createDebugLogger } from '../utils/debugLogger';
 import '../styles/chart.css';
 // useThrottledState removed (ticker UI removed)
 import type { CandlestickData } from 'lightweight-charts';
+import { fetchBinanceKlinesBefore, convertToLightweightChartsFormat } from '../services/binanceAPI';
 import AssetSelector from './AssetSelector';
 import PriceDisplay from './PriceDisplay';
 import OrderBookDisplay from './OrderBookDisplay';
@@ -685,6 +686,36 @@ const MarketPanel: React.FC = () => {
             realtimeCandle={realtimeCandle}
             width="100%"
             height="400px"
+            visibleCandlesCount={120}
+            onLoadMoreHistory={async (firstCandleTime) => {
+              try {
+                // firstCandleTime from lightweight-charts is seconds or BusinessDay; assume seconds number here
+                const firstOpenSec = Number(firstCandleTime);
+                if (!Number.isFinite(firstOpenSec)) return [];
+                const firstOpenMs = firstOpenSec * 1000;
+                // Load older klines before current oldest
+                const older = await fetchBinanceKlinesBefore(
+                  selectedSymbol,
+                  selectedInterval,
+                  firstOpenMs,
+                  300
+                );
+                // Convert to lightweight-charts format
+                const lc = convertToLightweightChartsFormat(older);
+                // Map to CandlestickData type (numbers)
+                const mapped: CandlestickData[] = lc.map(k => ({
+                  time: k.time as any,
+                  open: k.open,
+                  high: k.high,
+                  low: k.low,
+                  close: k.close,
+                }));
+                return mapped;
+              } catch (e) {
+                logger.error('Failed to load older history', e);
+                return [];
+              }
+            }}
             onChartReady={(chart) => {
               logger.log('Chart ready:', chart);
               // Use callback ref to avoid infinite loops
