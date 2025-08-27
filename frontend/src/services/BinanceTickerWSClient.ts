@@ -52,6 +52,13 @@ export class BinanceTickerWSClient {
   const fromEnv = (typeof process !== 'undefined' && (process as any).env?.VITE_BINANCE_WS_URL) as string | undefined;
   this.baseUrl = fromEnv || 'wss://data-stream.binance.vision/ws';
   this.logger.debug('init', { baseUrl: this.baseUrl });
+    
+    // Skip WebSocket in development mode to avoid CORS issues
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug('dev-mode-skip-ws');
+      return;
+    }
+    
     // Don't auto-connect, wait for subscriptions
   }
 
@@ -59,6 +66,12 @@ export class BinanceTickerWSClient {
 
   // Subscribe to specific symbols for ticker updates
   subscribe(symbols: string[]) {
+    // Skip WebSocket in development mode
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug('dev-mode-skip-subscribe');
+      return;
+    }
+
     symbols.forEach(symbol => {
       const symbolLower = symbol.toLowerCase();
       if (!this.subscribedSymbols.has(symbolLower)) {

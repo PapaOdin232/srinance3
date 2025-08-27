@@ -13,7 +13,7 @@
 
 import { marketDataService, type KlineData, type MarketDataEvent, type MarketDataSubscriber } from '../market/MarketDataService';
 import BinanceWSClient from '../binanceWSClient';
-import type { CandlestickData } from 'lightweight-charts';
+import type { CandlestickData } from '../../types/trading';
 
 export interface ChartDataSubscriber {
   id: string;
@@ -346,7 +346,8 @@ class ChartDataService implements MarketDataSubscriber {
       open: kline.open,
       high: kline.high,
       low: kline.low,
-      close: kline.close
+      close: kline.close,
+      volume: kline.volume  // Add volume field
     };
   }
 

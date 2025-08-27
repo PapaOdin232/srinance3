@@ -30,7 +30,7 @@ import ChartSettings from './ChartSettings';
 import { createDebugLogger } from '../utils/debugLogger';
 import '../styles/chart.css';
 // useThrottledState removed (ticker UI removed)
-import type { CandlestickData } from 'lightweight-charts';
+import type { CandlestickData } from '../types/trading';
 import { fetchBinanceKlinesBefore, convertToLightweightChartsFormat } from '../services/binanceAPI';
 import AssetSelector from './AssetSelector';
 import PriceDisplay from './PriceDisplay';
