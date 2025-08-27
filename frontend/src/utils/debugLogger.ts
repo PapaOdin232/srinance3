@@ -29,6 +29,12 @@ export class DebugLogger {
       if (componentsEnabled === 'false') return false;
     }
     
+    // Check service flags (for data services like ChartDataService)
+    if (this.prefix === 'ChartDataService' || this.prefix === 'MarketDataService') {
+      const servicesEnabled = localStorage.getItem('debug:services');
+      if (servicesEnabled === 'false') return false;
+    }
+    
     return true;
   }
 
@@ -92,6 +98,18 @@ export const disablePerformanceLogs = () => {
   console.log('🔇 Performance logs disabled. Refresh page to take effect.');
 };
 
+// Helper to disable service logs (ChartDataService, MarketDataService etc)
+export const disableServiceLogs = () => {
+  localStorage.setItem('debug:services', 'false');
+  console.log('🔇 Service logs disabled. Refresh page to take effect.');
+};
+
+// Helper to enable service logs
+export const enableServiceLogs = () => {
+  localStorage.removeItem('debug:services');
+  console.log('🔊 Service logs enabled. Refresh page to take effect.');
+};
+
 // Helper to set logger level to error only (for binance ticker logs)
 export const disableBinanceLogs = () => {
   localStorage.setItem('LOG_LEVEL', 'error');
@@ -110,6 +128,8 @@ if (import.meta.env.DEV) {
   (window as any).enableAllDebugLogs = enableAllDebugLogs;
   (window as any).disableComponentRenderLogs = disableComponentRenderLogs;
   (window as any).disablePerformanceLogs = disablePerformanceLogs;
+  (window as any).disableServiceLogs = disableServiceLogs;
+  (window as any).enableServiceLogs = enableServiceLogs;
   (window as any).disableBinanceLogs = disableBinanceLogs;
   (window as any).enableDebugLogs = enableDebugLogs;
 }

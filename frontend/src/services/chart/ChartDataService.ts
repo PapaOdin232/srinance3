@@ -14,6 +14,7 @@
 import { marketDataService, type KlineData, type MarketDataEvent, type MarketDataSubscriber } from '../market/MarketDataService';
 import BinanceWSClient from '../binanceWSClient';
 import type { CandlestickData } from '../../types/trading';
+import { createDebugLogger } from '../../utils/debugLogger';
 
 export interface ChartDataSubscriber {
   id: string;
@@ -46,10 +47,11 @@ class ChartDataService implements MarketDataSubscriber {
   private activeSubscriptions: Map<string, ChartConfig> = new Map();
   private subscriberKeyMap: Map<string, string> = new Map(); // subscriberId -> symbol:interval
   private wsClients: Map<string, BinanceWSClient> = new Map(); // key = symbol:interval
+  private pendingSetupKeys: Set<string> = new Set();
+  private logger = createDebugLogger('ChartDataService');
   
   // Common trading intervals in order of popularity
   private readonly commonIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
-  private debug = import.meta.env.VITE_DEBUG_WS === 'true';
 
   private constructor() {
     // Do not auto-subscribe with empty symbol to avoid opening WS connections prematurely
@@ -270,31 +272,48 @@ class ChartDataService implements MarketDataSubscriber {
     const key = this.getKey(symbol, interval);
 
     // Avoid duplicate clients
-    if (this.wsClients.has(key)) {
+    if (this.wsClients.has(key) || this.pendingSetupKeys.has(key)) {
       return;
     }
-  // Open direct Binance WS for snappy real-time klines
-    const client = new BinanceWSClient(symbol, interval);
-    client.addListener((data) => {
-      if (data && data.e === 'kline' && data.k) {
-        const kline: KlineData = {
-          symbol: symbol,
-          interval: data.k.i,
-          openTime: data.k.t,
-          closeTime: data.k.T,
-          open: parseFloat(data.k.o),
-          high: parseFloat(data.k.h),
-          low: parseFloat(data.k.l),
-          close: parseFloat(data.k.c),
-          volume: parseFloat(data.k.v),
-          timestamp: Date.now()
-        };
-        this.handleKlineUpdate(kline);
-      }
-    });
 
-    this.wsClients.set(key, client);
-    this.log(`Real-time updates enabled for ${symbol} ${interval}`);
+    // Mark as pending to debounce quick interval switches
+    this.pendingSetupKeys.add(key);
+
+    // Small delay to allow any unsubscribe/cleanup to complete on rapid interval changes
+    setTimeout(() => {
+      // If subscriber was removed in the meantime, abort
+      if (!this.activeSubscriptions.has(key)) {
+        this.pendingSetupKeys.delete(key);
+        return;
+      }
+
+      // Open direct Binance WS for snappy real-time klines
+      const client = new BinanceWSClient(symbol, interval);
+      client.addListener((data) => {
+        if (data && data.e === 'kline' && data.k) {
+          const kline: KlineData = {
+            symbol: symbol,
+            interval: data.k.i,
+            openTime: data.k.t,
+            closeTime: data.k.T,
+            open: parseFloat(data.k.o),
+            high: parseFloat(data.k.h),
+            low: parseFloat(data.k.l),
+            close: parseFloat(data.k.c),
+            volume: parseFloat(data.k.v),
+            timestamp: Date.now()
+          };
+          // Only handle updates if subscription still active
+          if (this.activeSubscriptions.has(key)) {
+            this.handleKlineUpdate(kline);
+          }
+        }
+      });
+
+      this.wsClients.set(key, client);
+      this.pendingSetupKeys.delete(key);
+      this.log(`Real-time updates enabled for ${symbol} ${interval}`);
+    }, 200);
   }
 
   private handleKlineUpdate(klineData: KlineData): void {
@@ -341,8 +360,9 @@ class ChartDataService implements MarketDataSubscriber {
   }
 
   private convertKlineToChartData(kline: KlineData): CandlestickData {
+    const timeInSeconds = Math.floor(kline.openTime / 1000);
     return {
-      time: Math.floor(kline.openTime / 1000) as any, // Convert to seconds for lightweight-charts
+      time: timeInSeconds as any, // Convert to seconds for lightweight-charts
       open: kline.open,
       high: kline.high,
       low: kline.low,
@@ -438,9 +458,7 @@ class ChartDataService implements MarketDataSubscriber {
   }
 
   private log(message: string, ...args: any[]): void {
-    if (this.debug) {
-      console.log(`[ChartDataService] ${message}`, ...args);
-    }
+    this.logger.log(message, ...args);
   }
 }
 
