@@ -124,8 +124,7 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   // mirror of current data to compute scroll heuristics and merges
   const dataRef = useRef<CandlestickData[]>([]);
   const volumeDataRef = useRef<HistogramData[]>([]);
-  // track current interval and chart time range to validate realtime updates
-  const intervalRef = useRef<string | null>(null);
+  // track chart time range to validate realtime updates
   const chartTimeRangeRef = useRef<{ first: number; last: number } | null>(null);
   // guards for history prefetching
   const isLoadingMoreRef = useRef(false);
@@ -539,7 +538,10 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
         }
       });
 
-      if (typeof ResizeObserver !== 'undefined') {
+  // Inform parent that chart is ready as soon as it's created
+  if (onChartReady && chartRef.current) onChartReady(chartRef.current);
+
+  if (typeof ResizeObserver !== 'undefined') {
         const resizeObserver = new ResizeObserver(() => window.requestAnimationFrame(handleResize));
         resizeObserver.observe(container);
 
@@ -557,7 +559,6 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
         };
       }
 
-      if (onChartReady && chartRef.current) onChartReady(chartRef.current);
     } catch (error) {
       logger.error('Error creating chart:', error);
       setIsLoading(false);
@@ -804,7 +805,7 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   }, [realtimeCandle]);
 
   return (
-    <div style={{ position: 'relative', width, height }}>
+    <div style={{ position: 'relative', width, height }} data-testid="simple-chart-root">
       {/* Tooltip for hovered OHLCV */}
       {hoveredOHLCV && (
         <div style={{
@@ -834,6 +835,7 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
           height: '100%',
           minHeight: '300px'
         }}
+        data-testid="simple-chart-container"
       />
       {isLoading && (
         <div style={{

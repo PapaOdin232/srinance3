@@ -127,7 +127,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ chartInstance, historic
         {/* Add Indicator Section */}
         <Accordion defaultValue="add-indicator">
           <Accordion.Item value="add-indicator">
-            <Accordion.Control>Dodaj wskaźnik</Accordion.Control>
+            <Accordion.Control data-testid="add-indicator-accordion">Dodaj wskaźnik</Accordion.Control>
             <Accordion.Panel>
               <Stack gap="md">
                 <Select
@@ -141,6 +141,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ chartInstance, historic
                     { value: 'MACD', label: 'MACD' },
                     { value: 'BB', label: 'Bollinger Bands' }
                   ]}
+                  data-testid="indicator-select"
                 />
 
                 {/* RSI Configuration */}
@@ -265,6 +266,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ chartInstance, historic
                   onClick={handleAddIndicator}
                   disabled={!selectedIndicator || !chartInstance || !historicalData.length}
                   fullWidth
+                  data-testid="add-indicator-button"
                 >
                   Dodaj wskaźnik
                 </Button>
@@ -298,6 +300,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ chartInstance, historic
                       variant="subtle"
                       color={indicator.visible ? 'blue' : 'gray'}
                       onClick={() => toggleIndicator(indicator.id)}
+                      data-testid="eye-icon"
                     >
                       {indicator.visible ? <IconEye size={14} /> : <IconEyeOff size={14} />}
                     </ActionIcon>
@@ -306,6 +309,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ chartInstance, historic
                       variant="subtle"
                       color="red"
                       onClick={() => removeIndicator(indicator.id)}
+                      data-testid={`trash-icon-${indicator.id}`}
                     >
                       <IconTrash size={14} />
                     </ActionIcon>

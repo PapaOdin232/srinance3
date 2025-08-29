@@ -1,0 +1,239 @@
+[MarketPanel] Setting up chart subscription for BTCUSDT 5m
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 5m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 5m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 5m (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 5m (limit: 500)
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 5m
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 5m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 5m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 5m (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 5m (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 5m
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:5m, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:5m, targetKey=BTCUSDT:5m, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 5m
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 5m
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:5m, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:5m, targetKey=BTCUSDT:5m, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 5m
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1756175700, last: 1756325400}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756325400), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1756175700, last: 1756325400}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 5m
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 1m
+ChartDataService.ts:461 [ChartDataService] Cleaned up subscription for BTCUSDT:5m
+ChartDataService.ts:461 [ChartDataService] Unsubscribed market-panel-chart-1756325606413 from chart data
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 1m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 1m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:1m
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 1m (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 1m (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 1m
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:1m
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:1m, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:1m
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:1m, targetKey=BTCUSDT:1m, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:1m
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 1m
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1756295640, last: 1756325580}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756325580), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1756295640, last: 1756325580}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 1m
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 15m
+ChartDataService.ts:461 [ChartDataService] Cleaned up subscription for BTCUSDT:1m
+ChartDataService.ts:461 [ChartDataService] Unsubscribed market-panel-chart-1756325606413 from chart data
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 15m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 15m by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:15m
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 15m (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 15m (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 15m
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:15m
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:15m, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:15m
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:15m, targetKey=BTCUSDT:15m, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:15m
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 15m
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1755875700, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756324800), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1755875700, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 15m
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 1h
+ChartDataService.ts:461 [ChartDataService] Cleaned up subscription for BTCUSDT:15m
+ChartDataService.ts:461 [ChartDataService] Unsubscribed market-panel-chart-1756325606413 from chart data
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 1h by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 1h by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:1h
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 1h (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 1h (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 1h
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:1h
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:1h, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:1h
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:1h, targetKey=BTCUSDT:1h, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:1h
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 1h
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1754528400, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756324800), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1754528400, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 1h
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 4h
+ChartDataService.ts:461 [ChartDataService] Cleaned up subscription for BTCUSDT:1h
+ChartDataService.ts:461 [ChartDataService] Unsubscribed market-panel-chart-1756325606413 from chart data
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 4h by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 4h by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:4h
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 4h (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 4h (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 4h
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:4h
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:4h, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:4h
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:4h, targetKey=BTCUSDT:4h, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:4h
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 4h
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1749139200, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756324800), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1749139200, last: 1756324800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 4h
+debugLogger.ts:37 [MarketPanel] Setting up chart subscription for BTCUSDT 1d
+ChartDataService.ts:461 [ChartDataService] Cleaned up subscription for BTCUSDT:4h
+ChartDataService.ts:461 [ChartDataService] Unsubscribed market-panel-chart-1756325606413 from chart data
+ChartDataService.ts:461 [ChartDataService] 🔥 SUBSCRIBE CALLED: BTCUSDT 1d by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] New chart subscription: BTCUSDT 1d by market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 📊 Current subscribers: 1, keys: market-panel-chart-1756325606413,BTCUSDT:1d
+ChartDataService.ts:461 [ChartDataService] 🔍 LOAD HISTORICAL DATA: BTCUSDT 1d (limit: 500, forceRefresh: false)
+ChartDataService.ts:461 [ChartDataService] Loading historical data for BTCUSDT 1d (limit: 500)
+ChartDataService.ts:461 [ChartDataService] 🔥 GOT KLINE DATA: 500 points for BTCUSDT 1d
+ChartDataService.ts:461 [ChartDataService] 📊 CONVERTED TO CHART DATA: 500 points
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFYING SUBSCRIBERS for key: BTCUSDT:1d
+ChartDataService.ts:461 [ChartDataService] 🔔 NOTIFY HISTORICAL DATA: key=BTCUSDT:1d, dataLength=500
+ChartDataService.ts:461 [ChartDataService] 📋 Available subscribers: market-panel-chart-1756325606413
+ChartDataService.ts:461 [ChartDataService] 🗺️ Subscriber key mappings: market-panel-chart-1756325606413,BTCUSDT:1d
+ChartDataService.ts:461 [ChartDataService] 🔍 Checking subscriber market-panel-chart-1756325606413: subscriberKey=BTCUSDT:1d, targetKey=BTCUSDT:1d, match=true
+ChartDataService.ts:461 [ChartDataService] ✅ NOTIFYING subscriber market-panel-chart-1756325606413 with 500 historical data points
+ChartDataService.ts:461 [ChartDataService] 🎯 Notified 1 subscribers for key BTCUSDT:1d
+ChartDataService.ts:461 [ChartDataService] Loaded 500 data points for BTCUSDT 1d
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] Updated chart with 500 data points (fingerprint=500:1756252800), volume nonzero=500
+debugLogger.ts:37 [SimpleChart] Initial volume points: total=500, nonzero=500
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] Applied chart settings: theme=dark, colorScheme=default, showVolume=true
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+ChartDataService.ts:461 [ChartDataService] Real-time updates enabled for BTCUSDT 1d
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111810.9
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111810.9
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111810.9, …} volume: 10911.8035
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111810.9
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111810.9
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111810.9, …} volume: 10911.82472
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111810.9
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111810.9
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111810.9, …} volume: 10911.83709
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111810.9
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111810.9
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111810.9, …} volume: 10911.84523
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111809.83
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111809.83
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111809.83, …} volume: 10912.33825
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111809.87
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111809.87
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111809.87, …} volume: 10912.41972
+debugLogger.ts:37 [MarketPanel] Chart update - Price: 111818.07
+ChartDataService.ts:461 [ChartDataService] Chart updated: BTCUSDT 1d - Price: 111818.07
+debugLogger.ts:37 [SimpleChart] Chart time range updated {first: 1713139200, last: 1756252800}
+debugLogger.ts:37 [SimpleChart] History unchanged — skipping setData
+debugLogger.ts:37 [SimpleChart] Processing realtime candle: {originalTime: 1756252800, normalizedTime: 1756252800, timeType: 'number', isClosed: undefined}
+debugLogger.ts:37 [SimpleChart] safeSeriesUpdate received candle: {candle: {…}, keys: Array(6), hasExtraFields: true}
+debugLogger.ts:37 [SimpleChart] Updating existing candle (same time as last): {normalizedTime: 1756252800, lastTime: 1756252800}
+debugLogger.ts:37 [SimpleChart] About to call series.update with clean object: {candle: {…}, keys: Array(5), timeType: 'number', timeValue: 1756252800, isNumber: true}
+debugLogger.ts:37 [SimpleChart] Updated open candle data {time: 1756252800, open: 111763.22, high: 112625, low: 110345.42, close: 111818.07, …} volume: 10912.48364

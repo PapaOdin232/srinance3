@@ -14,7 +14,7 @@ export default {
       'ts-jest',
       {
         useESM: true,
-  diagnostics: false,
+        diagnostics: false,
         tsconfig: {
           module: 'ESNext',
           target: 'ES2022',
@@ -28,11 +28,16 @@ export default {
     // Map style imports to a simple mock to avoid extra dev deps
     '^.+\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.ts',
     // Support ESM TS path imports that end with .js in transpiled code
-  '^(\\.{1,2}/.*)\\.js$': '$1',
-  '^lightweight-charts$': '<rootDir>/src/__mocks__/lightweight-charts.ts'
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^lightweight-charts$': '<rootDir>/src/__mocks__/lightweight-charts.ts',
+    // Mock problematic modules that use import.meta
+    '^../utils/debugLogger$': '<rootDir>/src/__mocks__/debugLogger.ts',
+    '^./debugLogger$': '<rootDir>/src/__mocks__/debugLogger.ts',
+    '^../services/logger$': '<rootDir>/src/__mocks__/logger.ts',
+    '^./logger$': '<rootDir>/src/__mocks__/logger.ts'
   },
   // Force transformation of modules that use import.meta
   transformIgnorePatterns: [
-    'node_modules/(?!(lightweight-charts|@mantine|@tabler)/)'
+    'node_modules/(?!(lightweight-charts|@mantine|@tabler|@testing-library)/)'
   ]
 };

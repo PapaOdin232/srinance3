@@ -43,7 +43,7 @@ const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows 
   const asks = orderbook.asks.slice(0, maxRows).reverse(); // Show highest asks first
 
   return (
-    <Paper p="md" withBorder shadow="sm" h="400">
+    <Paper p="md" withBorder shadow="sm" h="400" data-testid="orderbook-container">
       <Stack gap="sm" h="100%">
         {/* Header */}
         <Group justify="space-between" align="center">
@@ -69,13 +69,14 @@ const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows 
         <ScrollArea flex={1} type="never">
           <Stack gap="xs">
             {/* Asks (Sell Orders) - Red */}
-            {asks.map(([price, quantity], index) => (
+    {asks.map(([price, quantity], index) => (
               <Group key={`ask-${index}`} justify="space-between" px="xs" py={2}>
                 <Text 
                   size="sm" 
                   ff="monospace" 
                   c="red.6" 
                   fw={500}
+      data-testid={`ask-price-${index}`}
                 >
                   ${formatPrice(price)}
                 </Text>
@@ -83,6 +84,7 @@ const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows 
                   size="sm" 
                   ff="monospace" 
                   c="dimmed"
+      data-testid={`ask-qty-${index}`}
                 >
                   {formatQuantity(quantity)}
                 </Text>
@@ -101,13 +103,14 @@ const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows 
             </Box>
 
             {/* Bids (Buy Orders) - Green */}
-            {bids.map(([price, quantity], index) => (
+    {bids.map(([price, quantity], index) => (
               <Group key={`bid-${index}`} justify="space-between" px="xs" py={2}>
                 <Text 
                   size="sm" 
                   ff="monospace" 
                   c="teal.6" 
                   fw={500}
+      data-testid={`bid-price-${index}`}
                 >
                   ${formatPrice(price)}
                 </Text>
@@ -115,6 +118,7 @@ const OrderBookDisplay: React.FC<OrderBookDisplayProps> = ({ orderbook, maxRows 
                   size="sm" 
                   ff="monospace" 
                   c="dimmed"
+      data-testid={`bid-qty-${index}`}
                 >
                   {formatQuantity(quantity)}
                 </Text>

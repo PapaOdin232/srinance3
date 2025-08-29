@@ -47,6 +47,7 @@ import { MantineProvider } from '@mantine/core';
 import MarketPanel from './MarketPanel';
 import * as restClient from '../services/restClient';
 
+
 jest.mock('../services/restClient', () => ({
   getCurrentTicker: jest.fn(async (symbol: string) => ({ symbol, price: '50000', change: '100', changePercent: '2.00%' })),
   getOrderBook: jest.fn(async (symbol: string) => ({ symbol, bids: [['49900','0.5']], asks: [['50100','0.3']] }))
@@ -69,6 +70,9 @@ jest.mock('../services/wsClient', () => ({
   },
   getConnectionStateDisplay: jest.fn(() => ({ icon: '🟢', text: 'Połączony', color: '#4CAF50' }))
 }));
+
+// Ensure a basic import.meta.env is present (setupTests already defines one)
+(global as any).import = (global as any).import || { meta: { env: { DEV: false } } } as any;
 
 const mockTicker = { symbol: 'BTCUSDT', price: '50000' };
 const mockOrderbook = {

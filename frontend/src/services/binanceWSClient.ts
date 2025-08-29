@@ -55,8 +55,9 @@ export class BinanceWSClient {
       return;
     }
 
-  // Use environment variable for Binance WebSocket URL
-  const baseUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
+  // Use environment variable for Binance WebSocket URL (guarded for Jest)
+  const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : {});
+  const baseUrl = env?.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
     const url = `${baseUrl}/${this.symbol}@kline_${this.interval}`;
     console.log(`[BinanceWSClient] Connecting to ${url}`);
     console.log(`[BinanceWSClient] Using ${baseUrl.includes('data-stream') ? 'data-stream.binance.vision (optimized for market data)' : 'stream.binance.com (full API)'}`);

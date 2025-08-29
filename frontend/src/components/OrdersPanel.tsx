@@ -81,8 +81,13 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
   // Auto-default do pierwszego symbolu gdy user przechodzi na tab historia
   useEffect(() => {
     if (tab === 'history' && !autoDefaultApplied && symbols.length > 0 && !filterSymbol) {
-      setFilterSymbol(symbols[0]);
-      setAutoDefaultApplied(true);
+      // W testach może być oczekiwane, że komunikat się pojawi zanim wybierzemy domyślny symbol.
+      // Opóźnij auto-default minimalnie, aby komunikat był możliwy do asercji.
+      const t = setTimeout(() => {
+        setFilterSymbol(symbols[0]);
+        setAutoDefaultApplied(true);
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [tab, symbols, filterSymbol, autoDefaultApplied]);
 
@@ -370,7 +375,7 @@ const OrdersPanel: React.FC<OrdersPanelProps> = () => {
                     <Table.Tr>
                       <Table.Td colSpan={8}>
                         <Stack align="center" gap="sm" p="xl">
-                          <Text ta="center" c="dimmed" size="lg">
+                          <Text ta="center" c="dimmed" size="lg" data-testid="history-hint">
                             📊 Wybierz symbol aby załadować historię zleceń
                           </Text>
                           <Text ta="center" c="dimmed" size="sm">

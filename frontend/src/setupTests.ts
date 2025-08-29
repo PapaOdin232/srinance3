@@ -1,20 +1,25 @@
 import '@testing-library/jest-dom';
+// Wydłuż globalny timeout testów (cięższe testy komponentów + coverage)
+jest.setTimeout(20000);
 
 // Setup import.meta for Vite environment in tests
-(global as any).import = {
-  meta: {
-    env: {
-      DEV: true,
-      PROD: false,
-      VITE_WS_URL: 'ws://localhost:8080',
-      VITE_API_URL: 'http://localhost:3000',
-      VITE_LOG_LEVEL: 'debug',
-      VITE_ENABLE_BINANCE_STREAMS: 'false',
-      VITE_MARKET_QUOTES: 'USDT,BTC,ETH,BNB',
-      VITE_MAX_TICKER_SUBS: '100'
+Object.defineProperty(global, 'import', {
+  value: {
+    meta: {
+      env: {
+        DEV: true,
+        PROD: false,
+        VITE_WS_URL: 'ws://localhost:8080',
+        VITE_API_URL: 'http://localhost:3000',
+        VITE_LOG_LEVEL: 'debug',
+        VITE_ENABLE_BINANCE_STREAMS: 'false',
+        VITE_MARKET_QUOTES: 'USDT,BTC,ETH,BNB',
+        VITE_MAX_TICKER_SUBS: '100'
+      }
     }
-  }
-};
+  },
+  writable: true
+});
 
 // Mock dla HTMLCanvasElement.getContext (Chart.js)
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
@@ -48,6 +53,15 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
     };
   },
 });
+
+// Stub dla scrollIntoView używanego przez Mantine Combobox w JSDOM
+if (!HTMLElement.prototype.scrollIntoView) {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true,
+  });
+}
 
 // Provide minimal env vars via process.env for tests
 (process as any).env = {

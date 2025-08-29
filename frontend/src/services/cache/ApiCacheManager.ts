@@ -40,11 +40,12 @@ class ApiCacheManager {
   private missCount = 0;
 
   private constructor(config: CacheConfig = {}) {
+    const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : {});
     this.config = {
       defaultTTL: 30000, // 30 seconds
       maxCacheSize: 1000,
       staleWhileRevalidate: true,
-      debug: import.meta.env.VITE_DEBUG_WS === 'true',
+      debug: env?.VITE_DEBUG_WS === 'true',
       ...config
     };
 

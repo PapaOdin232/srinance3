@@ -79,7 +79,7 @@ describe('OrdersPanel', () => {
     fireEvent.click(historyTab);
     await screen.findAllByText('Historia Zleceń');
     
-    // Sprawdź czy po przełączeniu na historię wyświetla się odpowiedni komunikat
-    expect(screen.getByText(/Wybierz symbol aby załadować historię/)).toBeInTheDocument();
+  // Stabilny selektor dla komunikatu o wybraniu symbolu
+  expect(screen.getByTestId('history-hint')).toBeInTheDocument();
   });
 });

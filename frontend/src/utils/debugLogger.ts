@@ -9,7 +9,9 @@ export class DebugLogger {
 
   constructor(prefix: string) {
     this.prefix = prefix;
-    this.isDev = import.meta.env.DEV;
+  const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : {});
+  // Treat any non-production env as dev in tests
+  this.isDev = !!(env?.DEV ?? (env?.NODE_ENV && env.NODE_ENV !== 'production'));
   }
 
   private isEnabled(): boolean {
@@ -122,8 +124,11 @@ export const enableDebugLogs = () => {
   console.log('🔊 Debug level logs enabled. Refresh page to take effect.');
 };
 
-// Make functions available globally in development
-if (import.meta.env.DEV) {
+// Make functions available globally in development (guarded for Jest)
+(() => {
+  const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : {});
+  const isDev = !!(env?.DEV ?? (env?.NODE_ENV && env.NODE_ENV !== 'production'));
+  if (!isDev) return;
   (window as any).disableAllDebugLogs = disableAllDebugLogs;
   (window as any).enableAllDebugLogs = enableAllDebugLogs;
   (window as any).disableComponentRenderLogs = disableComponentRenderLogs;
@@ -132,4 +137,4 @@ if (import.meta.env.DEV) {
   (window as any).enableServiceLogs = enableServiceLogs;
   (window as any).disableBinanceLogs = disableBinanceLogs;
   (window as any).enableDebugLogs = enableDebugLogs;
-}
+})();

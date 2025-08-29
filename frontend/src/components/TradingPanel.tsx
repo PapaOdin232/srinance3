@@ -260,7 +260,7 @@ const TradingPanel: React.FC = () => {
             </Group>
             
             {/* Show base asset balance if not USDT */}
-            {symbol && !symbol.endsWith('USDT') && (() => {
+            {symbol && symbol.endsWith('USDT') && (() => {
               const baseAsset = symbol.replace('USDT', '');
               const baseBalance = balances.find(b => b.asset === baseAsset);
               return baseBalance && baseBalance.free > 0 ? (

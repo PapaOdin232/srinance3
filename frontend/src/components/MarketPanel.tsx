@@ -382,8 +382,8 @@ const MarketPanel: React.FC = () => {
     return () => {
       isMounted = false;
       
-      // In development/StrictMode, avoid cleanup to prevent double mounting issues
-      const isDevelopment = import.meta.env.DEV;
+  // In development/StrictMode, avoid cleanup to prevent double mounting issues
+  const isDevelopment = (globalThis as any)?.import?.meta?.env?.DEV ?? false;
       if (isDevelopment) {
         logger.log('Skipping cleanup in development mode (StrictMode protection)');
         return;

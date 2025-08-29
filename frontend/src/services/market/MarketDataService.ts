@@ -80,12 +80,19 @@ class MarketDataService {
   // Map subscriber -> symbol to allow precise cleanup decisions
   private subscriberSymbols: Map<string, string> = new Map();
   
-  // URLs from environment
-  private binanceWsUrl = import.meta.env.VITE_BINANCE_WS_URL || 'wss://data-stream.binance.vision/ws';
-  private backendWsUrl = this.normalizeBackendUrl(import.meta.env.VITE_WS_URL || 'ws://localhost:8001/ws/market');
+  // Helper to safely access environment values across Vite/Jest
+  private getEnv(key: string, fallback?: string): string | undefined {
+    const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
+    const val = env[key];
+    return (val !== undefined && val !== null && String(val).length > 0) ? String(val) : fallback;
+  }
+
+  // URLs from environment (safe for Jest without import.meta)
+  private binanceWsUrl = this.getEnv('VITE_BINANCE_WS_URL', 'wss://data-stream.binance.vision/ws')!;
+  private backendWsUrl = this.normalizeBackendUrl(this.getEnv('VITE_WS_URL', 'ws://localhost:8001/ws/market')!);
   private binanceApiUrl = 'https://api.binance.com/api/v3';
   
-  private debug = import.meta.env.VITE_DEBUG_WS === 'true';
+  private debug = this.getEnv('VITE_DEBUG_WS') === 'true';
 
   private constructor() {
     // Singleton pattern
@@ -223,7 +230,7 @@ class MarketDataService {
   // (symbol not needed directly here; sub-methods receive full config)
     
     // Setup Binance WebSocket for real-time data if enabled
-    if (import.meta.env.VITE_ENABLE_BINANCE_STREAMS === 'true' && config.includeKlines) {
+  if (this.getEnv('VITE_ENABLE_BINANCE_STREAMS') === 'true' && config.includeKlines) {
       this.setupBinanceWebSocket(config);
     }
     

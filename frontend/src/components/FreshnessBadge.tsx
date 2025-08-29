@@ -8,7 +8,7 @@ interface FreshnessBadgeProps {
 function getCategory(freshnessMs: number, fallback?: boolean): { color: string; label: string } {
   if (fallback) return { color: 'gray', label: 'Fallback REST' };
   if (freshnessMs < 5000) return { color: 'green', label: 'Świeże <5s' };
-  if (freshnessMs < 15000) return { color: 'yellow', label: 'OK <15s' };
+  if (freshnessMs <= 15000) return { color: 'yellow', label: 'OK <15s' };
   return { color: 'red', label: 'Stare >15s' };
 }
 

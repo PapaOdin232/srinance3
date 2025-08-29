@@ -54,7 +54,8 @@ class WebSocketConnectionManager {
 
   private constructor() {
     // Singleton pattern - private constructor
-    this.debug = import.meta.env.VITE_DEBUG_WS === 'true';
+  const env = (globalThis as any)?.import?.meta?.env || (typeof process !== 'undefined' ? (process as any).env : {});
+  this.debug = env?.VITE_DEBUG_WS === 'true';
   }
 
   public static getInstance(): WebSocketConnectionManager {

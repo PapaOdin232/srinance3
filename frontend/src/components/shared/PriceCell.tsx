@@ -27,13 +27,22 @@ export const PriceCell = ({
   return (
     <Text 
       ta={ta}
-      ff="monospace"
-      style={animationStyle}
+  ff="monospace"
+  style={{ ...animationStyle, fontFamily: 'monospace' }}
       px="xs"
       py="2px"
       size="sm"
+  data-align={ta}
+  data-size="sm"
     >
-      {formattedPrice}
+      <span
+        data-testid="price-cell-text"
+        data-align={ta}
+        data-size="sm"
+        style={{ ...animationStyle, fontFamily: 'monospace' }}
+      >
+        {formattedPrice}
+      </span>
     </Text>
   );
 };

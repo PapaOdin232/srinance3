@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import EnhancedWSClient, { ConnectionState } from '../services/wsClient';
+import { getEnvVar } from '../services/getEnvVar';
 
 // Typy odpowiadające protokołowi WEBSOCKET_PROTOCOL.md
 interface OrderExternal {
@@ -146,7 +147,7 @@ export const UserStreamProvider: React.FC<{ baseUrl?: string; children: React.Re
   // Connect WS
   useEffect(() => {
     if (wsRef.current) return; // already connected
-    const envBase = (import.meta as any).env?.VITE_WS_URL as string | undefined;
+    const envBase = getEnvVar('VITE_WS_URL', '');
     let rawBase = baseUrl || envBase;
     if (!rawBase) {
       const loc = window.location;

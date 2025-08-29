@@ -18,6 +18,9 @@ export const StatusCell = ({
       c={isActive ? 'green' : 'red'} 
       size={size}
       fw={500}
+  data-color={isActive ? 'green' : 'red'}
+  data-size={size}
+  data-weight="500"
     >
       {isActive ? activeText : inactiveText}
     </Text>
@@ -47,11 +50,15 @@ export const ActionButtons = ({
     <div style={{ display: 'flex', gap: '8px' }}>
       {onEdit && (
         <button 
+          type="button"
           onClick={onEdit}
           disabled={disabled}
           style={{ 
             background: 'none', 
             border: 'none', 
+            borderWidth: 0,
+            appearance: 'none',
+            outline: 'none',
             color: '#228be6', 
             cursor: disabled ? 'not-allowed' : 'pointer',
             fontSize: '12px'
@@ -62,11 +69,15 @@ export const ActionButtons = ({
       )}
       {onToggle && (
         <button 
+          type="button"
           onClick={onToggle}
           disabled={disabled}
           style={{ 
             background: 'none', 
             border: 'none', 
+            borderWidth: 0,
+            appearance: 'none',
+            outline: 'none',
             color: '#40c057', 
             cursor: disabled ? 'not-allowed' : 'pointer',
             fontSize: '12px'
@@ -77,11 +88,15 @@ export const ActionButtons = ({
       )}
       {onDelete && (
         <button 
+          type="button"
           onClick={onDelete}
           disabled={disabled}
           style={{ 
             background: 'none', 
             border: 'none', 
+            borderWidth: 0,
+            appearance: 'none',
+            outline: 'none',
             color: '#fa5252', 
             cursor: disabled ? 'not-allowed' : 'pointer',
             fontSize: '12px'
