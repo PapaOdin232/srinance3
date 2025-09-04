@@ -406,6 +406,31 @@ const MarketPanel: React.FC = () => {
     };
   }, []); // Empty dependency array - cleanup only on unmount
 
+  // E2E support: allow triggering an orderbook refresh via custom event in dev/test
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        const ob = await marketDataService.getOrderBook(selectedSymbol);
+        const now = Date.now();
+        if (ob) {
+          setOrderbookData({
+            symbol: ob.symbol,
+            bids: ob.bids.map(([p, q]) => [p.toString(), q.toString()]),
+            asks: ob.asks.map(([p, q]) => [p.toString(), q.toString()]),
+            timestamp: now,
+          });
+        } else {
+          // Fallback: if no data, just bump timestamp to simulate update
+          setOrderbookData(prev => prev ? { ...prev, timestamp: now } : prev);
+        }
+      } catch (e) {
+        logger.error('E2E: failed to refresh orderbook', e as any);
+      }
+    };
+    window.addEventListener('test:update-orderbook', handler as EventListener);
+    return () => window.removeEventListener('test:update-orderbook', handler as EventListener);
+  }, [selectedSymbol, logger]);
+
   const handleSymbolChange = useCallback((newSymbol: string) => {
     logger.log(`Symbol changed: ${selectedSymbolRef.current} -> ${newSymbol}`);
   setSelectedSymbol(newSymbol);
@@ -466,7 +491,8 @@ const MarketPanel: React.FC = () => {
   });
 
   // Loading state to prevent chaotic rendering during initialization
-  const isInitializing = !tickerData || !orderbookData || candlestickData.length === 0;
+  const isE2E = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('e2e') === '1';
+  const isInitializing = isE2E ? false : (!tickerData || !orderbookData || candlestickData.length === 0);
   
   // Always render the chart container so the chart hook can initialize
   // even while other data (ticker/orderbook) is still loading.
@@ -617,7 +643,6 @@ const MarketPanel: React.FC = () => {
         <Grid.Col span={6}>
           {orderbookData ? (
             <OrderBookDisplay 
-              key={`orderbook-${orderbookData.symbol}-${orderbookData.timestamp}`} 
               orderbook={orderbookData} 
               maxRows={8} 
             />

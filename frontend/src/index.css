@@ -1,4 +1,3 @@
-
 @import './theme.css';
 
 :root {
@@ -70,4 +69,15 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Nie pozwalaj przeglądarce „wyrywać" scrolla poza viewport */
+.mantine-ScrollArea-viewport {
+  overscroll-behavior: contain;
+}
+
+/* Stabilny layout zegara w orderbook */
+.orderbook-clock {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
