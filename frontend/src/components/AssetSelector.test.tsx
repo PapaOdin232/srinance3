@@ -4,6 +4,7 @@ import axios from 'axios';
 jest.mock('axios');
 import AssetSelector from './AssetSelector';
 import type { Asset } from '../types/asset';
+import { act } from 'react-dom/test-utils';
 
 // Mock data
 const mockAssets: Asset[] = [
@@ -142,5 +143,89 @@ describe('AssetSelector', () => {
 
     // Szukamy sformatowanej wartości 0.0048 lub w notacji naukowej (0.00e) zależnie od reguły
     expect(screen.getByText(/0\.0048|4\.80e-3/)).toBeInTheDocument();
+  });
+
+  test('visible denominator uses displayAssets.length (USDT default)', () => {
+    (axios.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/exchangeInfo')) return Promise.resolve({ data: { symbols: [] } });
+      if (url.includes('/api/24hr')) return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: {} });
+    });
+
+    render(
+      <MantineProvider defaultColorScheme="dark">
+        <AssetSelector
+          selectedAsset={null}
+          onAssetSelect={mockOnAssetSelect}
+          assets={mockAssets}
+        />
+      </MantineProvider>
+    );
+
+    // For default selectedMarket='USDT' in component, displayAssets should contain only USDT pairs (3 in mock)
+    expect(screen.getByText(/Widoczne:\s+\d+\s+\/\s+3\s+aktyw/)).toBeInTheDocument();
+  });
+
+  test('shows quote badge when switching market to ALL', async () => {
+    (axios.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/exchangeInfo')) return Promise.resolve({ data: { symbols: [] } });
+      if (url.includes('/api/24hr')) return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: {} });
+    });
+
+    render(
+      <MantineProvider defaultColorScheme="dark">
+        <AssetSelector
+          selectedAsset={null}
+          onAssetSelect={mockOnAssetSelect}
+          assets={mockAssets}
+        />
+      </MantineProvider>
+    );
+
+    // Open market select and choose 'Wszystkie rynki'
+    const marketSelect = screen.getByPlaceholderText('Rynek');
+    fireEvent.mouseDown(marketSelect);
+    const allOption = await screen.findByText('Wszystkie rynki');
+    fireEvent.click(allOption);
+
+    // After switching to ALL, badges with quotes should be visible, including 'TAO' from mockAssets
+    expect(await screen.findByText('TAO')).toBeInTheDocument();
+  });
+
+  test('does not call onAssetSelect after unmount due to debounce cleanup', () => {
+    jest.useFakeTimers();
+
+    (axios.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/exchangeInfo')) return Promise.resolve({ data: { symbols: [] } });
+      if (url.includes('/api/24hr')) return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: {} });
+    });
+
+    const { unmount } = render(
+      <MantineProvider defaultColorScheme="dark">
+        <AssetSelector
+          selectedAsset={null}
+          onAssetSelect={mockOnAssetSelect}
+          assets={mockAssets}
+        />
+      </MantineProvider>
+    );
+
+    // Click the first 'Wybierz' button to schedule debounce
+    const chooseButtons = screen.getAllByText('Wybierz');
+    expect(chooseButtons.length).toBeGreaterThan(0);
+    fireEvent.click(chooseButtons[0]);
+
+    // Unmount immediately, then advance timers past debounce interval
+    unmount();
+
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+
+    expect(mockOnAssetSelect).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
   });
 });

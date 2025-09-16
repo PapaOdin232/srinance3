@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, memo } from 'react';
+import React, { useState, useMemo, useEffect, memo, useRef } from 'react';
 import {
   Text,
   Table,
@@ -31,11 +31,10 @@ import {
 import { IconRefresh, IconSearch, IconSortAscending, IconSortDescending, IconEye, IconEyeOff } from '@tabler/icons-react';
 import { PriceCell } from './shared';
 import type { PortfolioBalance, PortfolioTableProps } from '../types/portfolio';
-import { useDebounced } from '../hooks/useDebounced';
 import { usePriceChangeAnimation } from '../hooks/usePriceChangeAnimation';
 import { formatCurrency, formatCrypto } from '../types/portfolio';
 
-const columnHelper = createColumnHelper<PortfolioBalance>();
+// columnHelper will be declared after View/Row types to keep correct order
 
 const PortfolioTable: React.FC<PortfolioTableProps> = ({
   balances,
@@ -56,12 +55,15 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     pageSize: 10,
   });
 
-  // Debounced search dla lepszej wydajności
-  const debouncedGlobalFilter = useDebounced(globalFilter, 300);
+  // Debounced search previously used; removed in favor of single update path via table.setGlobalFilter
 
   // Zakładki kategorii: ALL | CRYPTO | STABLE | FIAT
   type View = 'ALL' | 'CRYPTO' | 'STABLE' | 'FIAT';
   const [view, setView] = useState<View>('ALL');
+
+  // Row = portfolio balance extended with the computed category — helps avoid `any`
+  type Row = PortfolioBalance & { category: View };
+  const columnHelper = createColumnHelper<Row>();
 
   // Zbiory klasyfikacji
   const STABLECOINS = useMemo(() => new Set([
@@ -76,7 +78,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
 
   // Klasyfikacja balansów (dodajemy pole category)
   const classifiedBalances = useMemo(() => {
-    if (!Array.isArray(balances)) return [] as (PortfolioBalance & { category: View })[];
+    if (!Array.isArray(balances)) return [] as Row[];
     return balances.map(b => {
       const asset = (b.asset || '').toUpperCase();
       let category: View = 'CRYPTO';
@@ -89,7 +91,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
           category = 'FIAT';
         }
       }
-      return { ...b, category };
+      return { ...b, category } as Row;
     });
   }, [balances, STABLECOINS, FIAT_ASSETS]);
   
@@ -97,6 +99,12 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
   const priceChanges = usePriceChangeAnimation(
     Array.isArray(classifiedBalances) ? classifiedBalances.map(b => ({ symbol: b.asset, price: b.currentPrice || 0 })) : []
   );
+
+  // Keep priceChanges in a ref so we don't put it in columns deps (prevents rebuilding columns on every tick)
+  const priceChangesRef = useRef(priceChanges);
+  useEffect(() => {
+    priceChangesRef.current = priceChanges;
+  }, [priceChanges]);
 
   // Filter balances based on hideZeroBalances setting
   const filteredBalances = useMemo(() => {
@@ -120,10 +128,10 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     () => [
       columnHelper.accessor('asset', {
         header: 'Aktywo',
-        cell: (info) => {
-          const asset = info.getValue();
-          const balance = info.row.original;
-          const category = (balance as any).category as View;
+      cell: (info) => {
+        const asset = info.getValue();
+        const balance = info.row.original as Row;
+        const category = balance.category;
           const isFiat = category === 'FIAT';
           const isStable = category === 'STABLE';
           const micaCompliance = balance.micaCompliance;
@@ -215,11 +223,11 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
         header: 'Cena',
         cell: (info) => {
           const asset = info.row.original.asset;
-          const change = priceChanges.get(asset);
+          const change = priceChangesRef.current?.get(asset);
           const price = info.getValue();
           
           if (!price || price === 0) {
-            const cat = (info.row.original as any).category as View;
+            const cat = (info.row.original as Row).category;
             return (
               <Tooltip label={cat === 'FIAT' ? 'Fiat – wycena niedostępna' : 'Brak danych ceny'} withArrow>
                 <Text c="dimmed" size="sm">-</Text>
@@ -230,7 +238,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
           return (
             <PriceCell 
               price={price}
-              change={change || undefined}
+              change={change ?? undefined}
               isUSDT={asset === 'USDT'}
             />
           );
@@ -283,47 +291,31 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
         }
       ),
     ],
-    [priceChanges, totalPortfolioValue]
+  [totalPortfolioValue]
   );
 
+  // Kolumny dla których pragniemy przenieść wartości 0 na dół (single source of truth)
+  const ZERO_LAST_COLS = useMemo(() => ['currentPrice', 'valueUSD', 'allocation'], []);
+
   // Konfiguracja tabeli TanStack
-  const baseGetSortedRowModel = getSortedRowModel();
-  const table = useReactTable({
-    data: filteredBalances,
+  const table = useReactTable<Row>({
+    data: filteredBalances as Row[],
     columns,
     state: {
       sorting,
       columnFilters,
-      globalFilter: debouncedGlobalFilter,
+      // Use raw globalFilter in table state; we keep debouncedGlobalFilter for expensive ops
+      globalFilter: globalFilter,
       pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: (value) => {
-      setGlobalFilter(value as string);
-      // Po zmianie wyszukiwarki przejdź na pierwszą stronę, żeby uniknąć pustego widoku
-      setPagination(prev => ({ ...prev, pageIndex: 0 }));
-    },
+  // Keep a single update path: table.onGlobalFilterChange will sync local state via setGlobalFilter
+  onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: ((table: any) => {
-      const sortedModel = baseGetSortedRowModel(table) as any;
-      const sortingState = table.getState().sorting as any[];
-      if (!sortingState.length) return sortedModel;
-      const colId = sortingState[sortingState.length - 1].id;
-  if (!['currentPrice','valueUSD','allocation','priceChange24h','valueChange24h'].includes(colId)) return sortedModel;
-      const rows: any[] = sortedModel.rows || [];
-      if (!rows.length) return sortedModel;
-      const nonZero: any[] = [];
-      const zeros: any[] = [];
-      for (const r of rows) {
-        const raw = r.getValue(colId);
-        const v = typeof raw === 'number' ? raw : parseFloat(raw);
-        if (!v) zeros.push(r); else nonZero.push(r);
-      }
-      sortedModel.rows = [...nonZero, ...zeros];
-      return sortedModel;
-    }) as any,
+  getCoreRowModel: getCoreRowModel(),
+  // Use standard sorter; post-processing (displayRows) will handle zero-last logic
+  getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     // Zapobiegnij skakaniu na pierwszą stronę przy każdej aktualizacji cen
@@ -339,7 +331,7 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
     const sortingState = table.getState().sorting;
     if (!sortingState.length) return table.getRowModel().rows;
     const colId = sortingState[sortingState.length - 1].id;
-    if (!['currentPrice','valueUSD','allocation','priceChange24h','valueChange24h'].includes(colId)) {
+    if (!ZERO_LAST_COLS.includes(colId)) {
       return table.getRowModel().rows;
     }
     const rows = table.getRowModel().rows;
@@ -428,11 +420,11 @@ const PortfolioTable: React.FC<PortfolioTableProps> = ({
               value={globalFilter ?? ''}
               onChange={(event) => {
                 const val = event.currentTarget.value;
-                setGlobalFilter(val);
-                // natychmiast przejdź na pierwszą stronę po zmianie frazy
+                // Single update path: update table's global filter which will call onGlobalFilterChange
+                table.setGlobalFilter(val);
+                // Reset pagination and switch to ALL in one place
                 setPagination(prev => ({ ...prev, pageIndex: 0 }));
-        // Przy wyszukiwaniu przechodzimy na ALL aby pokazać wszystkie dopasowania
-        if (val && view !== 'ALL') setView('ALL');
+                if (val && view !== 'ALL') setView('ALL');
               }}
               style={{ flexGrow: 1, maxWidth: 300 }}
             />

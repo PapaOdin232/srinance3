@@ -109,6 +109,58 @@ def upsert_final_order(order: dict):
     finally:
         session.close()
 
+def clear_orders_history():
+    """Usuń wszystkie rekordy z tabeli orders_history.
+    
+    Returns:
+        int: Liczba usuniętych rekordów
+    """
+    session = SessionLocal()
+    try:
+        count = session.query(OrdersHistory).count()
+        if count > 0:
+            session.query(OrdersHistory).delete()
+            session.commit()
+            logger.info(f"Usunięto {count} rekordów z tabeli orders_history")
+        else:
+            logger.info("Tabela orders_history jest już pusta")
+        return count
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Błąd podczas czyszczenia tabeli orders_history: {e}")
+        raise
+    finally:
+        session.close()
+
+
+def delete_orders_history_by_symbol(symbol: str):
+    """Usuń rekordy z tabeli orders_history dla określonego symbolu.
+    
+    Args:
+        symbol (str): Symbol pary handlowej (np. 'BTCUSDT')
+        
+    Returns:
+        int: Liczba usuniętych rekordów
+    """
+    session = SessionLocal()
+    try:
+        symbol = symbol.upper()
+        count = session.query(OrdersHistory).filter(OrdersHistory.symbol == symbol).count()
+        if count > 0:
+            session.query(OrdersHistory).filter(OrdersHistory.symbol == symbol).delete()
+            session.commit()
+            logger.info(f"Usunięto {count} rekordów dla symbolu {symbol} z tabeli orders_history")
+        else:
+            logger.info(f"Brak rekordów dla symbolu {symbol} w tabeli orders_history")
+        return count
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Błąd podczas usuwania rekordów dla symbolu {symbol}: {e}")
+        raise
+    finally:
+        session.close()
+
+
 from typing import cast
 
 

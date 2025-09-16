@@ -28,6 +28,7 @@ export interface AssetSelectorProps {
   assets: Asset[];
   loading?: boolean;
   error?: string | null;
+  onRetry?: () => void;
 }
 
 // Typy dla tabeli

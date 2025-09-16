@@ -26,9 +26,10 @@ const columnHelper = createColumnHelper<Asset>();
 const AssetSelector: React.FC<AssetSelectorProps> = ({
   selectedAsset,
   onAssetSelect,
-  assets,
+  assets = [],
   loading = false,
   error = null,
+  onRetry,
 }) => {
   // Stan dla sortowania, filtrowania, paginacji
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -49,8 +50,9 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     } else {
       setPreferredQuotes([selectedMarket]);
     }
-    // po zmianie rynku wróć na pierwszą stronę
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    // po zmianie rynku wróć na pierwszą stronę tylko jeśli nie jesteśmy już na 0
+    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMarket]);
 
   // Debounced search dla lepszej wydajności
@@ -59,13 +61,21 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
   // Hook do animacji zmian cen
   // Filtrowanie/grupowanie wg wybranego rynku
   const displayAssets = useMemo(() => {
+    // Sprawdź czy assets jest poprawną tablicą
+    if (!Array.isArray(assets) || assets.length === 0) {
+      return [];
+    }
+
     if (selectedMarket !== 'ALL') {
-      return assets.filter(a => a.quoteAsset === selectedMarket);
+      return assets.filter(a => a?.quoteAsset === selectedMarket);
     }
     // ALL: wybierz dla każdej monety jedną parę wg preferencji quote
     const preference = ['USDT', 'BTC', 'ETH', 'BNB'];
     const byBase = new Map<string, Asset>();
     for (const asset of assets) {
+      // Sprawdź czy asset ma wymagane właściwości
+      if (!asset?.baseAsset || !asset?.quoteAsset) continue;
+      
       const current = byBase.get(asset.baseAsset);
       if (!current) {
         byBase.set(asset.baseAsset, asset);
@@ -77,7 +87,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
       const nextScore = nextRank === -1 ? Number.MAX_SAFE_INTEGER : nextRank;
       if (nextScore < curScore) byBase.set(asset.baseAsset, asset);
       // jeśli ten sam priorytet, wybierz większy wolumen
-      else if (nextScore === curScore && asset.volume > current.volume) byBase.set(asset.baseAsset, asset);
+      else if (nextScore === curScore && (asset.volume || 0) > (current.volume || 0)) byBase.set(asset.baseAsset, asset);
     }
     return Array.from(byBase.values());
   }, [assets, selectedMarket]);
@@ -96,6 +106,16 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
       onAssetSelect(asset);
     }, 250);
   }, [onAssetSelect]);
+
+  // Cleanup debounce timer on unmount to avoid calling onAssetSelect after component is gone
+  useEffect(() => {
+    return () => {
+      if (selectDebounceRef.current) {
+        clearTimeout(selectDebounceRef.current);
+        selectDebounceRef.current = null;
+      }
+    };
+  }, []);
 
   // Definicja kolumn dla tabeli
   const columns = useMemo(
@@ -119,13 +139,13 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
         header: 'Cena',
         cell: (info) => {
           const symbol = info.row.original.symbol;
-          const change = priceChanges.get(symbol);
+          const change = priceChanges?.get(symbol);
           const price = info.getValue();
           
           return (
             <PriceCell 
               price={price}
-              change={change || undefined}
+              change={change ?? undefined}
             />
           );
         },
@@ -178,8 +198,8 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
           </Button>
         ),
       }),
-    ],
-    [selectedAsset, onAssetSelect]
+  ],
+  [selectedAsset, selectedMarket, priceChanges, handleAssetSelectDebounced]
   );
 
   // Konfiguracja tabeli TanStack
@@ -206,18 +226,6 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
     debugTable: false,
   });
 
-  // Zabezpieczenie: jeśli po filtracji/zmianie pageSize obecny pageIndex wykracza poza zakres, zawęź go
-  useEffect(() => {
-    const pageCount = table.getPageCount();
-    if (pageCount === 0 && pagination.pageIndex !== 0) {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      return;
-    }
-    if (pageCount > 0 && pagination.pageIndex > pageCount - 1) {
-      setPagination((prev) => ({ ...prev, pageIndex: pageCount - 1 }));
-    }
-  }, [displayAssets.length, debouncedGlobalFilter, pagination.pageSize, sorting, table, pagination.pageIndex]);
-
   if (loading) {
     return (
       <Paper p="md" withBorder>
@@ -234,7 +242,13 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
       <Paper p="md" withBorder>
         <Group justify="center" c="red">
           <Text>Błąd: {error}</Text>
-          <ActionIcon variant="outline" color="red">
+          <ActionIcon
+            variant="outline"
+            color="red"
+            onClick={onRetry ?? (() => window.location.reload())}
+            title="Spróbuj ponownie"
+            aria-label="Spróbuj ponownie"
+          >
             <IconRefresh size={16} />
           </ActionIcon>
         </Group>
@@ -252,10 +266,10 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
               Wybór aktywa
             </Text>
             <Group gap="xs">
-              <Text size="sm" c="dimmed">
-                Widoczne: {table.getFilteredRowModel().rows.length} / {assets.length} aktywów {selectedMarket !== 'ALL' ? `(rynek ${selectedMarket})` : ``}
-              </Text>
-            </Group>
+                <Text size="sm" c="dimmed">
+                  Widoczne: {table.getFilteredRowModel().rows.length} / {displayAssets.length} aktywów {selectedMarket !== 'ALL' ? `(rynek ${selectedMarket})` : ``}
+                </Text>
+              </Group>
           </Group>
 
           <Group>
