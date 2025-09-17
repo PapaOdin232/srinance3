@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.order import Base as OrderBase
-from models.log import Base as LogBase
-from models.history import Base as HistoryBase
-from models.orders_history import Base as OrdersHistoryBase
+from backend.models.order import Base as OrderBase
+from backend.models.log import Base as LogBase
+from backend.models.history import Base as HistoryBase
+from backend.models.orders_history import Base as OrdersHistoryBase
 import logging
 from pathlib import Path
 
