@@ -89,72 +89,104 @@ export const usePortfolio = (): UsePortfolioReturn => {
     'AED', 'SAR', 'QAR', 'KRW', 'MYR'
   ]), []);
 
-  // Helper function to find market data for any asset
+  // Helper function to find market data for any asset - FIXED for single USD valuation path
   const findMarketPrice = useCallback((asset: string) => {
-    // USDC is our new base currency (MiCA-compliant)
+    console.log(`[Portfolio] Finding price for asset: ${asset}`);
+    
+    // USDC is our base currency (MiCA-compliant) - always 1 USD
     if (asset === 'USDC') {
+      console.log(`[Portfolio] ${asset}: Using base price 1.0 USD`);
       return { price: 1, priceChangePercent: 0 };
     }
 
-    // Major stablecoins - assume ~$1.00 for portfolio tracking
-    // (exact spreads are not critical for portfolio valuation)
+    // Major stablecoins - treat as 1 USD (avoid double-counting via different pairs)
     const MAJOR_STABLECOINS = new Set(['USDT', 'DAI', 'TUSD', 'USDP', 'FDUSD']);
     if (MAJOR_STABLECOINS.has(asset)) {
+      console.log(`[Portfolio] ${asset}: Using stablecoin price 1.0 USD`);
       return { price: 1, priceChangePercent: 0 };
     }
 
-    // First try standard format: {ASSET}USDC
+    // SINGLE PATH STRATEGY: Use hierarchy to ensure each asset has only ONE price path
+    // Priority: USDC pairs > USDT pairs > BTC pairs > ETH pairs
+    
+    // 1. First try USDC pairs (MiCA-compliant, preferred)
     let marketAsset = marketData.find(m => m.symbol === `${asset}USDC`);
     if (marketAsset) {
+      console.log(`[Portfolio] ${asset}: Found ${asset}USDC = ${marketAsset.price} USD`);
       return { price: marketAsset.price, priceChangePercent: marketAsset.priceChangePercent };
     }
 
-    // For fiat currencies, try different USDC-based formats (MiCA-compliant)
+    // For fiat currencies, try USDC-based formats
     if (FIAT_CURRENCIES.has(asset)) {
-      // Try USDC{FIAT} format (e.g., USDCPLN, USDCTRY)
+      // Try USDC{FIAT} format (e.g., USDCPLN, USDCTRY) - INVERTED
       marketAsset = marketData.find(m => m.symbol === `USDC${asset}`);
       if (marketAsset && marketAsset.price > 0) {
-        // Invert the price: if USDCPLN = 4.0, then PLN price = 1/4.0 = 0.25 USD
         const invertedPrice = 1 / marketAsset.price;
-        // For inverted pairs, we also need to invert the percentage change
         const invertedPriceChange = marketAsset.priceChangePercent ? -marketAsset.priceChangePercent : 0;
+        console.log(`[Portfolio] ${asset}: Found USDC${asset} = ${marketAsset.price}, inverted to ${invertedPrice} USD`);
         return { price: invertedPrice, priceChangePercent: invertedPriceChange };
       }
 
-      // Try {FIAT}USDC format (e.g., EURUSDC)
+      // Try {FIAT}USDC format (e.g., EURUSDC) - DIRECT
       marketAsset = marketData.find(m => m.symbol === `${asset}USDC`);
       if (marketAsset) {
-        // Direct price: EURUSDC = 1.16 means 1 EUR = 1.16 USD
-        return { price: marketAsset.price, priceChangePercent: marketAsset.priceChangePercent };
-      }
-
-      // Fallback for fiat: Try USDT{FIAT} format (e.g., USDTZAR, USDTUAH)
-      marketAsset = marketData.find(m => m.symbol === `USDT${asset}`);
-      if (marketAsset && marketAsset.price > 0) {
-        // Invert the price: if USDTZAR = 18.0, then ZAR price = 1/18.0 = 0.056 USD
-        const invertedPrice = 1 / marketAsset.price;
-        // For inverted pairs, we also need to invert the percentage change
-        const invertedPriceChange = marketAsset.priceChangePercent ? -marketAsset.priceChangePercent : 0;
-        return { price: invertedPrice, priceChangePercent: invertedPriceChange };
-      }
-
-      // Fallback for fiat: Try {FIAT}USDT format (e.g., EURUSDT)
-      marketAsset = marketData.find(m => m.symbol === `${asset}USDT`);
-      if (marketAsset) {
-        // Direct price: EURUSDT = 1.16 means 1 EUR = 1.16 USD
+        console.log(`[Portfolio] ${asset}: Found ${asset}USDC = ${marketAsset.price} USD`);
         return { price: marketAsset.price, priceChangePercent: marketAsset.priceChangePercent };
       }
     }
 
-    // Fallback: Try {ASSET}USDT for assets that don't have USDC pairs yet
-    // Note: This will be phased out as USDT pairs are delisted in EU
+    // 2. Fallback to USDT pairs ONLY if no USDC pair exists
     marketAsset = marketData.find(m => m.symbol === `${asset}USDT`);
     if (marketAsset) {
+      console.log(`[Portfolio] ${asset}: Found ${asset}USDT = ${marketAsset.price} USD (USDT fallback)`);
       return { price: marketAsset.price, priceChangePercent: marketAsset.priceChangePercent };
     }
 
+    // For fiat: USDT-based fallbacks
+    if (FIAT_CURRENCIES.has(asset)) {
+      // Try USDT{FIAT} format - INVERTED
+      marketAsset = marketData.find(m => m.symbol === `USDT${asset}`);
+      if (marketAsset && marketAsset.price > 0) {
+        const invertedPrice = 1 / marketAsset.price;
+        const invertedPriceChange = marketAsset.priceChangePercent ? -marketAsset.priceChangePercent : 0;
+        console.log(`[Portfolio] ${asset}: Found USDT${asset} = ${marketAsset.price}, inverted to ${invertedPrice} USD (USDT fallback)`);
+        return { price: invertedPrice, priceChangePercent: invertedPriceChange };
+      }
+
+      // Try {FIAT}USDT format - DIRECT
+      marketAsset = marketData.find(m => m.symbol === `${asset}USDT`);
+      if (marketAsset) {
+        console.log(`[Portfolio] ${asset}: Found ${asset}USDT = ${marketAsset.price} USD (USDT fallback)`);
+        return { price: marketAsset.price, priceChangePercent: marketAsset.priceChangePercent };
+      }
+    }
+
+    // 3. BTC pairs as second fallback (convert BTC to USD)
+    marketAsset = marketData.find(m => m.symbol === `${asset}BTC`);
+    if (marketAsset) {
+      const btcPrice = findBTCPriceInUSD();
+      if (btcPrice !== undefined) {
+        const usdPrice = marketAsset.price * btcPrice;
+        console.log(`[Portfolio] ${asset}: Found ${asset}BTC = ${marketAsset.price} BTC, converted to ${usdPrice} USD`);
+        return { price: usdPrice, priceChangePercent: marketAsset.priceChangePercent };
+      }
+    }
+
+    console.log(`[Portfolio] ${asset}: No price found, returning undefined`);
     return { price: undefined, priceChangePercent: undefined };
   }, [marketData, FIAT_CURRENCIES]);
+
+  // Helper to get BTC price in USD for conversion
+  const findBTCPriceInUSD = useCallback(() => {
+    // Try BTCUSDC first, then BTCUSDT
+    let btcAsset = marketData.find(m => m.symbol === 'BTCUSDC');
+    if (btcAsset) return btcAsset.price;
+    
+    btcAsset = marketData.find(m => m.symbol === 'BTCUSDT');
+    if (btcAsset) return btcAsset.price;
+    
+    return undefined;
+  }, [marketData]);
 
   // Transform account balances to portfolio format with market data
   const balances: PortfolioBalance[] = useMemo(() => {
@@ -162,11 +194,28 @@ export const usePortfolio = (): UsePortfolioReturn => {
       return [];
     }
     
+    console.log(`[Portfolio] Processing ${accountData.balances.length} balances from account`);
+    
     return accountData.balances.map((balance: Balance) => {
       const asset = balance.asset;
       const free = parseFloat(balance.free);
       const locked = parseFloat(balance.locked);
       const total = free + locked;
+      
+      // Skip zero balances to reduce noise
+      if (total <= 0.00000001) {
+        return {
+          asset,
+          free,
+          locked,
+          total: 0,
+          currentPrice: undefined,
+          priceChange24h: undefined,
+          valueUSD: 0,
+          valueChange24h: 0,
+          micaCompliance: getMiCAComplianceStatus(asset),
+        };
+      }
       
       // Find market data for this asset (handles both crypto and fiat)
       const marketPrice = findMarketPrice(asset);
@@ -178,6 +227,8 @@ export const usePortfolio = (): UsePortfolioReturn => {
       const valueChange24h = currentPrice && priceChange24h 
         ? valueUSD * (priceChange24h / 100) 
         : 0;
+      
+      console.log(`[Portfolio] ${asset}: total=${total.toFixed(8)}, price=${currentPrice?.toFixed(6) || 'N/A'}, valueUSD=${valueUSD.toFixed(2)}`);
       
       return {
         asset,
@@ -191,11 +242,22 @@ export const usePortfolio = (): UsePortfolioReturn => {
         micaCompliance: getMiCAComplianceStatus(asset),
       };
     });
-  }, [accountData?.balances, marketData, getMiCAComplianceStatus]);
+  }, [accountData?.balances, findMarketPrice, getMiCAComplianceStatus]);
 
-  // Calculate portfolio metrics with throttling
+  // Calculate portfolio metrics with detailed logging
   const totalValue = useMemo(() => {
-    return balances.reduce((total, balance) => total + (balance.valueUSD || 0), 0);
+    const nonZeroBalances = balances.filter(b => (b.valueUSD || 0) > 0);
+    console.log(`[Portfolio] Calculating total from ${nonZeroBalances.length} non-zero balances:`);
+    
+    let sum = 0;
+    nonZeroBalances.forEach(balance => {
+      const value = balance.valueUSD || 0;
+      console.log(`[Portfolio] ${balance.asset}: ${value.toFixed(2)} USD`);
+      sum += value;
+    });
+    
+    console.log(`[Portfolio] Total portfolio value: ${sum.toFixed(2)} USD`);
+    return sum;
   }, [balances]);
 
   // Use throttled state for total value to prevent excessive UI updates

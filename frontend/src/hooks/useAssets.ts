@@ -21,12 +21,16 @@ type AssetsState = {
 };
 
 const MAX_SUBSCRIPTIONS = Number((typeof process !== 'undefined' && (process as any).env?.VITE_MAX_TICKER_SUBS) || 100);
-const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDT,BTC,ETH,BNB'))
+// UPDATED: Prefer USDC (MiCA-compliant) for portfolio calculations
+const MARKET_QUOTES: string[] = (((typeof process !== 'undefined' && (process as any).env?.VITE_MARKET_QUOTES) || 'USDC,USDT,BTC,ETH,BNB'))
   .split(',')
   .map((q: string) => q.trim().toUpperCase())
   .filter(Boolean);
 const FETCH_COOLDOWN = 60000; // 60s
 const UPDATE_THROTTLE_MS = 750; // Increased from 500ms to 750ms for better performance
+
+// Portfolio-focused quotes to reduce double-counting in valuation
+const PORTFOLIO_PREFERRED_QUOTES = ['USDC']; // Single quote for portfolio to prevent duplication
 
 class AssetStore {
   state: AssetsState = { assets: [], loading: true, error: null, isConnected: false };
@@ -116,17 +120,23 @@ class AssetStore {
 
   updateSubscriptions() {
     if (!this.wsClient || this.state.assets.length === 0) return;
+    
+    // Use portfolio-preferred quotes if no specific preference is set, or use user preference
     const allowedQuotes = (this.preferredQuotes && this.preferredQuotes.length > 0)
       ? this.preferredQuotes.map(q => q.toUpperCase())
-      : MARKET_QUOTES;
+      : PORTFOLIO_PREFERRED_QUOTES.length > 0 
+        ? PORTFOLIO_PREFERRED_QUOTES 
+        : MARKET_QUOTES;
+        
+    console.log(`[Assets] Using quotes for subscriptions: ${allowedQuotes.join(', ')}`);
     const candidates = this.state.assets.filter(a => allowedQuotes.includes(a.quoteAsset));
 
-    // równy przydział subskrypcji per rynek, aby nie faworyzować tylko USDT
+    // Equal allocation of subscriptions per market, to avoid favoring only one quote
     const perQuote = Math.max(1, Math.floor(MAX_SUBSCRIPTIONS / Math.max(1, allowedQuotes.length)));
     const byQuote = new Map<string, Asset[]>();
     for (const q of allowedQuotes) byQuote.set(q, []);
     for (const a of candidates) byQuote.get(a.quoteAsset)?.push(a);
-  for (const [_q, arr] of byQuote) arr.sort((a, b) => b.volume - a.volume);
+    for (const [_q, arr] of byQuote) arr.sort((a, b) => b.volume - a.volume);
 
     const picked: Asset[] = [];
     for (const q of allowedQuotes) {
@@ -134,7 +144,7 @@ class AssetStore {
       picked.push(...arr.slice(0, perQuote));
     }
 
-    // Jeśli mamy jeszcze wolne sloty, dobij ogólnie wg wolumenu
+    // If we still have free slots, fill with highest volume regardless of quote
     if (picked.length < MAX_SUBSCRIPTIONS) {
       const pickedSet = new Set(picked.map(a => a.symbol));
       const remaining = candidates
@@ -144,6 +154,7 @@ class AssetStore {
     }
 
     const symbols = Array.from(new Set(picked.map(a => a.symbol)));
+    console.log(`[Assets] Subscribing to ${symbols.length} symbols across ${allowedQuotes.length} quotes`);
     this.wsClient.setSubscriptions(symbols);
   }
 
