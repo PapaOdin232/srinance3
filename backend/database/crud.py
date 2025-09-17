@@ -2,11 +2,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from backend.database.init_db import SessionLocal
-from backend.models.order import Order
-from backend.models.log import Log
-from backend.models.history import History
-from backend.models.orders_history import OrdersHistory
+from database.init_db import SessionLocal
+from models.order import Order
+from models.log import Log
+from models.history import History
+from models.orders_history import OrdersHistory
 
 def create_order(**kwargs):
     session = SessionLocal()

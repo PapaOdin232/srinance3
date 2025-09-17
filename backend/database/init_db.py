@@ -1,12 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from backend.models.order import Base as OrderBase
-from backend.models.log import Base as LogBase
-from backend.models.history import Base as HistoryBase
-from backend.models.orders_history import Base as OrdersHistoryBase
+from models.order import Base as OrderBase
+from models.log import Base as LogBase
+from models.history import Base as HistoryBase
+from models.orders_history import Base as OrdersHistoryBase
 import logging
+from pathlib import Path
 
-DB_URL = "sqlite:///database/bot.db"
+# Ścieżka do bazy danych w folderze data/
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DB_URL = f"sqlite:///{PROJECT_ROOT}/data/bot.db"
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

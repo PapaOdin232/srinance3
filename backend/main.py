@@ -17,14 +17,19 @@ from backend.database.init_db import init_db
 from backend.bot.trading_bot import TradingBot
 
 # Ensure database directory exists
-os.makedirs('database', exist_ok=True)
+from pathlib import Path
+
+# Utworzenie folderu data/logs jeśli nie istnieje
+PROJECT_ROOT = Path(__file__).parent.parent
+LOG_DIR = PROJECT_ROOT / 'data' / 'logs'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Setup logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('database/app.log'),
+        logging.FileHandler(LOG_DIR / 'app.log'),
         logging.StreamHandler()
     ]
 )

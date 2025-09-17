@@ -1,7 +1,10 @@
 import traceback
 import datetime
+from pathlib import Path
 
-LOG_FILE = 'backend/database/app.log'
+# Ścieżka do logów w folderze data/logs/
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+LOG_FILE = PROJECT_ROOT / 'data' / 'logs' / 'app.log'
 
 def log_error(error: Exception):
     with open(LOG_FILE, 'a') as f:
