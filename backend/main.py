@@ -2080,6 +2080,56 @@ async def get_available_strategies():
         return {"error": str(e)}
 
 
+@app.get("/bot/predefined-strategies")
+async def get_predefined_strategies():
+    """Get list of predefined trading strategies"""
+    try:
+        from bot.predefined_strategies import get_predefined_strategies
+        strategies = get_predefined_strategies()
+        return {"strategies": strategies}
+    except Exception as e:
+        logger.error(f"Error getting predefined strategies: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/bot/select-strategy")
+async def select_predefined_strategy(strategy_data: dict):
+    """Select and apply a predefined strategy"""
+    try:
+        strategy_key = strategy_data.get("strategy_key")
+        if not strategy_key:
+            raise HTTPException(status_code=400, detail="strategy_key is required")
+        
+        from bot.predefined_strategies import get_strategy_config, get_strategy_metadata
+        
+        # Get strategy config
+        config = get_strategy_config(strategy_key)
+        metadata = get_strategy_metadata(strategy_key)
+        
+        # Apply configuration to bot
+        if trading_bot:
+            success = trading_bot.update_strategy_config(config)
+            if success:
+                logger.info(f"Applied predefined strategy: {strategy_key}")
+                return {
+                    "message": f"Strategy '{metadata['name']}' applied successfully",
+                    "strategy_key": strategy_key,
+                    "config": config,
+                    "metadata": metadata
+                }
+            else:
+                raise HTTPException(status_code=500, detail="Failed to apply strategy configuration")
+        else:
+            raise HTTPException(status_code=503, detail="Bot not available")
+            
+    except ValueError as e:
+        logger.error(f"Invalid strategy key: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error selecting strategy: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/bot/config")
 async def get_bot_config():
     """Get current bot configuration"""

@@ -25,9 +25,10 @@ import {
   IconClock,
   IconSettings,
   IconChartLine,
+  IconTarget,
 } from '@tabler/icons-react';
 import EnhancedWSClient, { ConnectionState, getConnectionStateDisplay } from '../services/wsClient';
-import BotConfigPanel from './BotConfigPanel';
+import PredefinedStrategies from './PredefinedStrategies';
 import { secureApiCall, API_CONFIG } from '../config/api';
 
 interface BotStatus {
@@ -303,6 +304,15 @@ const BotPanel: React.FC = () => {
     }
   };
 
+  const handleStrategySelect = (strategyKey: string) => {
+    logger.log('Strategy selected:', strategyKey);
+    // Refresh bot status and config after strategy selection
+    setTimeout(() => {
+      requestStatus();
+      loadBotConfig();
+    }, 500);
+  };
+
   const connectionDisplay = getConnectionStateDisplay(connectionState);
 
   return (
@@ -312,8 +322,11 @@ const BotPanel: React.FC = () => {
           <Tabs.Tab value="monitoring" leftSection={<IconChartLine size={14} />}>
             Monitoring & Control
           </Tabs.Tab>
-          <Tabs.Tab value="configuration" leftSection={<IconSettings size={14} />}>
-            Strategy Configuration
+          <Tabs.Tab value="strategies" leftSection={<IconTarget size={14} />}>
+            Predefined Strategies
+          </Tabs.Tab>
+          <Tabs.Tab value="advanced" leftSection={<IconSettings size={14} />}>
+            Advanced Configuration
           </Tabs.Tab>
         </Tabs.List>
 
@@ -531,17 +544,30 @@ const BotPanel: React.FC = () => {
           </Stack>
         </Tabs.Panel>
 
-        <Tabs.Panel value="configuration">
-          <BotConfigPanel 
+        <Tabs.Panel value="strategies">
+          <PredefinedStrategies 
             isRunning={botStatus.running}
-            onConfigUpdate={() => {
-              // Refresh bot status and config after config update
-              setTimeout(() => {
-                requestStatus();
-                loadBotConfig();
-              }, 500);
-            }}
+            onStrategySelect={handleStrategySelect}
           />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="advanced">
+          <Paper p="md">
+            <Stack gap="md">
+              <Group gap="sm">
+                <IconSettings size={24} />
+                <Title order={3}>Advanced Configuration</Title>
+              </Group>
+              <Alert color="blue" icon={<IconAlertCircle size={16} />}>
+                Advanced configuration is temporarily disabled. Please use predefined strategies for now.
+              </Alert>
+              <Text size="sm" c="dimmed">
+                This section will contain manual strategy configuration options in a future update.
+                For now, please select from the predefined strategies which have been optimized 
+                for different market conditions and risk profiles.
+              </Text>
+            </Stack>
+          </Paper>
         </Tabs.Panel>
       </Tabs>
     </Stack>

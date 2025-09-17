@@ -4,8 +4,8 @@ import { renderWithMantine } from '../testUtils/renderWithMantine';
 import axios from 'axios';
 jest.mock('axios');
 import BotPanel from './BotPanel';
-// Stub BotConfigPanel to avoid rendering complexity & icon issues in test
-jest.mock('./BotConfigPanel', () => () => <div data-testid="bot-config-panel" />);
+// Stub PredefinedStrategies to avoid rendering complexity & icon issues in test
+jest.mock('./PredefinedStrategies', () => () => <div data-testid="predefined-strategies" />);
 
 // Mock WebSocket
 const mockWebSocket = {
