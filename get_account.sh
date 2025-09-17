@@ -291,7 +291,7 @@ format_number() {
             echo "Liczba aktywów z saldem > 0: $ACTIVE_BALANCES"
             
             if [[ -f "$PRICES_FILE" && "$PRICES_HTTP_CODE" == "200" && -n "$FORMATTED_TOTAL" ]]; then
-                echo "Całkowita wartość portfela: ~$${FORMATTED_TOTAL} USDC"
+                echo "Całkowita wartość portfela: ~\$${FORMATTED_TOTAL} USDC"
             else
                 echo "Całkowita wartość portfela: Nie można obliczyć (brak danych o cenach)"
             fi
